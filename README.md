@@ -18,7 +18,7 @@ python3 workflow/setupWorkflow.py
 
 2. **Install requeirements `manually`**:
 
-        :exclamation:  Not necessary if you have performed the previous step.
+:exclamation:  Not necessary if you have performed the previous step.
 
 ```
 pip install --ignore-installed -r requirements.txt
@@ -205,65 +205,65 @@ Below is a detailed guide to the JSON configuration file for the workflow. It de
 
 - **Description:** Configuration for subtree construction and mining.
 
-    **construct_tree_method:**
+    **4.1. construct_tree_method:**
 
     - **Description:** Method used for tree construction during subtree - **mining.**
     - **Type: st**ring
     Value: "nj" (uses Neighbor-Joining method)
 
-    **input_path:**
+    **4.2. input_path:**
 
     - **Description:** Path to the input tree files to be mined.
     - **Type:** string
     - **Exampl**e: "./projects/test_artigo_fulldataset2/out/Trees"
 
-    **output_path:**
+    **4.3. output_path:**
 
     - **Description:** Path to save the generated subtrees.
     - **Type:** string
     - **Exampl**e: "./projects/test_artigo_fulldataset2/out"
 
-    **input_format:**
+    **4.4. input_format:**
 
     - **Description:** Input format of the trees.
     - **Type:** string
     - **Value:** "nexus"
 
-    **output_format:**
+    **4.5. output_format:**
 
     - **Description:** Output format of the generated subtrees.
     - **Type:** string
     - **Value:** "nexus"
 
-    **resume_infos:**
+    **4.6. resume_infos:**
 
     - **Description:** Defines whether previous information will be reused - **or the** process will start from scratch.
     - **Type: b**oolean
     Value: false (the process will start from scratch)
 
-    **save_metadata:**
+    **4.7. save_metadata:**
 
     - **Description:** Defines whether metadata for mined subtrees will be saved.
     - **Type:** boolean
     - **Value:** true (metadata will be saved)
 
-    **subtree_miner:**
+    **4.8. subtree_miner:**
 
     - **Description:** Enables or disables the subtree mining process.
     - **Type:** boolean
     - **Value:** true (subtree miner is active)
 
-**subtree_miner_configs:**
+**5. subtree_miner_configs:**
 
 - **Description:** Specific configurations for subtree miner.
 
-    **mode:**
+    **5.1. mode:**
 
     - **Description:** Subtree mining mode.
     - **Type:** string
     - **Value:** "OFST" (only from the same base tree)
 
-    **save_fpmax:**
+    **5.2. save_fpmax:**
 
     - **Description:** Defines whether FPMax results will be saved.
     - **Type:** boolean
@@ -271,19 +271,19 @@ Below is a detailed guide to the JSON configuration file for the workflow. It de
         - false,
         - true
 
-    **output_path:**
+    **5.3. output_path:**
 
     - **Description:** Path to save the subtree mining results.
     - **Type:** string
     - **Example**: "./projects/test_artigo_fulldataset2/out"
 
-    **support_fpmax:**
+    **5.4. support_fpmax:**
 
     - **Description:** FPMax support setting.
     - **Type:** string
     - **Value:** 
         - "auto" (all values), 
-        - Any number between 0.1 at 1.0
+        - Any number between 0.1 at 0.9
 
 ### Data directory
 
