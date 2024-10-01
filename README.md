@@ -18,7 +18,7 @@ python3 workflow/setupWorkflow.py
 
 2. **Install requeirements `manually`**:
 
-        :exclamation:  Not necessary if you have performed the previous step.
+:exclamation:  Not necessary if you have performed the previous step.
 
 ```
 pip install --ignore-installed -r requirements.txt
