@@ -1,0 +1,29 @@
+{
+    "log_file": true,
+    "output_log":"./projects/test_artigo_fulldataset2/out",
+    "tree_config":{
+        "mode":"auto",
+        "construct_tree_method":"upgma",
+        "input_path":"./data/testset",
+        "output_path":"./projects/test_artigo_fulldataset2/out",
+        "output_format":"nexus",
+        "align_method":"mafft"
+    },
+    "subtree_config":{
+        "construct_tree_method":"nj",
+        "input_path":"./projects/test_artigo_fulldataset2/out/Trees",
+        "output_path":"./projects/test_artigo_fulldataset2/out",
+        "input_format":"nexus",
+        "output_format":"nexus",
+        "resume_infos":false,
+        "save_metadata": true,
+        "subtree_miner": true,
+        "subtree_miner_configs":{
+            "mode":"OFST",
+            "save_fpmax":false,
+            "output_path":"./projects/test_artigo_fulldataset2/out",
+            "support_fpmax": "auto"
+        }
+   }
+
+}
