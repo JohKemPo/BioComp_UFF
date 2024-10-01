@@ -8,6 +8,8 @@ from Bio import AlignIO
 import numpy as np
 import logging, datetime
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, '../..'))
 
@@ -90,6 +92,8 @@ class TreeBuilderController:
                     filename=os.path.join(self.output_path,'outputs',f"log_setup_{date.year}_{date.month}_{date.day}.log"),
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
+        self.max_workers = kwargs.get('max_workers', os.cpu_count())
+
     def __call__(self):
         """
         Executa o processo de construção das árvores baseado no modo especificado.
@@ -113,68 +117,81 @@ class TreeBuilderController:
         
 
         heatmap_matrix = np.zeros((8, 8))
-        for file in tqdm(self.files, desc="Construindo árvores...", ascii="░▒█"):
-            if '.dnd' in file:
-                continue
-            
-            start_cycle = time.time()
-            fasta_path = os.path.join(self.input_path, file)
-            output_path_align = os.path.join(self.output_path, 'tmp', f'{Path(file).stem}.aln')
-            output_path_dnd = os.path.join(self.output_path, 'tmp', f'{Path(file).stem}.dnd')
-            path_dnd = os.path.join(self.input_path, f'{Path(file).stem}.dnd')
-            
-            if not(duplicate_names(fasta_path)) and not(duplicate_seq(fasta_path)[0]) and validate_sequences(fasta_path):
-                pass
-            else:
-                fasta_path = remove_pipe(Path(file).stem, fasta_path, self.input_path)
-                path_dnd = os.path.join(f'{fasta_path}.dnd')
-            
-            output_path_tree = os.path.join(self.output_path, 'Trees')
-            output_path_tree_image = os.path.join(self.output_path, 'Trees')
-            
-            if self.mode == "distance":
-                self.count_trees += 1
-                name = f'tree_{Path(file).stem}_distance.{self.output_format}'
-                tree = self.build_tree_distance_matrix(fasta_path, output_path_align, output_path_dnd, path_dnd, os.path.join(output_path_tree, name), self.align_method)
-                self.save_tree_image(title=name, tree=[tree], path=os.path.join(output_path_tree_image, name).replace('Trees', 'outputs/Plots'))
-                end_time = time.time()
-            elif self.mode == "parsimony":
-                self.count_trees += 1
-                name = f'tree_{Path(file).stem}_parsimony.{self.output_format}'
-                tree = self.build_tree_parsimony(fasta_path, output_path_align, output_path_dnd, path_dnd, os.path.join(output_path_tree, name), self.align_method)
-                self.save_tree_image(title=name, tree=[tree], path=os.path.join(output_path_tree_image, name).replace('Trees', 'outputs/Plots'))
-                end_time = time.time()
-            elif self.mode == "auto":
-                multi_trees = {
-                    "clustalw": {"distance": {"nj": [], "upgma": []}, "parsimony": {"nj": [], "upgma": []}},
-                    "mafft": {"distance": {"nj": [], "upgma": []}, "parsimony": {"nj": [], "upgma": []}}
-                }
-                for method in ['nj', 'upgma']:
-                    for alg in ['clustalw', 'mafft']:
-                        self.count_trees += 2
-                        name_distance = f'tree_{Path(file).stem}_{alg}_{method}_distance.{self.output_format}'
-                        name_parsimony = f'tree_{Path(file).stem}_{alg}_{method}_parsimony.{self.output_format}'
-                        output_path_tree_distance = os.path.join(self.output_path, 'Trees', name_distance)
-                        output_path_tree_parsimony = os.path.join(self.output_path, 'Trees', name_parsimony)
-                        self.construct_tree_method = method
-                        tree_distance = self.build_tree_distance_matrix(fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree_distance, alg)
-                        tree_parsimony = self.build_tree_parsimony(fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree_parsimony, alg)
-                        multi_trees[alg]['distance'][method].append(tree_distance)
-                        multi_trees[alg]['parsimony'][method].append(tree_parsimony)
 
-                self.save_tree_image(title=f'tree_{Path(file).stem}', tree=multi_trees, path=os.path.join(output_path_tree_image, f'tree_{Path(file).stem}').replace('Trees', 'outputs/Plots'))
-                end_time = time.time()
-                rf_scores = process_rf_distance(multi_trees)
-                heatmap_matrix = self.somarMatrizes(heatmap_matrix, plot_heatmap_distances(data_dict=multi_trees, scores=rf_scores, base_name=Path(file).stem, path=os.path.join(self.output_path, 'outputs/Plots')))
-
-            self.list_times.append(end_time - start_cycle)
-
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            futures = []
+            for file in tqdm(self.files, desc="Construindo árvores...", ascii="░▒█"):
+                if '.dnd' in file:
+                    continue
+                
+                futures.append(executor.submit(self.build_tree_for_file, file, heatmap_matrix))
+            
+            for future in as_completed(futures):
+                heatmap_matrix = future.result()[0]
+            multi_trees = future.result()[1]
         plot_heatmap_distances(data_dict=multi_trees, base_name='Acumulate', path=os.path.join(self.output_path, 'outputs/Plots'), distance_matrix=heatmap_matrix)
 
         clean_tmp(self.output_path)
         clean_NoPipe(self.input_path)
         
         self.msg.resume_tree(start=self.start, sum_time=self.list_times, num_trees=self.count_trees, output_format=self.output_format, n_nodes=self.count_nodes, method=self.construct_tree_method)
+    
+    def build_tree_for_file(self, file, heatmap_matrix):
+        """
+        """
+        start_cycle = time.time()
+        fasta_path = os.path.join(self.input_path, file)
+        output_path_align = os.path.join(self.output_path, 'tmp', f'{Path(file).stem}.aln')
+        output_path_dnd = os.path.join(self.output_path, 'tmp', f'{Path(file).stem}.dnd')
+        path_dnd = os.path.join(self.input_path, f'{Path(file).stem}.dnd')
+        
+        if not(duplicate_names(fasta_path)) and not(duplicate_seq(fasta_path)[0]) and validate_sequences(fasta_path):
+            pass
+        else:
+            fasta_path = remove_pipe(Path(file).stem, fasta_path, self.input_path)
+            path_dnd = os.path.join(f'{fasta_path}.dnd')
+        
+        output_path_tree = os.path.join(self.output_path, 'Trees')
+        output_path_tree_image = os.path.join(self.output_path, 'Trees')
+        
+        if self.mode == "distance":
+            self.count_trees += 1
+            name = f'tree_{Path(file).stem}_distance.{self.output_format}'
+            tree = self.build_tree_distance_matrix(fasta_path, output_path_align, output_path_dnd, path_dnd, os.path.join(output_path_tree, name), self.align_method)
+            self.save_tree_image(title=name, tree=[tree], path=os.path.join(output_path_tree_image, name).replace('Trees', 'outputs/Plots'))
+            end_time = time.time()
+        elif self.mode == "parsimony":
+            self.count_trees += 1
+            name = f'tree_{Path(file).stem}_parsimony.{self.output_format}'
+            tree = self.build_tree_parsimony(fasta_path, output_path_align, output_path_dnd, path_dnd, os.path.join(output_path_tree, name), self.align_method)
+            self.save_tree_image(title=name, tree=[tree], path=os.path.join(output_path_tree_image, name).replace('Trees', 'outputs/Plots'))
+            end_time = time.time()
+        elif self.mode == "auto":
+            multi_trees = {
+                "clustalw": {"distance": {"nj": [], "upgma": []}, "parsimony": {"nj": [], "upgma": []}},
+                "mafft": {"distance": {"nj": [], "upgma": []}, "parsimony": {"nj": [], "upgma": []}}
+            }
+            for method in ['nj', 'upgma']:
+                for alg in ['clustalw', 'mafft']:
+                    self.count_trees += 2
+                    name_distance = f'tree_{Path(file).stem}_{alg}_{method}_distance.{self.output_format}'
+                    name_parsimony = f'tree_{Path(file).stem}_{alg}_{method}_parsimony.{self.output_format}'
+                    output_path_tree_distance = os.path.join(self.output_path, 'Trees', name_distance)
+                    output_path_tree_parsimony = os.path.join(self.output_path, 'Trees', name_parsimony)
+                    self.construct_tree_method = method
+                    tree_distance = self.build_tree_distance_matrix(fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree_distance, alg)
+                    tree_parsimony = self.build_tree_parsimony(fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree_parsimony, alg)
+                    multi_trees[alg]['distance'][method].append(tree_distance)
+                    multi_trees[alg]['parsimony'][method].append(tree_parsimony)
+
+            self.save_tree_image(title=f'tree_{Path(file).stem}', tree=multi_trees, path=os.path.join(output_path_tree_image, f'tree_{Path(file).stem}').replace('Trees', 'outputs/Plots'))
+            end_time = time.time()
+            rf_scores = process_rf_distance(multi_trees)
+            heatmap_matrix = self.somarMatrizes(heatmap_matrix, plot_heatmap_distances(data_dict=multi_trees, scores=rf_scores, base_name=Path(file).stem, path=os.path.join(self.output_path, 'outputs/Plots')))
+
+        self.list_times.append(end_time - start_cycle)
+        return heatmap_matrix, multi_trees
+    
 
     def somarMatrizes(self, matriz1, matriz2):
         """
