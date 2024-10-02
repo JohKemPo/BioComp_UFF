@@ -17,6 +17,22 @@ except FileNotFoundError:
     print(f"Config file at {path} not found.")
     sys.exit(1)
 
+def replace_project_name(config):
+    project_name = config['project_name']
+    
+    def recursive_replace(value):
+        if isinstance(value, str):
+            return value.replace('#', project_name)
+        elif isinstance(value, dict):
+            return {k: recursive_replace(v) for k, v in value.items()}
+        elif isinstance(value, list):
+            return [recursive_replace(item) for item in value]
+        return value
+    
+    return recursive_replace(config)
+
+params = replace_project_name(params)
+
 # Create output directories if they do not exist
 os.makedirs(params['output_log'], exist_ok=True)
 os.makedirs(os.path.join(params['output_log'], 'outputs'), exist_ok=True)
