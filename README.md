@@ -109,31 +109,32 @@ Below is a detailed guide to the JSON configuration file for the workflow. It de
 ```
 {
     "log_file": true,
-    "output_log": "./projects/test_artigo_fulldataset2/out",
-    "tree_config": {
-        "mode": "auto",
-        "construct_tree_method": "upgma",
-        "input_path": "./data/testset",
-        "output_path": "./projects/test_artigo_fulldataset2/out",
-        "output_format": "nexus",
-        "align_method": "mafft"
+    "project_name": "test_artigo_fulldataset2",
+    "output_log":"./projects/#/out",
+    "tree_config":{
+        "mode":"auto",
+        "construct_tree_method":"upgma",
+        "input_path":"./data/testset",
+        "output_path":"./projects/#/out",
+        "output_format":"nexus",
+        "align_method":"mafft"
     },
-    "subtree_config": {
-        "construct_tree_method": "nj",
-        "input_path": "./projects/test_artigo_fulldataset2/out/Trees",
-        "output_path": "./projects/test_artigo_fulldataset2/out",
-        "input_format": "nexus",
-        "output_format": "nexus",
-        "resume_infos": false,
+    "subtree_config":{
+        "construct_tree_method":"nj",
+        "input_path":"./projects/#/out/Trees",
+        "output_path":"./projects/#/out",
+        "input_format":"nexus",
+        "output_format":"nexus",
+        "resume_infos":false,
         "save_metadata": true,
         "subtree_miner": true,
-        "subtree_miner_configs": {
-            "mode": "OFST",
-            "save_fpmax": false,
-            "output_path": "./projects/test_artigo_fulldataset2/out",
+        "subtree_miner_configs":{
+            "mode":"OFST",
+            "save_fpmax":false,
+            "output_path":"./projects/#/out",
             "support_fpmax": "auto"
         }
-    }
+   }
 }
 ```
 
@@ -151,11 +152,17 @@ Below is a detailed guide to the JSON configuration file for the workflow. It de
 - **Type:** string
 - **Example:** "./projects/test_artigo_fulldataset2/out"
 
-**3. tree_config:**
+**3. project_name:**
+
+- **Description:** Name of project.
+- **Type:** string
+- **Example:** "test_artigo_fulldataset2"
+
+**4. tree_config:**
 
 - **Description:** Configuration for the main tree construction.
 
-    **3.1. mode:**
+    **4.1. mode:**
 
     - **Description:** Operation mode for tree construction.
     - **Type:** string
@@ -165,7 +172,7 @@ Below is a detailed guide to the JSON configuration file for the workflow. It de
         - "parsimony" (Use parsimony), 
         - "distance" (Use distance matrix).
 
-    **3.2. construct_tree_method:**
+    **4.2. construct_tree_method:**
 
     - **Description:** Method used to construct the tree.
     - **Type:** string
@@ -173,19 +180,19 @@ Below is a detailed guide to the JSON configuration file for the workflow. It de
         - "upgma",
         -  "nj".
 
-    **3.3. input_path:**
+    **4.3. input_path:**
 
      - **Description:** Path to the input data used for tree construction.
      - **Type:** string
      - **Example:** "./data/testset"
 
-    **3.4. output_path:**
+    **4.4. output_path:**
 
     - **Description:** Path to save the generated tree.
     - **Type:** string
     - **Example:** "./projects/test_artigo_fulldataset2/out"
     
-    **3.5. output_format:**
+    **4.5. output_format:**
 
     - **Description:** Output format of the generated tree.
     - **Type:** string
@@ -193,7 +200,7 @@ Below is a detailed guide to the JSON configuration file for the workflow. It de
         - "nexus",
         - "nwk".
 
-    **3.6. align_method:**
+    **4.6. align_method:**
 
     - **Description:** Sequence alignment method for tree construction.
     - **Type:** string
@@ -201,69 +208,69 @@ Below is a detailed guide to the JSON configuration file for the workflow. It de
         - "mafft",
         - "clustalw".
 
-**4. subtree_config:**
+**5. subtree_config:**
 
 - **Description:** Configuration for subtree construction and mining.
 
-    **4.1. construct_tree_method:**
+    **5.1. construct_tree_method:**
 
     - **Description:** Method used for tree construction during subtree - **mining.**
     - **Type: st**ring
     Value: "nj" (uses Neighbor-Joining method)
 
-    **4.2. input_path:**
+    **5.2. input_path:**
 
     - **Description:** Path to the input tree files to be mined.
     - **Type:** string
     - **Exampl**e: "./projects/test_artigo_fulldataset2/out/Trees"
 
-    **4.3. output_path:**
+    **5.3. output_path:**
 
     - **Description:** Path to save the generated subtrees.
     - **Type:** string
     - **Exampl**e: "./projects/test_artigo_fulldataset2/out"
 
-    **4.4. input_format:**
+    **5.4. input_format:**
 
     - **Description:** Input format of the trees.
     - **Type:** string
     - **Value:** "nexus"
 
-    **4.5. output_format:**
+    **5.5. output_format:**
 
     - **Description:** Output format of the generated subtrees.
     - **Type:** string
     - **Value:** "nexus"
 
-    **4.6. resume_infos:**
+    **5.6. resume_infos:**
 
     - **Description:** Defines whether previous information will be reused - **or the** process will start from scratch.
     - **Type: b**oolean
     Value: false (the process will start from scratch)
 
-    **4.7. save_metadata:**
+    **5.7. save_metadata:**
 
     - **Description:** Defines whether metadata for mined subtrees will be saved.
     - **Type:** boolean
     - **Value:** true (metadata will be saved)
 
-    **4.8. subtree_miner:**
+    **5.8. subtree_miner:**
 
     - **Description:** Enables or disables the subtree mining process.
     - **Type:** boolean
     - **Value:** true (subtree miner is active)
 
-**5. subtree_miner_configs:**
+**6. subtree_miner_configs:**
 
 - **Description:** Specific configurations for subtree miner.
 
-    **5.1. mode:**
+    **6.1. mode:**
 
     - **Description:** Subtree mining mode.
     - **Type:** string
     - **Value:** "OFST" (only from the same base tree)
 
-    **5.2. save_fpmax:**
+    **6.2. save_fpmax:**
 
     - **Description:** Defines whether FPMax results will be saved.
     - **Type:** boolean
@@ -271,13 +278,13 @@ Below is a detailed guide to the JSON configuration file for the workflow. It de
         - false,
         - true
 
-    **5.3. output_path:**
+    **6.3. output_path:**
 
     - **Description:** Path to save the subtree mining results.
     - **Type:** string
     - **Example**: "./projects/test_artigo_fulldataset2/out"
 
-    **5.4. support_fpmax:**
+    **6.4. support_fpmax:**
 
     - **Description:** FPMax support setting.
     - **Type:** string
