@@ -1,6 +1,6 @@
 {
     "log_file": true,
-    "project_name": "test_artigo_fulldataset2",
+    "project_name": "test",
     "output_log":"./projects/#/out",
     "tree_config":{
         "mode":"auto",

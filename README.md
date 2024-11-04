@@ -321,6 +321,12 @@ or
 python workflow.py  --path "templates/config.json"
 ```
 
+or
+
+```
+python3 workflow.py --path templates/config.json -iData <Input path of sequences> -pName <Name of project>
+```
+
 ## Documentation
 
 All project documentation can be accessed by running the command, if the directory `html` has not been generated after running `setupWorkflow.py`:

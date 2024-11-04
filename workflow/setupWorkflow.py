@@ -154,6 +154,6 @@ def gen_doc():
         logging.error(f"Erro inesperado: {error}")
 
 if __name__ == "__main__":
-    create_virtualenv_and_install_deps()
     install_bioinformatics_tools()
     gen_doc()
+    create_virtualenv_and_install_deps()

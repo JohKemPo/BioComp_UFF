@@ -6,13 +6,29 @@ from workflow.controller.subtreeBuilderController import SubtreeBuilderControlle
 # Setup argument parser
 parser = argparse.ArgumentParser(description="Execute the workflow with specified config file.")
 parser.add_argument("--path", "-p", required=True, help="Path to the JSON configuration file.")
+parser.add_argument("--inputData", "-iData", required=False, help="Path to the input sequences.")
+parser.add_argument("--projectName", "-pName", required=False, help="Name of project.")
 args = parser.parse_args()
+
+try:
+    if args.inputData:
+        os.path.exists(args.inputData)
+except FileExistsError:
+    print(f"{args.inputData} not exists.")
+    sys.exit(1)
 
 # Load the config file from the provided path
 path = args.path
 try:
     with open(path, 'rb') as configs:
         params = json.load(configs)
+    
+    # Replace params with args      
+    if args.inputData:
+        params['tree_config']['input_path'] = args.inputData
+    if args.projectName:
+        params['project_name'] = args.projectName
+        
 except FileNotFoundError:
     print(f"Config file at {path} not found.")
     sys.exit(1)
