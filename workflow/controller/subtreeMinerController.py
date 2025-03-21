@@ -1,4 +1,4 @@
-import time
+import time, logging, datetime
 import os, sys
 import pandas as pd
 import numpy as np
@@ -42,6 +42,11 @@ class SubtreeMinerController:
         """
         for key, value in kwargs.items():
             setattr(self, key, value)
+        
+        date = datetime.datetime.now()
+        logging.basicConfig(level=logging.INFO, 
+                    filename=os.path.join(self.output_path,'outputs',f"log_setup_{date.year}_{date.month}_{date.day}.log"),
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
         self.msg = Messages(logPath=os.path.join(self.output_path,'outputs'))
         self.start = time.time()
@@ -50,7 +55,8 @@ class SubtreeMinerController:
         print(self.msg.init_message())
         print('       - MINERAÇÃO DE SUBÁRVORES FREQUENTES -       \n')
         print('------------------------------------------------------')
-
+        logging.info("SubtreeMinerController inicializado com sucesso.")
+        
     def group_data_by_tree_base(self, data: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
         """
         Agrupa os dados de subárvores com base no nome base das árvores.
@@ -66,12 +72,16 @@ class SubtreeMinerController:
             Dicionário com as subárvores agrupadas por nome base da árvore.
         """
         grouped_data = {}
+        logging.debug("Iniciando agrupamento de dados por base de árvore.")
         for item in data:
             for tree_name in item.keys():
-                base_name = '_'.join(tree_name.split('_')[:2]) 
+                base_name = '_'.join(tree_name.split('_')[:2])
                 if base_name not in grouped_data:
                     grouped_data[base_name] = []
+                    logging.debug(f"Criando novo grupo para a base: {base_name}")
                 grouped_data[base_name].append(item)
+                logging.debug(f"Adicionado item ao grupo {base_name}: {item}")
+        logging.info("Agrupamento de dados concluído.")
         return grouped_data
     
     def miner(self, data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -92,17 +102,29 @@ class SubtreeMinerController:
             Lista contendo as subárvores processadas após a mineração.
         """
         processed_group = []
-
-        if self.mode == "OFST":  # Only of the same tree
-            grouped_data = SubtreeMiner.group_data_by_tree_base(data)
-            for base_name, group in grouped_data.items():
-                self.matriz_subtree = []
-                print(f'Analisando grupo de árvores com base "{base_name}"')
-                result = SubtreeMiner.process_group(group, base_name)
-                processed_group.append(result)
-                parse_tree(trees=result, path=os.path.join(self.output_path, 'outputs'), mode=base_name)
-            return processed_group
-        else:
-            result = self.process_group(data)
-            parse_tree(trees=result, path=os.path.join(self.output_path, 'outputs'))
-            return result
+        logging.info("Iniciando mineração de subárvores frequentes.")
+        try:
+            if self.mode == "OFST":  # Only of the same tree
+                logging.info("Modo OFST detectado: agrupando dados por base de árvore.")
+                # Utiliza o método de agrupamento da classe SubtreeMiner
+                grouped_data = SubtreeMiner.group_data_by_tree_base(data)
+                logging.debug(f"Dados agrupados: {list(grouped_data.keys())}")
+                for base_name, group in grouped_data.items():
+                    self.matriz_subtree = []
+                    logging.info(f'Analisando grupo de árvores com base "{base_name}"')
+                    result = SubtreeMiner.process_group(group, base_name)
+                    processed_group.append(result)
+                    out_path = os.path.join(self.output_path, 'outputs')
+                    parse_tree(trees=result, path=out_path, mode=base_name)
+                    logging.info(f"Grupo {base_name} minerado e árvore salva em {out_path}.")
+                return processed_group
+            else:
+                logging.info("Modo padrão detectado: processando conjunto completo de dados.")
+                result = self.process_group(data)
+                out_path = os.path.join(self.output_path, 'outputs')
+                parse_tree(trees=result, path=out_path)
+                logging.info(f"Mineração concluída e árvore salva em {out_path}.")
+                return result
+        except Exception as e:
+            logging.error(f"Erro durante a mineração de subárvores: {e}", exc_info=True)
+            raise

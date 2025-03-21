@@ -1,4 +1,4 @@
-import os, sys, time, json
+import os, sys, time, json, logging, datetime
 from tqdm import tqdm
 import pandas as pd
 from typing import Any, Dict, List, Union
@@ -54,15 +54,23 @@ class SubtreeBuilderController:
         **kwargs : dict
             Argumentos passados para configurar os atributos da classe, como caminhos de entrada/saída e opções de mineração.
         """
+        
+        
         for key, value in kwargs.items():
             setattr(self, key, value)
+        
+        date = datetime.datetime.now()
+        logging.basicConfig(level=logging.INFO, 
+                    filename=os.path.join(self.output_path,'outputs',f"log_setup_{date.year}_{date.month}_{date.day}.log"),
+                    format='%(asctime)s - %(levelname)s - %(message)s')
             
         self.start = time.time()
         self.msg = Messages(logPath=os.path.join(self.output_path,'outputs'))
         print(self.msg.init_message())
         print('             - CONTRUÇÃO DE SUBÁRVORES -             \n')
         print('------------------------------------------------------')
-
+        logging.info("Inicializando SubtreeBuilderController.")
+        
         os.makedirs(self.output_path, exist_ok=True)
         dirs = ['Subtrees', 'outputs']
 
@@ -78,6 +86,7 @@ class SubtreeBuilderController:
         self.matrix_subtree = []
         self.subtree_kwargs = kwargs
         self.count_subtrees = 0
+        logging.info(f"{self.count_trees} arquivo(s) encontrado(s) em {self.input_path}.")
 
     def __call__(self) -> List[Dict[str, Any]]:
         """
@@ -91,34 +100,58 @@ class SubtreeBuilderController:
         List[Dict[str, Any]]
             Lista contendo os dados das subárvores processadas e mineradas.
         """
+        logging.info("Início da construção das subárvores.")
         for name in tqdm(self.files, desc="Gerando subárvores....", ascii="░▒█"):
             path = os.path.join(self.input_path, name)
+            logging.debug(f"Iniciando construção da subárvore para o arquivo: {name}")
             self.raw_data.append(self.builder(path, name))
+            logging.debug(f"Subárvore construída para: {name}")
 
         json_result = json.dumps(self.raw_data, indent=2)
-
+        logging.info("Construção das subárvores concluída.")
+        
         if self.save_metadata:
-            with open(os.path.join(self.output_path, 'outputs', 'metadata.json'), 'w') as output_file:
-                output_file.write(json_result)
+            metadata_path = os.path.join(self.output_path, 'outputs', 'metadata.json')
+            try:
+                with open(metadata_path, 'w') as output_file:
+                    output_file.write(json_result)
+                logging.info(f"Metadados salvos em JSON: {metadata_path}")
+            except Exception as e:
+                logging.error(f"Erro ao salvar metadados em JSON: {e}", exc_info=True)
+
 
         self.msg.resume_subtree(start=self.start,
                                 num_trees=self.count_trees,
                                 output_format=self.output_format,
                                 num_subtrees=self.count_subtrees)
+        data = self.raw_data
         
         if self.subtree_miner:
-            miner = SubtreeMiner(**self.subtree_miner_configs)
-            data = miner.miner(data=self.raw_data)
-            json_result = json.dumps(data, indent=2)
-
-            df = pd.DataFrame(data)
-            df.to_csv(os.path.join(self.output_path, 'outputs', 'metadata.csv'))
-
-            path = os.path.join(self.output_path, 'outputs', 'metadata.json')
-            with open(path, 'w') as output_file:
-                output_file.write(json_result)
+            logging.info("Iniciando mineração de subárvores frequentes.")
+            try:
+                miner = SubtreeMiner(**self.subtree_miner_configs)
+                data = miner.miner(data=self.raw_data)
+                json_result = json.dumps(data, indent=2)
+                df = pd.DataFrame(data)
+                csv_path = os.path.join(self.output_path, 'outputs', 'metadata.csv')
+                df.to_csv(csv_path)
+                logging.info(f"Metadados minerados salvos em CSV: {csv_path}")
+                
+                json_path = os.path.join(self.output_path, 'outputs', 'metadata.json')
+                with open(json_path, 'w') as output_file:
+                    output_file.write(json_result)
+                logging.info(f"Metadados minerados salvos em JSON: {json_path}")
+            except Exception as e:
+                logging.error(f"Erro na mineração de subárvores: {e}", exc_info=True)
+                raise
         
-        process_histogram_frequence(data,os.path.join(self.output_path, 'outputs','Plots'))
+        try:
+            plot_path = os.path.join(self.output_path, 'outputs', 'Plots')
+            process_histogram_frequence(data, plot_path)
+            logging.info(f"Histograma de frequência processado e salvo em: {plot_path}")
+        except Exception as e:
+            logging.error(f"Erro ao processar histograma de frequência: {e}", exc_info=True)
+            raise
         return data
 
     def builder(self, path: str, name: str) -> Dict[str, Any]:
@@ -137,8 +170,13 @@ class SubtreeBuilderController:
         Dict[str, Any]
             Dados brutos das subárvores construídas.
         """
-        builder = SubtreeBuilder(**self.subtree_kwargs)
-        self.rawdata = builder.subtree_constructor(path, name)
-        self.count_subtrees += builder.count_subtrees
-
-        return self.rawdata
+        logging.info(f"Iniciando a construção da subárvore para: {name}")
+        try:
+            builder = SubtreeBuilder(**self.subtree_kwargs)
+            rawdata = builder.subtree_constructor(path, name)
+            self.count_subtrees += builder.count_subtrees
+            logging.info(f"Subárvore para {name} construída com sucesso. Total de subárvores construídas: {self.count_subtrees}")
+        except Exception as e:
+            logging.error(f"Erro na construção da subárvore para {name}: {e}", exc_info=True)
+            raise
+        return rawdata
