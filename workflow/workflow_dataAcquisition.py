@@ -34,14 +34,25 @@ class ZikaWorkflow:
         """
         Inicializa os parâmetros do workflow.
         
-        :param email: E-mail para consulta ao GenBank (obrigatório para Entrez).
-        :param work_dir: Diretório base para salvar os arquivos intermediários e finais.
-        :param initial_min_length: Comprimento mínimo (em pb) para filtrar sequências inicialmente.
-        :param refined_min_length: Comprimento mínimo para o dataset refinado.
-        :param utr5_end: Posição final do UTR 5' (se conhecido); se None, não será removido.
-        :param utr3_start: Posição inicial do UTR 3' (se conhecido); se None, não será removido.
-        :param similarity_threshold: Limite para considerar duas sequências como idênticas (para remoção de duplicatas/overrepresentation).
-        :param retmax: Limite de sequências que serão baixadas.
+        Parameters
+        ----------
+
+        email : str
+            E-mail para consulta ao GenBank (obrigatório para Entrez).
+        work_dir : str
+            Diretório base para salvar os arquivos intermediários e finais.
+        initial_min_length : int
+            Comprimento mínimo (em pb) para filtrar sequências inicialmente.
+        refined_min_length : int
+            Comprimento mínimo para o dataset refinado.
+        utr5_end : int or str
+            Posição final do UTR 5' (se conhecido); se None, não será removido.
+        utr3_start : int or str
+            Posição inicial do UTR 3' (se conhecido); se None, não será removido.
+        similarity_threshold: float
+            Limite para considerar duas sequências como idênticas (para remoção de duplicatas/overrepresentation).
+        retmax : int
+            Limite de sequências que serão baixadas.
         """
         Entrez.email = email
         self.work_dir = work_dir
@@ -77,8 +88,13 @@ class ZikaWorkflow:
         """
         Passo 1: Baixa sequências do GenBank usando o Biopython.
         
-        :param query: String de consulta para o GenBank.
-        :param output_file: Caminho para salvar as sequências baixadas (formato GenBank).
+        Parameters
+        ----------
+
+        query: str
+            String de consulta para o GenBank.
+        output_file: str
+            Caminho para salvar as sequências baixadas (formato GenBank).
         """
         self.logger.info(f"Baixando sequências com query: {query}")
         print(f"Baixando sequências com query: {query}")
@@ -101,8 +117,13 @@ class ZikaWorkflow:
         Passo 2: Filtra as sequências para manter apenas aquelas com metadados e
         comprimento mínimo (e remove duplicatas).
         
-        :param input_file: Arquivo de entrada com sequências (formato GenBank).
-        :param output_file: Arquivo de saída com sequências filtradas.
+        Parameters
+        ----------
+
+        input_file: str
+            Arquivo de entrada com sequências (formato GenBank).
+        output_file: str
+            Arquivo de saída com sequências filtradas.
         """
         print(f"Iniciando filtragem de sequências: {input_file}")
         self.logger.info(f"Iniciando filtragem de sequências: {input_file}")
@@ -129,9 +150,13 @@ class ZikaWorkflow:
         """
         Passo 3: Remove regiões UTR se as posições forem fornecidas.
         Caso contrário, apenas copia o arquivo de entrada.
-        
-        :param input_file: Arquivo de entrada com as sequências (formato GenBank).
-        :param output_file: Arquivo de saída com as sequências sem UTRs.
+        Parameters
+        ----------
+
+        input_file: str
+            Arquivo de entrada com as sequências (formato GenBank).
+        output_file: str
+            Arquivo de saída com as sequências sem UTRs.
         """
         print("Removendo UTRs (se as posições estiverem definidas)...")
         self.logger.info("Removendo UTRs (se as posições estiverem definidas)...")
@@ -157,8 +182,13 @@ class ZikaWorkflow:
           - Filtra por um comprimento mínimo mais alto (ex.: 9000 nt).
           - (Opcional) Remove sequências muito similares para reduzir super-representação.
         
-        :param input_file: Arquivo de entrada com as sequências (após remoção de UTRs).
-        :param output_file: Arquivo de saída com o dataset refinado.
+        Parameters
+        ----------
+
+        input_file: str
+            Arquivo de entrada com as sequências (após remoção de UTRs).
+        output_file: str
+            Arquivo de saída com o dataset refinado.
         """
         print("Refinando o dataset...")
         self.logger.info("Refinando o dataset...")
@@ -188,9 +218,15 @@ class ZikaWorkflow:
         """
         Passo 5: Adiciona a(s) sequência(s) de outgroup ao dataset refinado.
         
-        :param input_file: Arquivo do dataset refinado (formato GenBank).
-        :param outgroup_file: Arquivo com a(s) sequência(s) do outgroup (formato GenBank).
-        :param output_file: Arquivo final combinando dataset e outgroup.
+        Parameters
+        ----------
+
+        input_file: str
+            Arquivo do dataset refinado (formato GenBank).
+        outgroup_file: str
+            Arquivo com a(s) sequência(s) do outgroup (formato GenBank).
+        output_file: str
+            Arquivo final combinando dataset e outgroup.
         """
         print("Adicionando outgroup...")
         self.logger.info("Adicionando outgroup...")
@@ -207,9 +243,15 @@ class ZikaWorkflow:
         """
         Passo 6: Alinha as sequências utilizando MAFFT.
         
-        :param input_file: Arquivo de entrada (formato Genbank ou FASTA).
-        :param output_file: Arquivo de saída com o alinhamento (formato FASTA).
-        :param mafft_path: Caminho para o executável do MAFFT (assumindo que esteja no PATH, por padrão "mafft").
+        Parameters
+        ----------
+
+        input_file: str
+            Arquivo de entrada (formato Genbank ou FASTA).
+        output_file: str
+            Arquivo de saída com o alinhamento (formato FASTA).
+        mafft_path: str
+            Caminho para o executável do MAFFT (assumindo que esteja no PATH, por padrão "mafft").
         """
         print("Alinhando sequências com MAFFT...")
         self.logger.info("Alinhando sequências com MAFFT...")
@@ -237,8 +279,13 @@ class ZikaWorkflow:
           5. Adicionar outgroup.
           6. Alinhar sequências.
         
-        :param query: Query para baixar as sequências do GenBank.
-        :param outgroup_query_or_file: Pode ser uma query para o outgroup ou um arquivo já existente.
+        Parameters
+        ----------
+
+        query: str
+            Query para baixar as sequências do GenBank.
+        outgroup_query_or_file: str
+            Pode ser uma query para o outgroup ou um arquivo já existente.
         """
         self.logger.info("Iniciando o workflow completo...")
         raw_file = os.path.join(self.work_dir, "raw_sequences.gb")
@@ -280,8 +327,10 @@ class ZikaWorkflow:
         """
         Converte um arquivo de sequências (ex.: GenBank) em um arquivo FASTA.
         
-        :param input_file: Caminho do arquivo de entrada (formato GenBank).
-        :param output_file: Caminho do arquivo de saída (formato FASTA) que conterá todas as sequências.
+        input_file: str
+            Caminho do arquivo de entrada (formato GenBank).
+        output_file: str
+            Caminho do arquivo de saída (formato FASTA) que conterá todas as sequências.
         """
         self.logger.info(f"Gerando arquivo FASTA a partir de: {input_file}")
         try:
@@ -296,10 +345,13 @@ class ZikaWorkflow:
         Divide um arquivo de sequências (FASTA) em múltiplos arquivos, cada um contendo 
         no máximo 'slice_size' sequências.
         
-        :param input_file: Caminho para o arquivo FASTA de entrada.
-        :param output_prefix: Prefixo para os arquivos de saída; serão gerados arquivos com nome
+        input_file: str
+            Caminho para o arquivo FASTA de entrada.
+        output_prefix: str
+            Prefixo para os arquivos de saída; serão gerados arquivos com nome
                               <output_prefix>_1.fasta, <output_prefix>_2.fasta, etc.
-        :param slice_size: Número máximo de sequências por arquivo (default: 50).
+        slice_size: str
+            Número máximo de sequências por arquivo (default: 50).
         """
         self.logger.info(f"Iniciando a divisão do arquivo: {input_file}")
         try:
