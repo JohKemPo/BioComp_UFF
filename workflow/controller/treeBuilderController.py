@@ -168,8 +168,10 @@ class TreeBuilderController:
                             self.construct_tree_method = method
                             logging.debug(f"Construindo árvore de distância ({alg} - {method}) para o arquivo {file}")
                             tree_distance = self.build_tree_distance_matrix(fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree_distance, alg)
+                            self.save_tree_image(title=name_distance.split('.')[0], tree=[tree_distance], path=os.path.join(output_path_tree_image, name).replace('Trees', 'outputs/Plots'))
                             logging.debug(f"Construindo árvore por parcimônia ({alg} - {method}) para o arquivo {file}")
                             tree_parsimony = self.build_tree_parsimony(fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree_parsimony, alg)
+                            self.save_tree_image(title=name_parsimony.split('.')[0], tree=[tree_parsimony], path=os.path.join(output_path_tree_image, name).replace('Trees', 'outputs/Plots'))
                             multi_trees[alg]['distance'][method].append(tree_distance)
                             multi_trees[alg]['parsimony'][method].append(tree_parsimony)
                     
