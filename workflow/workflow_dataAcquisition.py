@@ -165,7 +165,7 @@ class ZikaWorkflow:
             for rec in SeqIO.parse(input_file, "genbank"):
                 if self.utr5_end is not None and self.utr3_start is not None:
                     # Considerando que a CDS esteja entre utr5_end+1 e utr3_start-1
-                    cds_seq = rec.seq[self.utr5_end:self.utr3_start - 1]
+                    cds_seq = rec.seq[rec.features[1].location.start:rec.features[1].location.end]
                     new_rec = SeqRecord(cds_seq, id=rec.id, name=rec.name,
                                         description=rec.description, annotations=rec.annotations)
                     records.append(new_rec)
@@ -376,15 +376,15 @@ if __name__ == "__main__":
     path = "workflow_dataAcquisition_1"
     workflow = ZikaWorkflow(work_dir=path,
                             email="joaovitormoraesjp@gmail.com",
-                            utr5_end=None,  
-                            utr3_start=None,  
+                            utr5_end=True,  
+                            utr3_start=True,  
                             similarity_threshold=0.99)
     
     # QUERY: Primeira tentativa 270hits
     zika_query = "Zika virus[Organism] AND complete genome"
     outgroup_query = "Spondweni virus[Organism] AND complete genome"
     
-    # QUERY: Segunda tentativa hits
+    # QUERY: Segunda tentativa 128hits
     # zika_query = '"Zika virus"[Organism] OR Zika virus[All Fields]'
     # outgroup_query = 'spondweni[All Fields] AND ("Viruses"[Organism] OR viruses[All Fields])'
     
