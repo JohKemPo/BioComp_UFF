@@ -75,7 +75,8 @@ def get_trees_data_list(data_dict: Dict) -> List[Dict[str, Phylo.BaseTree.Tree]]
     for alg, trs in data_dict.items():
         for method, trees in trs.items():
             for mtd, tr in trees.items():
-                trees_data.append({f"tree_{alg}_{method}_{mtd}": tr[0]})
+                if len(tr) > 0:
+                    trees_data.append({f"tree_{alg}_{method}_{mtd}": tr[0]})
     return trees_data
 
 def process_rf_distance(data_dict: Dict) -> Dict[Tuple[str, str], int]:
@@ -133,7 +134,7 @@ def plot_heatmap_distances(data_dict: Dict,
     trees = get_trees_data_list(data_dict)
     tree_names = [list(tree.keys())[0] for tree in trees]
 
-    if distance_matrix is None:
+    if distance_matrix is None and scores:
         distance_matrix = np.zeros((len(trees), len(trees)))
         for (name1, name2), distance in scores.items():
             i = tree_names.index(name1)

@@ -71,6 +71,3 @@ class Neo4jUploader:
                 session.run(cql_commands)
                 print(f"Executed commands from {cql_file_path}")
 
-# uri = "neo4j+s://14f06a7b.databases.neo4j.io:7687"  # Substitua pela URI do seu Neo4j
-# user = "Joao Vitor Mendonca de Moraes"  # Substitua pelo nome de usuário do seu Neo4j
-# password = "8GVRUA7T"  # Substitua pela senha do seu Neo4j

@@ -113,8 +113,18 @@ class TreeBuilderController:
         else:
             logging.error(f"Modo desconhecido: {self.mode}")
             raise ValueError(f"Modo desconhecido: {self.mode}")
-
+        
+        
+        print(f"Ignorando o método: {self.ignore_mode.upper()}\n")
+        logging.info(f"Ignorando o método: {self.ignore_mode.upper()}")
         heatmap_matrix = np.zeros((8, 8))
+
+        multi_trees = {
+                        "clustalw": {"distance": {"nj": [], "upgma": []}, "parsimony": {"nj": [], "upgma": []}},
+                        "mafft": {"distance": {"nj": [], "upgma": []}, "parsimony": {"nj": [], "upgma": []}}
+                    }
+
+
         for file in tqdm(self.files, desc="Construindo árvores...", ascii="░▒█"):
             logging.info(f"Iniciando processamento do arquivo: {file}")
             if '.dnd' in file:
@@ -138,42 +148,53 @@ class TreeBuilderController:
             output_path_tree_image = os.path.join(self.output_path, 'Trees')
             
             try:
-                if self.mode == "distance":
+                if self.mode.lower() == "distance":
                     self.count_trees += 1
                     name = f'tree_{Path(file).stem}_distance.{self.output_format}'
                     logging.info(f"Construindo árvore de distância para o arquivo {file}")
                     tree = self.build_tree_distance_matrix(fasta_path, output_path_align, output_path_dnd, path_dnd, os.path.join(output_path_tree, name), self.align_method)
                     self.save_tree_image(title=name, tree=[tree], path=os.path.join(output_path_tree_image, name).replace('Trees', 'outputs/Plots'))
                     end_time = time.time()
-                elif self.mode == "parsimony":
+                elif self.mode.lower() == "parsimony":
                     self.count_trees += 1
                     name = f'tree_{Path(file).stem}_parsimony.{self.output_format}'
                     logging.info(f"Construindo árvore por parcimônia para o arquivo {file}")
                     tree = self.build_tree_parsimony(fasta_path, output_path_align, output_path_dnd, path_dnd, os.path.join(output_path_tree, name), self.align_method)
                     self.save_tree_image(title=name, tree=[tree], path=os.path.join(output_path_tree_image, name).replace('Trees', 'outputs/Plots'))
                     end_time = time.time()
-                elif self.mode == "auto":
-                    multi_trees = {
-                        "clustalw": {"distance": {"nj": [], "upgma": []}, "parsimony": {"nj": [], "upgma": []}},
-                        "mafft": {"distance": {"nj": [], "upgma": []}, "parsimony": {"nj": [], "upgma": []}}
-                    }
+                elif self.mode.lower() == "auto":
+                    
                     logging.info(f"Construindo árvores com múltiplos métodos para o arquivo {file}")
                     for method in ['nj', 'upgma']:
                         for alg in ['clustalw', 'mafft']:
                             self.count_trees += 2
                             name_distance = f'tree_{Path(file).stem}_{alg}_{method}_distance.{self.output_format}'
                             name_parsimony = f'tree_{Path(file).stem}_{alg}_{method}_parsimony.{self.output_format}'
+
+                            if os.path.exists(name_distance):
+                                continue
+                            
+                            if os.path.exists(name_parsimony):
+                                continue
+
                             output_path_tree_distance = os.path.join(self.output_path, 'Trees', name_distance)
                             output_path_tree_parsimony = os.path.join(self.output_path, 'Trees', name_parsimony)
                             self.construct_tree_method = method
-                            logging.debug(f"Construindo árvore de distância ({alg} - {method}) para o arquivo {file}")
-                            tree_distance = self.build_tree_distance_matrix(fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree_distance, alg)
-                            self.save_tree_image(title=name_distance.split('.')[0], tree=[tree_distance], path=os.path.join(output_path_tree_image, name).replace('Trees', 'outputs/Plots'))
-                            logging.debug(f"Construindo árvore por parcimônia ({alg} - {method}) para o arquivo {file}")
-                            tree_parsimony = self.build_tree_parsimony(fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree_parsimony, alg)
-                            self.save_tree_image(title=name_parsimony.split('.')[0], tree=[tree_parsimony], path=os.path.join(output_path_tree_image, name).replace('Trees', 'outputs/Plots'))
-                            multi_trees[alg]['distance'][method].append(tree_distance)
-                            multi_trees[alg]['parsimony'][method].append(tree_parsimony)
+
+                            if self.ignore_mode.lower() and multi_trees.get(self.ignore_mode.lower()):
+                                multi_trees[alg].pop(self.ignore_mode.lower())
+                            
+                            if not self.ignore_mode.lower() == "distance":
+                                logging.debug(f"Construindo árvore de distância ({alg} - {method}) para o arquivo {file}")
+                                tree_distance = self.build_tree_distance_matrix(fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree_distance, alg)
+                                self.save_tree_image(title=name_distance, tree=[tree_distance], path=os.path.join(output_path_tree_image, name_distance).replace('Trees', 'outputs/Plots'))
+                                multi_trees[alg]['distance'][method].append(tree_distance)
+                            
+                            if not self.ignore_mode.lower() == "parsimony":
+                                logging.debug(f"Construindo árvore por parcimônia ({alg} - {method}) para o arquivo {file}")
+                                tree_parsimony = self.build_tree_parsimony(fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree_parsimony, alg)
+                                self.save_tree_image(title=name_parsimony, tree=[tree_parsimony], path=os.path.join(output_path_tree_image, name_parsimony).replace('Trees', 'outputs/Plots'))
+                                multi_trees[alg]['parsimony'][method].append(tree_parsimony)
                     
                     self.save_tree_image(title=f'tree_{Path(file).stem}', tree=multi_trees, path=os.path.join(output_path_tree_image, f'tree_{Path(file).stem}').replace('Trees', 'outputs/Plots'))
                     end_time = time.time()
@@ -193,7 +214,7 @@ class TreeBuilderController:
                 
         if self.mode == "auto":
             plot_heatmap_distances(data_dict=multi_trees, base_name='Acumulate', 
-                                path=os.path.join(self.output_path, 'outputs/Plots'), distance_matrix=heatmap_matrix)
+                               path=os.path.join(self.output_path, 'outputs/Plots'), distance_matrix=heatmap_matrix)
             logging.info("Heatmap acumulado gerado com sucesso.")
         
         clean_tmp(self.output_path)
@@ -422,7 +443,7 @@ class TreeBuilderController:
                 for alg, trs in tree.items():
                     for method, trees in trs.items():
                         for mtd, tr in trees.items():
-                            if ax_index < len(axs):
+                            if ax_index < len(axs) and len(tr) > 0:
                                 Phylo.draw(tr[0], do_show=False, axes=axs[ax_index], 
                                            label_func=lambda x: None if x.name is None or 'Inner' in x.name else x.name)
                                 axs[ax_index].set_title(f"{title} - {alg.lower()} - {method.lower()} - {mtd}", 

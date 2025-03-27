@@ -1,11 +1,12 @@
 {
     "log_file": true,
-    "project_name": "Zika Virus",
+    "project_name": "Zika Virus 1",
     "output_log":"./projects/#/out",
     "tree_config":{
-        "mode":"auto",
+        "mode":"distance",
+        "ignore_mode": "parsimony",
         "construct_tree_method":"upgma",
-        "input_path":"./data/Zika",
+        "input_path":"./data/ZikaOne",
         "output_path":"./projects/#/out",
         "output_format":"nexus",
         "align_method":"mafft"
