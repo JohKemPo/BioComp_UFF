@@ -1,12 +1,12 @@
 {
     "log_file": true,
-    "project_name": "Zika Virus 1",
+    "project_name": "Dataset Test",
     "output_log":"./projects/#/out",
     "tree_config":{
-        "mode":"distance",
-        "ignore_mode": "parsimony",
+        "mode":"auto",
+        "ignore_mode": "",
         "construct_tree_method":"upgma",
-        "input_path":"./data/ZikaOne",
+        "input_path":"./data/testset",
         "output_path":"./projects/#/out",
         "output_format":"nexus",
         "align_method":"mafft"

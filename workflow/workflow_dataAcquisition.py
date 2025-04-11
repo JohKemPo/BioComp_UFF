@@ -26,6 +26,7 @@ import subprocess
 import logging
 from Bio import Entrez, SeqIO
 from Bio.SeqRecord import SeqRecord
+import pandas as pd
 
 class ZikaWorkflow:
     def __init__(self, email, work_dir="workflow_dataAcquisition",
@@ -99,6 +100,11 @@ class ZikaWorkflow:
         self.logger.info(f"Baixando sequências com query: {query}")
         print(f"Baixando sequências com query: {query}")
         try:
+            if not query:
+                with open(output_file, "w") as f:
+                    f.write("")
+                return
+            
             handle = Entrez.esearch(db="nucleotide", term=query, retmax=self.retmax)
             record = Entrez.read(handle)
             handle.close()
@@ -112,6 +118,36 @@ class ZikaWorkflow:
         except Exception as e:
             self.logger.error(f"Erro no download de sequências: {e}")
 
+    
+    def download_from_csv(self, csv_path, output_file):
+        """
+        Baixa sequências com base em accession numbers listados em um CSV.
+        
+        Parameters
+        ----------
+        csv_path : str
+            Caminho para o arquivo CSV contendo coluna 'Accession'.
+        output_file : str
+            Caminho do arquivo de saída (formato GenBank).
+        """
+        self.logger.info(f"Lendo CSV: {csv_path}")
+        try:
+            df = pd.read_csv(csv_path)
+            if 'Accession' not in df.columns:
+                raise ValueError("O CSV precisa conter uma coluna 'Accession'")
+            
+            accession_list = df['Accession'].dropna().astype(str).tolist()
+            self.logger.info(f"Total de accessions encontrados: {len(accession_list)}")
+
+            handle = Entrez.efetch(db="nucleotide", id=accession_list, rettype="gb", retmode="text")
+            with open(output_file, "w") as f:
+                f.write(handle.read())
+            handle.close()
+            self.logger.info(f"Sequências baixadas e salvas em: {output_file}")
+        except Exception as e:
+            self.logger.error(f"Erro ao processar CSV: {e}")
+
+            
     def filter_sequences(self, input_file, output_file):
         """
         Passo 2: Filtra as sequências para manter apenas aquelas com metadados e
@@ -133,7 +169,7 @@ class ZikaWorkflow:
             seen_seqs = set()
             for rec in records:
                 # Verifica se a sequência tem metadados (ex.: data, local) e comprimento mínimo
-                if len(rec.seq) < self.initial_min_length:
+                if self.initial_min_length is not None and len(rec.seq) < self.initial_min_length:
                     continue
                 seq_str = str(rec.seq).upper()
                 if seq_str in seen_seqs:
@@ -196,7 +232,7 @@ class ZikaWorkflow:
             records = list(SeqIO.parse(input_file, "genbank"))
             refined = []
             for rec in records:
-                if len(rec.seq) < self.refined_min_length:
+                if self.initial_min_length is not None and len(rec.seq) < self.initial_min_length:
                     continue
                 duplicate = False
                 for existing in refined:
@@ -269,7 +305,7 @@ class ZikaWorkflow:
         except Exception as e:
             self.logger.error(f"Erro inesperado no alinhamento: {e}")
 
-    def run_workflow(self, query, outgroup_query_or_file):
+    def run_workflow(self, outgroup_query_or_file="", query=None ,csv_path = None, download_method = "query"):
         """
         Executa o workflow completo:
           1. Baixar sequências.
@@ -296,7 +332,10 @@ class ZikaWorkflow:
         alignment_file = os.path.join(self.work_dir, "final_alignment.fasta")
         
         # Passo 1: Baixar sequências 
-        self.download_sequences(query, raw_file)
+        if download_method == "query":
+            self.download_sequences(query, raw_file)
+        elif download_method == "csv":
+            workflow.download_from_csv(csv_path, raw_file)
         
         # Passo 2: Filtrar sequências
         self.filter_sequences(raw_file, filtered_file)
@@ -373,27 +412,36 @@ class ZikaWorkflow:
             self.logger.error(f"Erro ao dividir o arquivo: {e}")
     
 if __name__ == "__main__":
-    path = "workflow_dataAcquisition_1"
+    path = "workflow_dataAcquisition_SupplementaryTable_filtered"
     workflow = ZikaWorkflow(work_dir=path,
                             email="joaovitormoraesjp@gmail.com",
                             utr5_end=True,  
                             utr3_start=True,  
+                            initial_min_length=None,
+                            refined_min_length=None,
                             similarity_threshold=0.99)
     
     # QUERY: Primeira tentativa 270hits
-    zika_query = "Zika virus[Organism] AND complete genome"
-    outgroup_query = "Spondweni virus[Organism] AND complete genome"
+    # zika_query = "Zika virus[Organism] AND complete genome"
+    # outgroup_query = "Spondweni virus[Organism] AND complete genome"
     
     # QUERY: Segunda tentativa 128hits
     # zika_query = '"Zika virus"[Organism] OR Zika virus[All Fields]'
     # outgroup_query = 'spondweni[All Fields] AND ("Viruses"[Organism] OR viruses[All Fields])'
     
-    workflow.run_workflow(query=zika_query, outgroup_query_or_file=outgroup_query)
+    #QUERY: Bactéria da gastrite
+    # zika_query = 'Helicobacter pylori[Organism] AND complete genome'
+    # outgroup_query = ""
+    
+    
+    workflow.run_workflow(csv_path="data/dataset_zikaVirus.csv", outgroup_query_or_file="", download_method="csv")
     
     
     input_genbank = f"{path}/dataset_with_outgroup.gb"
+
+    # input_genbank = f"{path}/raw_sequences.gb" # processamento do csv.
     output_fasta = f"{path}/dataset_final.fasta"
     workflow.generate_fasta(input_genbank, output_fasta)
     
-    input_fasta = f"{path}/dataset_final.fasta"
-    workflow.slice_file(input_fasta, output_prefix="dataset_slice", slice_size=50)
+    # input_fasta = f"{path}/dataset_final.fasta"
+    # workflow.slice_file(input_fasta, output_prefix="dataset_slice", slice_size=50)
