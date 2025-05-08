@@ -1,4 +1,11 @@
 from Bio import Phylo
+from Bio import Entrez
+from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
+from Bio.SeqFeature import SeqFeature, Reference, FeatureLocation
+from Bio.Seq import Seq
+from collections import defaultdict
+import json
 
 #Types
 from Bio.Phylo.BaseTree import Clade, Tree
@@ -310,7 +317,71 @@ def decode_tree_hash(encoded_data: Dict) -> Optional[str]:
         return newick
     else:
         return None
-    
+
+def seqrecord_to_serializable_dict(record: SeqRecord) -> dict:
+    def convert(obj):
+        if isinstance(obj, Seq):
+            return str(obj)
+        elif isinstance(obj, SeqFeature):
+            return {
+                "type": obj.type,
+                "location": str(obj.location),
+                "strand": obj.strand,
+                "qualifiers": convert(obj.qualifiers)
+            }
+        elif isinstance(obj, FeatureLocation):
+            return str(obj)
+        elif isinstance(obj, defaultdict):
+            return {k: convert(v) for k, v in obj.items()}
+        elif isinstance(obj, Reference):
+            return {
+                "title": obj.title,
+                "authors": obj.authors,
+                "journal": obj.journal,
+                "pubmed_id": obj.pubmed_id,
+                "comment": obj.comment
+            }
+        elif isinstance(obj, dict):
+            return {k: convert(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [convert(i) for i in obj]
+        elif callable(obj):  # Ignorar métodos
+            return None
+        else:
+            try:
+                json.dumps(obj)  # Testa se é serializável
+                return obj
+            except:
+                return str(obj)
+
+    return {
+        attr: convert(getattr(record, attr))
+        for attr in dir(record)
+        if not attr.startswith("_") and not callable(getattr(record, attr))
+    }
+
+
+def fetch_ncbi_record(accession: str, email: str = "email@gmail.com") -> dict:
+    """
+    Busca informações de uma sequência no NCBI usando o accession number.
+
+    Parâmetros:
+    - accession: str - o identificador da sequência.
+    - email: str - seu e-mail (requisito do NCBI para controle de uso da API)
+
+    Retorna:
+    - dict com informações principais da sequência
+    """
+    Entrez.email = email  # obrigatório pelo NCBI
+    try:
+        with Entrez.efetch(db="nucleotide", id=accession, rettype="gb", retmode="text") as handle:
+            record = SeqIO.read(handle, "genbank")
+        
+        return seqrecord_to_serializable_dict(record)
+
+    except Exception as e:
+        return {"error": str(e)}
+
 def calculate_tree_hash(data: Tree) -> Dict:
     """
     Calcula o hash terminal de uma subárvore.
@@ -332,5 +403,6 @@ def calculate_tree_hash(data: Tree) -> Dict:
     hash_object = hashlib.md5(newick.encode())
     return {
         'newick': newick,
-        'terminal_hash': int(hash_object.hexdigest()[:4], 16)
+        'terminal_hash': int(hash_object.hexdigest()[:4], 16),
+        'metadata': fetch_ncbi_record(newick)
     }
