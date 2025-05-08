@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Resultado do Alinhamento</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #ffffff;
+            color: #000;
+            margin: 20px;
+        }
+
+        h2 {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .block {
+            margin-bottom: 20px;
+        }
+
+        .line {
+            white-space: pre;
+            font-size: 14px;
+            line-height: 1.4em;
+        }
+
+        .seq-id {
+            display: inline-block;
+            width: 25ch;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .residues {
+            display: inline-block;
+        }
+
+        .pos {
+            display: inline-block;
+            width: 5ch;
+            text-align: left;
+            color: #777;
+            margin-left: 20px;
+        }
+
+
+        .consensus {
+            color: #777;
+            font-weight: bold;
+            white-space: pre;
+        }
+
+
+        /* Estilo base para resíduos — será complementado por classes dinâmicas */
+        .res {
+            display: inline-block;
+            width: 1ch;
+            text-align: center;
+            padding: 0 1px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>Alinhamento de Sequências - {{alignment_title}}</h2>
+
+    {{alignment_blocks}}
+
+</body>
+
+</html>

@@ -232,7 +232,7 @@ class ZikaWorkflow:
             records = list(SeqIO.parse(input_file, "genbank"))
             refined = []
             for rec in records:
-                if self.initial_min_length is not None and len(rec.seq) < self.initial_min_length:
+                if self.refined_min_length is not None and len(rec.seq) < self.refined_min_length:
                     continue
                 duplicate = False
                 for existing in refined:
@@ -412,13 +412,13 @@ class ZikaWorkflow:
             self.logger.error(f"Erro ao dividir o arquivo: {e}")
     
 if __name__ == "__main__":
-    path = "workflow_dataAcquisition_SupplementaryTable_filtered"
+    path = "workflow_dataAcquisition_SupplementaryTable_filtered_1"
     workflow = ZikaWorkflow(work_dir=path,
                             email="joaovitormoraesjp@gmail.com",
                             utr5_end=True,  
                             utr3_start=True,  
-                            initial_min_length=None,
-                            refined_min_length=None,
+                            initial_min_length=700,
+                            refined_min_length=9000,
                             similarity_threshold=0.99)
     
     # QUERY: Primeira tentativa 270hits

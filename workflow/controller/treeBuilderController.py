@@ -69,7 +69,7 @@ class TreeBuilderController:
         print('------------------------------------------------------')
         
         os.makedirs(self.output_path, exist_ok=True)
-        dirs = ['outputs', 'tmp', 'Trees', 'outputs/Plots']
+        dirs = ['outputs', 'tmp','Align', 'Trees', 'outputs/Plots']
 
         for dir in dirs:
             path = os.path.join(self.output_path, dir)
@@ -81,7 +81,7 @@ class TreeBuilderController:
         self.list_times = list()
         self.aligner = AlignmentSeqs()
 
-        clean_tmp(self.output_path)
+        # clean_tmp(self.output_path)
         clean_NoPipe(self.input_path)
 
         date = datetime.datetime.now()
@@ -134,6 +134,7 @@ class TreeBuilderController:
             start_cycle = time.time()
             fasta_path = os.path.join(self.input_path, file)
             output_path_align = os.path.join(self.output_path, 'tmp', f'{Path(file).stem}.aln')
+            output_path_align_html = os.path.join(self.output_path, 'Align', f'{Path(file).stem}.html')
             output_path_dnd = os.path.join(self.output_path, 'tmp', f'{Path(file).stem}.dnd')
             path_dnd = os.path.join(self.input_path, f'{Path(file).stem}.dnd')
             
@@ -152,14 +153,14 @@ class TreeBuilderController:
                     self.count_trees += 1
                     name = f'tree_{Path(file).stem}_distance.{self.output_format}'
                     logging.info(f"Construindo árvore de distância para o arquivo {file}")
-                    tree = self.build_tree_distance_matrix(fasta_path, output_path_align, output_path_dnd, path_dnd, os.path.join(output_path_tree, name), self.align_method)
+                    tree = self.build_tree_distance_matrix(fasta_path, output_path_align, output_path_dnd, path_dnd, os.path.join(output_path_tree, name), self.align_method, output_path_align_html)
                     self.save_tree_image(title=name, tree=[tree], path=os.path.join(output_path_tree_image, name).replace('Trees', 'outputs/Plots'))
                     end_time = time.time()
                 elif self.mode.lower() == "parsimony":
                     self.count_trees += 1
                     name = f'tree_{Path(file).stem}_parsimony.{self.output_format}'
                     logging.info(f"Construindo árvore por parcimônia para o arquivo {file}")
-                    tree = self.build_tree_parsimony(fasta_path, output_path_align, output_path_dnd, path_dnd, os.path.join(output_path_tree, name), self.align_method)
+                    tree = self.build_tree_parsimony(fasta_path, output_path_align, output_path_dnd, path_dnd, os.path.join(output_path_tree, name), self.align_method, output_path_align_html)
                     self.save_tree_image(title=name, tree=[tree], path=os.path.join(output_path_tree_image, name).replace('Trees', 'outputs/Plots'))
                     end_time = time.time()
                 elif self.mode.lower() == "auto":
@@ -186,13 +187,13 @@ class TreeBuilderController:
                             
                             if not self.ignore_mode.lower() == "distance":
                                 logging.debug(f"Construindo árvore de distância ({alg} - {method}) para o arquivo {file}")
-                                tree_distance = self.build_tree_distance_matrix(fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree_distance, alg)
+                                tree_distance = self.build_tree_distance_matrix(fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree_distance, alg, output_path_align_html)
                                 self.save_tree_image(title=name_distance, tree=[tree_distance], path=os.path.join(output_path_tree_image, name_distance).replace('Trees', 'outputs/Plots'))
                                 multi_trees[alg]['distance'][method].append(tree_distance)
                             
                             if not self.ignore_mode.lower() == "parsimony":
                                 logging.debug(f"Construindo árvore por parcimônia ({alg} - {method}) para o arquivo {file}")
-                                tree_parsimony = self.build_tree_parsimony(fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree_parsimony, alg)
+                                tree_parsimony = self.build_tree_parsimony(fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree_parsimony, alg, output_path_align_html)
                                 self.save_tree_image(title=name_parsimony, tree=[tree_parsimony], path=os.path.join(output_path_tree_image, name_parsimony).replace('Trees', 'outputs/Plots'))
                                 multi_trees[alg]['parsimony'][method].append(tree_parsimony)
                     
@@ -217,7 +218,7 @@ class TreeBuilderController:
                                path=os.path.join(self.output_path, 'outputs/Plots'), distance_matrix=heatmap_matrix)
             logging.info("Heatmap acumulado gerado com sucesso.")
         
-        clean_tmp(self.output_path)
+        # clean_tmp(self.output_path)
         clean_NoPipe(self.input_path)
         logging.info("Diretórios temporários limpos.")
 
@@ -253,7 +254,7 @@ class TreeBuilderController:
                 result[i].append(round(matriz1[i][j] + matriz2[i][j]))
         return result
 
-    def build_tree_distance_matrix(self, fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree, align_method):
+    def build_tree_distance_matrix(self, fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree, align_method, output_path_align_html):
         """
         Constrói uma árvore filogenética usando matriz de distâncias.
 
@@ -293,10 +294,11 @@ class TreeBuilderController:
                 alng = self.aligner.align_sequences_clustalw(fasta_path=fasta_path,
                                                              path_dnd=path_dnd,
                                                              output_path_dnd=output_path_dnd,
-                                                             output_path_align=output_path_align)
+                                                             output_path_align=output_path_align,
+                                                             output_path_html=output_path_align_html)
             elif align_method == "mafft":
                 logging.debug(f"Alinhando sequências com MAFFT para {fasta_path}.")
-                alng = self.aligner.align_sequences_mafft(fasta_path=fasta_path)
+                alng = self.aligner.align_sequences_mafft(fasta_path=fasta_path, output_path_html=output_path_align_html)
             else:
                 logging.error(f"Método de alinhamento desconhecido: {align_method}")
                 raise ValueError("Método de alinhamento não suportado.")
@@ -326,7 +328,7 @@ class TreeBuilderController:
             raise
         return tree
     
-    def build_tree_parsimony(self, fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree, align_method):
+    def build_tree_parsimony(self, fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree, align_method, output_path_align_html):
         """
         Constrói uma árvore filogenética usando o método de parcimônia.
 
@@ -366,10 +368,11 @@ class TreeBuilderController:
                 alng = self.aligner.align_sequences_clustalw(fasta_path=fasta_path,
                                                              path_dnd=path_dnd,
                                                              output_path_dnd=output_path_dnd,
-                                                             output_path_align=output_path_align)
+                                                             output_path_align=output_path_align,
+                                                             output_path_html=output_path_align_html)
             elif align_method == "mafft":
                 logging.debug(f"Alinhando sequências com MAFFT para {fasta_path}.")
-                alng = self.aligner.align_sequences_mafft(fasta_path=fasta_path)
+                alng = self.aligner.align_sequences_mafft(fasta_path=fasta_path, output_path_html=output_path_align_html)
             else:
                 logging.error(f"Método de alinhamento desconhecido: {align_method}")
                 raise ValueError("Método de alinhamento não suportado.")

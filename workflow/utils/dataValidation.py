@@ -1,7 +1,7 @@
 from Bio import SeqIO
 import os
 
-#Função que verifica se todas as sequências são proteínas válidas no formato FASTA"""
+# Função que verifica se todas as sequências são proteínas válidas no formato FASTA
 def validate_sequences(file_path):
     """
     """
