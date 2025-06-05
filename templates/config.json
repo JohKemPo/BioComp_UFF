@@ -1,6 +1,6 @@
 {
     "log_file": true,
-    "project_name": "Test 1",
+    "project_name": "Test metadata",
     "output_log":"./projects/#/out",
     "tree_config":{
         "mode":"auto",
