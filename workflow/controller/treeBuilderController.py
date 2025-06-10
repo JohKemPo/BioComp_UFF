@@ -289,26 +289,35 @@ class TreeBuilderController:
                               output_path_tree=output_path_tree)
         
         try:
-            if align_method == "clustalw":
-                logging.debug(f"Alinhando sequências com ClustalW para {fasta_path}.")
-                alng = self.aligner.align_sequences_clustalw(fasta_path=fasta_path,
-                                                             path_dnd=path_dnd,
-                                                             output_path_dnd=output_path_dnd,
-                                                             output_path_align=output_path_align,
-                                                             output_path_html=output_path_align_html)
-            elif align_method == "mafft":
-                logging.debug(f"Alinhando sequências com MAFFT para {fasta_path}.")
-                alng = self.aligner.align_sequences_mafft(fasta_path=fasta_path, output_path_html=output_path_align_html)
+            if os.path.exists(output_path_align):
+                logging.info(f"Arquivo de alinhamento já existe: {output_path_align}. Reutilizando.")
+                alng = AlignIO.read(output_path_align, "clustal" if align_method == "clustalw" else "fasta")
             else:
-                logging.error(f"Método de alinhamento desconhecido: {align_method}")
-                raise ValueError("Método de alinhamento não suportado.")
-            
-            if align_method == "mafft":
-                tmp_align = os.path.join(self.output_path, 'tmp', 'align.aln')
-                with open(tmp_align, "w") as f:
-                    f.write(alng)
-                alng = AlignIO.read(tmp_align, "fasta")
-                logging.debug("Arquivo de alinhamento gerado e lido com sucesso (MAFFT).")
+                if align_method == "clustalw":
+                    logging.debug(f"Alinhando sequências com ClustalW para {fasta_path}.")
+                    alng = self.aligner.align_sequences_clustalw(fasta_path=fasta_path,
+                                                                path_dnd=path_dnd,
+                                                                output_path_dnd=output_path_dnd,
+                                                                output_path_align=output_path_align,
+                                                                output_path_html=output_path_align_html
+                    )
+                    alng = AlignIO.read(output_path_align, "clustal")
+
+                elif align_method == "mafft":
+                    logging.debug(f"Alinhando sequências com MAFFT para {fasta_path}.")
+                    alng_str = self.aligner.align_sequences_mafft(
+                        fasta_path=fasta_path,
+                        output_path_html=output_path_align_html
+                    )
+                    tmp_align = os.path.join(self.output_path, 'tmp', 'align.aln')
+                    os.makedirs(os.path.dirname(tmp_align), exist_ok=True)
+                    with open(tmp_align, "w") as f:
+                        f.write(alng_str)
+                    alng = AlignIO.read(tmp_align, "fasta")
+                    logging.debug("Arquivo de alinhamento gerado e lido com sucesso (MAFFT).")
+                else:
+                    logging.error(f"Método de alinhamento desconhecido: {align_method}")
+                    raise ValueError("Método de alinhamento não suportado.")
         except Exception as e:
             logging.error(f"Erro no alinhamento das sequências para {fasta_path}: {e}", exc_info=True)
             raise
@@ -328,12 +337,11 @@ class TreeBuilderController:
             raise
         return tree
     
-    def build_tree_parsimony(self, fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree, align_method, output_path_align_html):
+    def build_tree_parsimony(self, fasta_path, output_path_align, output_path_dnd,
+                         path_dnd, output_path_tree, align_method, output_path_align_html):
         """
         Constrói uma árvore filogenética usando o método de parcimônia.
-
-        Alinha as sequências, calcula a matriz de distâncias e constrói uma árvore filogenética
-        usando o método de parcimônia com uma árvore inicial gerada por NJ ou UPGMA.
+        Se o alinhamento já existir, ele será reutilizado.
 
         Parameters
         ----------
@@ -349,6 +357,8 @@ class TreeBuilderController:
             Caminho para salvar a árvore gerada.
         align_method : str
             Método de alinhamento a ser usado: 'clustalw' ou 'mafft'.
+        output_path_align_html : str
+            Caminho para salvar o alinhamento em HTML.
 
         Return
         ------
@@ -357,32 +367,42 @@ class TreeBuilderController:
         """
         logging.info(f"Iniciando construção de árvore por parcimônia para {fasta_path}")
         builder = TreeBuilder(fasta_path=fasta_path, 
-                              output_path_align=output_path_align, 
-                              output_path_dnd=output_path_dnd, 
-                              path_dnd=path_dnd, 
-                              output_path_tree=output_path_tree)
+                            output_path_align=output_path_align, 
+                            output_path_dnd=output_path_dnd, 
+                            path_dnd=path_dnd, 
+                            output_path_tree=output_path_tree)
         
         try:
-            if align_method == "clustalw":
-                logging.debug(f"Alinhando sequências com ClustalW para {fasta_path}.")
-                alng = self.aligner.align_sequences_clustalw(fasta_path=fasta_path,
-                                                             path_dnd=path_dnd,
-                                                             output_path_dnd=output_path_dnd,
-                                                             output_path_align=output_path_align,
-                                                             output_path_html=output_path_align_html)
-            elif align_method == "mafft":
-                logging.debug(f"Alinhando sequências com MAFFT para {fasta_path}.")
-                alng = self.aligner.align_sequences_mafft(fasta_path=fasta_path, output_path_html=output_path_align_html)
+            if os.path.exists(output_path_align):
+                logging.info(f"Arquivo de alinhamento já existe: {output_path_align}. Reutilizando.")
+                alng = AlignIO.read(output_path_align, "clustal" if align_method == "clustalw" else "fasta")
             else:
-                logging.error(f"Método de alinhamento desconhecido: {align_method}")
-                raise ValueError("Método de alinhamento não suportado.")
-            
-            if align_method == "mafft":
-                tmp_align = os.path.join(self.output_path, 'tmp', 'align.aln')
-                with open(tmp_align, "w") as f:
-                    f.write(alng)
-                alng = AlignIO.read(tmp_align, "fasta")
-                logging.debug("Arquivo de alinhamento gerado e lido com sucesso (MAFFT).")
+                if align_method == "clustalw":
+                    logging.debug(f"Alinhando sequências com ClustalW para {fasta_path}.")
+                    alng = self.aligner.align_sequences_clustalw(
+                        fasta_path=fasta_path,
+                        path_dnd=path_dnd,
+                        output_path_dnd=output_path_dnd,
+                        output_path_align=output_path_align,
+                        output_path_html=output_path_align_html
+                    )
+                    alng = AlignIO.read(output_path_align, "clustal")
+
+                elif align_method == "mafft":
+                    logging.debug(f"Alinhando sequências com MAFFT para {fasta_path}.")
+                    alng_str = self.aligner.align_sequences_mafft(
+                        fasta_path=fasta_path,
+                        output_path_html=output_path_align_html
+                    )
+                    tmp_align = os.path.join(self.output_path, 'tmp', 'align.aln')
+                    os.makedirs(os.path.dirname(tmp_align), exist_ok=True)
+                    with open(tmp_align, "w") as f:
+                        f.write(alng_str)
+                    alng = AlignIO.read(tmp_align, "fasta")
+                    logging.debug("Arquivo de alinhamento gerado e lido com sucesso (MAFFT).")
+                else:
+                    logging.error(f"Método de alinhamento desconhecido: {align_method}")
+                    raise ValueError("Método de alinhamento não suportado.")
         except Exception as e:
             logging.error(f"Erro no alinhamento das sequências para {fasta_path}: {e}", exc_info=True)
             raise
@@ -390,9 +410,11 @@ class TreeBuilderController:
         try:
             distance_matrix = builder.distance_matrix(alignment=alng)
             logging.debug("Matriz de distâncias calculada para parcimônia com sucesso.")
-            tree = builder.parsimony_constructor(distance_matrix=distance_matrix, 
-                                                  alignment=alng, 
-                                                  construct_tree_method=self.construct_tree_method)
+            tree = builder.parsimony_constructor(
+                distance_matrix=distance_matrix,
+                alignment=alng,
+                construct_tree_method=self.construct_tree_method
+            )
             builder.save_tree(tree=tree, path=output_path_tree, format=self.output_format)
             logging.info(f"Árvore de parcimônia salva em {output_path_tree}.")
         except Exception as e:

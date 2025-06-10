@@ -1,4 +1,11 @@
 from Bio import Phylo
+from Bio import Entrez
+from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
+from Bio.SeqFeature import SeqFeature, Reference, FeatureLocation
+from Bio.Seq import Seq
+from collections import defaultdict
+import json
 
 #Types
 from Bio.Phylo.BaseTree import Clade, Tree
@@ -310,27 +317,142 @@ def decode_tree_hash(encoded_data: Dict) -> Optional[str]:
         return newick
     else:
         return None
-    
-def calculate_tree_hash(data: Tree) -> Dict:
-    """
-    Calcula o hash terminal de uma subárvore.
 
-    A função gera uma representação Newick da subárvore e, em seguida,
-    calcula o hash MD5 dessa string, retornando os valores hash e Newick.
+def seqrecord_to_serializable_dict(record: SeqRecord) -> dict:
+    def convert(obj):
+        if isinstance(obj, Seq):
+            return str(obj)
+        elif isinstance(obj, SeqFeature):
+            return {
+                "type": obj.type,
+                "location": str(obj.location),
+                "strand": obj.strand,
+                "qualifiers": {
+                    k: convert(v) for k, v in obj.qualifiers.items()
+                    if k not in {"translation", "seq"}
+                }
+            }
+        elif isinstance(obj, FeatureLocation):
+            return str(obj)
+        elif isinstance(obj, defaultdict):
+            return {k: convert(v) for k, v in obj.items()}
+        elif isinstance(obj, Reference):
+            return {
+                "title": obj.title,
+                "authors": obj.authors,
+                "journal": obj.journal,
+                "pubmed_id": obj.pubmed_id,
+                "comment": obj.comment
+            }
+        elif isinstance(obj, dict):
+            return {
+                k: convert(v) for k, v in obj.items()
+                if k not in {"translation", "seq"}
+            }
+        elif isinstance(obj, list):
+            return [convert(i) for i in obj]
+        elif callable(obj):  # Ignorar métodos
+            return None
+        else:
+            try:
+                json.dumps(obj)  # Testa se é serializável
+                return obj
+            except:
+                return str(obj)
+
+    return {
+        attr: convert(getattr(record, attr))
+        for attr in dir(record)
+        if not attr.startswith("_")
+        and not callable(getattr(record, attr))
+        and attr not in {"seq"}  # <- ESSA LINHA IGNORA 'seq' da raiz
+    }
+
+
+
+def fetch_local_record(accession: str, gbk_file: str) -> dict:
+    """
+    Busca informações de uma sequência em um arquivo local GenBank (.gb/.gbk)
+
+    Parâmetros:
+    - accession: str - o identificador da sequência (terminal da árvore)
+    - gbk_file: str - caminho para o arquivo local no formato GenBank
+
+    Retorna:
+    - dict com informações principais da sequência ou erro
+    """
+    try:
+        for record in SeqIO.parse(gbk_file, "genbank"):
+            if record.id == accession or accession in record.annotations.get("accessions", []):
+                return seqrecord_to_serializable_dict(record)
+        return {"error": f"Acesso {accession} não encontrado no arquivo {gbk_file}"}
+    except Exception as e:
+        return {"error": str(e)}
+
+def calculate_tree_hash(data: Tree, is_terminal: bool = False, gbk_file: str = None) -> Dict:
+    """
+    Calcula o hash terminal de uma subárvore e busca metadados localmente.
 
     Parameters
     ----------
-    data : Bio.Phylo.BaseTree.Tree
-        A subárvore para a qual o hash será calculado.
+    data : Tree or str
+        Subárvore ou nome terminal (str) se is_terminal=True.
+    is_terminal : bool
+        Indica se é um terminal (folha) da árvore.
+    gbk_file : str
+        Caminho para o arquivo GenBank local (obrigatório se is_terminal=True)
 
     Return
     ------
     dict
-        Dicionário contendo a string Newick da subárvore e o valor do hash terminal.
+        Contém a string Newick, hash MD5 e metadados (se aplicável)
     """
-    newick = data.format("newick")
-    hash_object = hashlib.md5(newick.encode())
+    if is_terminal:
+        if not isinstance(data, str):
+            raise ValueError("Para terminais, 'data' deve ser uma string com o nome do terminal.")
+        newick = data
+        hash_object = hashlib.md5(newick.encode())
+
+        if gbk_file is None:
+            raise ValueError("Arquivo GenBank local (gbk_file) deve ser fornecido para terminais.")
+        
+        metadata = fetch_local_record(data, gbk_file)
+    else:
+        newick = data.format("newick")
+        hash_object = hashlib.md5(newick.encode())
+        metadata = None
+
     return {
         'newick': newick,
-        'terminal_hash': int(hash_object.hexdigest()[:4], 16)
+        'terminal_hash': int(hash_object.hexdigest()[:4], 16),
+        'metadata': metadata
     }
+    
+def download_sequences(self, queries, output_file):
+    """
+    Passo 1: Baixa sequências do GenBank usando o Biopython.
+    
+    Parameters
+    ----------
+
+    queries: str
+        String de consultas para o GenBank.
+    output_file: str
+        Caminho para salvar as sequências baixadas (formato GenBank).
+    """
+    try:
+        for query in queries:
+            if not query.name:
+                continue  # Pula terminais sem nome
+            Entrez.email = "email@email.com"
+            handle = Entrez.esearch(db="nucleotide", term=query.name, retmax=1000)
+            record = Entrez.read(handle)
+            handle.close()
+            
+            id_list = record["IdList"]
+            handle = Entrez.efetch(db="nucleotide", id=id_list, rettype="gb", retmode="text")
+            with open(output_file, "+a") as f:
+                f.write(handle.read())
+            handle.close()
+    except Exception as e:
+        return {"error": str(e)}

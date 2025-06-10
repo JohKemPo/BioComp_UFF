@@ -8,7 +8,8 @@ sys.path.append(os.path.join(current_dir, '../..'))
 from workflow.utils.messages import Messages
 from workflow.utils.treeUtils import (tree_to_dict, 
                                       calculate_tree_hash,
-                                      encode_list_to_int)
+                                      encode_list_to_int, 
+                                      download_sequences)
 
 class SubtreeBuilder:
     """
@@ -67,6 +68,11 @@ class SubtreeBuilder:
         tree = Phylo.read(path, self.input_format)
         name_tree = str(name.rsplit(".", 1)[0])
         tree_hash = calculate_tree_hash(tree)['terminal_hash']
+        
+        raw_data_sequences = os.path.join(self.output_path, 'outputs', 'raw_data_sequences.gb')
+        
+        tree_seqs = tree.get_terminals()
+        download_sequences(tree,tree_seqs ,raw_data_sequences)
 
         if self.resume_infos:
             print('======================================================')        
@@ -98,7 +104,7 @@ class SubtreeBuilder:
                 for subtree_clade in subtree.find_clades():
                     name_terminal = subtree_clade.name
                     if subtree_clade.is_terminal():
-                        hash_result = calculate_tree_hash(name_terminal)
+                        hash_result = calculate_tree_hash(name_terminal, subtree_clade.is_terminal(), gbk_file=raw_data_sequences)
                         hash_list.append(hash_result)
                         subtree_list_termials.append(hash_result['terminal_hash'])
 

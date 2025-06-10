@@ -1,4 +1,4 @@
-import os
+import os, json
 from neo4j import GraphDatabase
 
 def parse_tree(trees: list, path: str = None, mode: str = "completo"):
@@ -34,6 +34,7 @@ def create_subtree(parent_name, subtree_name, subtree_data):
     
     # Extrair os suportes, se existirem
     supports = subtree_data.get('supports', [])
+    metadatas = subtree_data.get('data_terminals', [])
     
     # Criar o nó da subárvore
     cypher_statements.append(f"""
@@ -49,7 +50,14 @@ def create_subtree(parent_name, subtree_name, subtree_data):
         MERGE (s:Support {{value: {support}}})
         CREATE (child)-[:HAS_SUPPORT]->(s);
         """)
-    
+        
+    for metadata in metadatas:
+        cypher_statements.append(f"""
+        MATCH (child:Subtree {{name: '{subtree_name}'}})
+        MERGE (m:Metadata {{value: '{json.dumps(metadata)}'}})
+        CREATE (child)-[:HAS_METADATA]->(m);
+        """)
+        
     for key, value in subtree_data.items():
         if isinstance(value, dict):
             cypher_statements.extend(create_subtree(subtree_name, key, value))
