@@ -79,7 +79,7 @@ class TreeBuilderController:
         self.count_trees = 0
         self.count_nodes = list()
         self.list_times = list()
-        self.aligner = AlignmentSeqs()
+        self.aligner = AlignmentSeqs({'num_threads': self.num_threads})
 
         # clean_tmp(self.output_path)
         clean_NoPipe(self.input_path)
@@ -123,7 +123,7 @@ class TreeBuilderController:
         heatmap_matrix = np.zeros((8, 8))
 
         multi_trees = {
-                        "clustalw": {"distance": {"nj": [], "upgma": []}, "parsimony": {"nj": [], "upgma": []}},
+                        "clustalo": {"distance": {"nj": [], "upgma": []}, "parsimony": {"nj": [], "upgma": []}},
                         "mafft": {"distance": {"nj": [], "upgma": []}, "parsimony": {"nj": [], "upgma": []}}
                     }
         base_folder = self.input_path.split('/')[-1]
@@ -136,7 +136,7 @@ class TreeBuilderController:
             
             start_cycle = time.time()
             fasta_path = os.path.join(self.input_path, file)
-            output_path_align = os.path.join(self.output_path, 'tmp', f'{Path(file).stem}.aln')
+            output_path_align_base = os.path.join(self.output_path, 'tmp', f'{Path(file).stem}.aln')
             output_path_align_html = os.path.join(self.output_path, 'Align', f'{Path(file).stem}.html')
             output_path_dnd = os.path.join(self.output_path, 'tmp', f'{Path(file).stem}.dnd')
             path_dnd = os.path.join(self.input_path, f'{Path(file).stem}.dnd')
@@ -156,25 +156,25 @@ class TreeBuilderController:
                     self.count_trees += 1
                     name = f'tree_{Path(file).stem}_distance.{self.output_format}'
                     logging.info(f"Construindo árvore de distância para o arquivo {file}")
-                    tree = self.build_tree_distance_matrix(fasta_path, output_path_align, output_path_dnd, path_dnd, os.path.join(output_path_tree, name), self.align_method, output_path_align_html)
+                    tree = self.build_tree_distance_matrix(fasta_path, output_path_align_base, output_path_dnd, path_dnd, os.path.join(output_path_tree, name), self.align_method, output_path_align_html)
                     self.save_tree_image(title=name, tree=[tree], path=os.path.join(output_path_tree_image, name).replace('Trees', 'outputs/Plots'))
                     end_time = time.time()
                 elif self.mode.lower() == "parsimony":
                     self.count_trees += 1
                     name = f'tree_{Path(file).stem}_parsimony.{self.output_format}'
                     logging.info(f"Construindo árvore por parcimônia para o arquivo {file}")
-                    tree = self.build_tree_parsimony(fasta_path, output_path_align, output_path_dnd, path_dnd, os.path.join(output_path_tree, name), self.align_method, output_path_align_html)
+                    tree = self.build_tree_parsimony(fasta_path, output_path_align_base, output_path_dnd, path_dnd, os.path.join(output_path_tree, name), self.align_method, output_path_align_html)
                     self.save_tree_image(title=name, tree=[tree], path=os.path.join(output_path_tree_image, name).replace('Trees', 'outputs/Plots'))
                     end_time = time.time()
                 elif self.mode.lower() == "auto":
                     
                     logging.info(f"Construindo árvores com múltiplos métodos para o arquivo {file}")
                     for method in ['nj', 'upgma']:
-                        for alg in ['clustalw', 'mafft']:
+                        for alg in ['clustalo', 'mafft']:
                             self.count_trees += 2
                             name_distance = f'tree_{Path(file).stem}_{alg}_{method}_distance.{self.output_format}'
                             name_parsimony = f'tree_{Path(file).stem}_{alg}_{method}_parsimony.{self.output_format}'
-
+                            output_path_align = output_path_align_base.replace('.aln',f'_{alg}.aln')
 
                             output_path_tree_distance = os.path.join(self.output_path, 'Trees', name_distance)
                             output_path_tree_parsimony = os.path.join(self.output_path, 'Trees', name_parsimony)
@@ -183,7 +183,7 @@ class TreeBuilderController:
                                 
                                 tree_distance = Phylo.read(output_path_tree_distance, self.output_format)
                                 tree_parsimony = Phylo.read(output_path_tree_parsimony, self.output_format)
-                                multi_trees[alg]['distance'][method].append(tree_parsimony)
+                                multi_trees[alg]['distance'][method].append(tree_distance)
                                 multi_trees[alg]['parsimony'][method].append(tree_parsimony)
                                 continue
 
@@ -220,10 +220,10 @@ class TreeBuilderController:
             except Exception as e:
                 logging.error(f"Erro ao processar o arquivo {file}: {e}", exc_info=True)
                 
-        # if self.mode == "auto":
-        #     plot_heatmap_distances(data_dict=multi_trees, base_name='Acumulate', 
-        #                        path=os.path.join(self.output_path, 'outputs/Plots'), distance_matrix=heatmap_matrix)
-        #     logging.info("Heatmap acumulado gerado com sucesso.")
+        if self.mode == "auto":
+            plot_heatmap_distances(data_dict=multi_trees, base_name='Acumulate', 
+                               path=os.path.join(self.output_path, 'outputs/Plots'), distance_matrix=heatmap_matrix)
+            logging.info("Heatmap acumulado gerado com sucesso.")
         
         # clean_tmp(self.output_path)
         clean_NoPipe(self.input_path)
@@ -299,39 +299,36 @@ class TreeBuilderController:
         try:
             if os.path.exists(output_path_align):
                 logging.info(f"Arquivo de alinhamento já existe: {output_path_align}. Reutilizando.")
-                with open(output_path_align, "rb") as f:
-                    content = f.read().decode("utf-8-sig")
-                tmp_path = os.path.dirname(os.path.abspath(output_path_align))
-                tmp_alg_path = os.path.join(tmp_path,"temp.aln")
-                with open(tmp_alg_path, "w") as f:
-                    f.write(content)
-                alng = AlignIO.read(tmp_alg_path, "clustal")
+                # with open(output_path_align, "rb") as f:
+                #     content = f.read().decode("utf-8-sig")
+                # tmp_path = os.path.dirname(os.path.abspath(output_path_align))
+                # tmp_alg_path = os.path.join(tmp_path,"temp.aln")
+                # with open(tmp_alg_path, "w") as f:
+                #     f.write(content)
+                alng = AlignIO.read(output_path_align, "fasta")
                 
                 
                 
                 # alng = AlignIO.read(output_path_align, "clustal" if align_method == "clustalw" else "fasta")
             else:
-                if align_method == "clustalw":
-                    logging.debug(f"Alinhando sequências com ClustalW para {fasta_path}.")
-                    alng = self.aligner.align_sequences_clustalw(fasta_path=fasta_path,
-                                                                path_dnd=path_dnd,
-                                                                output_path_dnd=output_path_dnd,
-                                                                output_path_align=output_path_align,
-                                                                output_path_html=output_path_align_html
+                if align_method == "clustalo":
+                    logging.debug(f"Alinhando sequências com Clustalo para {fasta_path}.")
+                    alng = self.aligner.align_sequences_clustalo(
+                        fasta_path=fasta_path,
+                        # path_dnd=path_dnd,
+                        # output_path_dnd=output_path_dnd,
+                        output_path_align=output_path_align,
+                        output_path_html=output_path_align_html
                     )
-                    alng = AlignIO.read(output_path_align, "clustal")
 
                 elif align_method == "mafft":
                     logging.debug(f"Alinhando sequências com MAFFT para {fasta_path}.")
-                    alng_str = self.aligner.align_sequences_mafft(
+                    alng = self.aligner.align_sequences_mafft(
                         fasta_path=fasta_path,
+                        output_path_align=output_path_align,
                         output_path_html=output_path_align_html
                     )
-                    tmp_align = os.path.join(self.output_path, 'tmp', 'align.aln')
-                    os.makedirs(os.path.dirname(tmp_align), exist_ok=True)
-                    with open(tmp_align, "w") as f:
-                        f.write(alng_str)
-                    alng = AlignIO.read(tmp_align, "fasta")
+                    
                     logging.debug("Arquivo de alinhamento gerado e lido com sucesso (MAFFT).")
                 else:
                     logging.error(f"Método de alinhamento desconhecido: {align_method}")
@@ -384,7 +381,7 @@ class TreeBuilderController:
             A árvore filogenética construída.
         """
         logging.info(f"Iniciando construção de árvore por parcimônia para {fasta_path}")
-        logging.info(f"STEP: Tree Construction.")
+        logging.info(f"STEP: Tree Construction with parsimony method.")
         builder = TreeBuilder(fasta_path=fasta_path, 
                             output_path_align=output_path_align, 
                             output_path_dnd=output_path_dnd, 
@@ -394,40 +391,37 @@ class TreeBuilderController:
         try:
             if os.path.exists(output_path_align):
                 logging.info(f"Arquivo de alinhamento já existe: {output_path_align}. Reutilizando.")
-                with open(output_path_align, "rb") as f:
-                    content = f.read().decode("utf-8-sig")
-                tmp_path = os.path.dirname(os.path.abspath(output_path_align))
-                tmp_alg_path = os.path.join(tmp_path,"temp.aln")
-                with open(tmp_alg_path, "w") as f:
-                    f.write(content)
-                alng = AlignIO.read(tmp_alg_path, "clustal")
+                # with open(output_path_align, "rb") as f:
+                #     content = f.read().decode("utf-8-sig")
+                # tmp_path = os.path.dirname(os.path.abspath(output_path_align))
+                # tmp_alg_path = os.path.join(tmp_path,"temp.aln")
+                # with open(tmp_alg_path, "w") as f:
+                #     f.write(content)
+                alng = AlignIO.read(output_path_align, "fasta")
                 
                 
                 
                 # alng = AlignIO.read(output_path_align, "clustal" if align_method == "clustalw" else "fasta")
             else:
-                if align_method == "clustalw":
-                    logging.debug(f"Alinhando sequências com ClustalW para {fasta_path}.")
-                    alng = self.aligner.align_sequences_clustalw(
+                if align_method == "clustalo":
+                    logging.debug(f"Alinhando sequências com Clustalo para {fasta_path}.")
+                    alng = self.aligner.align_sequences_clustalo(
                         fasta_path=fasta_path,
-                        path_dnd=path_dnd,
-                        output_path_dnd=output_path_dnd,
+                        # path_dnd=path_dnd,
+                        # output_path_dnd=output_path_dnd,
                         output_path_align=output_path_align,
                         output_path_html=output_path_align_html
                     )
-                    alng = AlignIO.read(output_path_align, "clustal")
+                    # alng = AlignIO.read(output_path_align, "clustal")
 
                 elif align_method == "mafft":
                     logging.debug(f"Alinhando sequências com MAFFT para {fasta_path}.")
-                    alng_str = self.aligner.align_sequences_mafft(
+                    alng = self.aligner.align_sequences_mafft(
                         fasta_path=fasta_path,
+                        output_path_align=output_path_align,
                         output_path_html=output_path_align_html
                     )
-                    tmp_align = os.path.join(self.output_path, 'tmp', 'align.aln')
-                    os.makedirs(os.path.dirname(tmp_align), exist_ok=True)
-                    with open(tmp_align, "w") as f:
-                        f.write(alng_str)
-                    alng = AlignIO.read(tmp_align, "fasta")
+                    
                     logging.debug("Arquivo de alinhamento gerado e lido com sucesso (MAFFT).")
                 else:
                     logging.error(f"Método de alinhamento desconhecido: {align_method}")

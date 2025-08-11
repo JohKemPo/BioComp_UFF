@@ -1,31 +1,31 @@
 {
     "log_file": true,
-    "project_name": "Test metadata",
-    "output_log":"./projects/#/out",
-    "tree_config":{
-        "mode":"auto",
+    "project_name": "ABC_3",
+    "output_log": "./projects/#/out",
+    "tree_config": {
+        "mode": "auto",
         "ignore_mode": "",
-        "construct_tree_method":"upgma",
-        "input_path":"./data/testset",
-        "output_path":"./projects/#/out",
-        "output_format":"nexus",
-        "align_method":"mafft"
+        "construct_tree_method": "distance",
+        "align_method": "mafft",
+        "num_threads":1,
+        "input_path": "./data/Zika479_Test",
+        "output_path": "./projects/#/out",
+        "output_format": "nexus"
     },
-    "subtree_config":{
-        "construct_tree_method":"nj",
-        "input_path":"./projects/#/out/Trees",
-        "output_path":"./projects/#/out",
-        "input_format":"nexus",
-        "output_format":"nexus",
-        "resume_infos":false,
+    "subtree_config": {
+        "construct_tree_method": "distance",
+        "input_path": "./projects/#/out/Trees",
+        "output_path": "./projects/#/out",
+        "input_format": "nexus",
+        "output_format": "nexus",
+        "resume_infos": true,
         "save_metadata": true,
         "subtree_miner": true,
-        "subtree_miner_configs":{
-            "mode":"OFST",
-            "save_fpmax":false,
-            "output_path":"./projects/#/out",
+        "subtree_miner_configs": {
+            "mode": "OFST",
+            "save_fpmax": true,
+            "output_path": "./projects/#/out",
             "support_fpmax": "auto"
         }
-   }
-
+    }
 }

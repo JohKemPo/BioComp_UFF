@@ -1,6 +1,5 @@
 from Bio import AlignIO, Phylo
-from Bio.Align.Applications import ClustalwCommandline
-from Bio.Align.Applications import MafftCommandline
+from Bio.Align.Applications import ClustalwCommandline, MafftCommandline, ClustalOmegaCommandline
 import html
 import os, re
 from pathlib import Path
@@ -11,7 +10,7 @@ class AlignmentSeqs():
     Esta classe fornece métodos para alinhar sequências utilizando ClustalW e MAFFT, retornando os alinhamentos em 
     formatos apropriados para posterior processamento filogenético.
     """
-    def __init__(self) -> None:
+    def __init__(self, config: dict) -> None:
         """
         Inicializa a instância da classe AlignmentSeqs.
 
@@ -22,7 +21,47 @@ class AlignmentSeqs():
         ------
         None
         """
+        self.num_threads = config.get('num_threads', 1)
+        print(f"Alinhamento configurado para usar até {self.num_threads} thread(s).")
+        
+    def align_sequences_clustalo(self,
+                                 fasta_path: str,
+                                 output_path_align: str,
+                                 output_path_html: str): 
+        """
+        Alinha sequências utilizando o Clustal Omega com suporte a paralelização.
 
+        Executa o comando Clustal Omega utilizando o número de threads definido
+        na inicialização da classe.
+
+        Return
+        ------
+        Bio.Align.MultipleSeqAlignment
+            Objeto de alinhamento resultante do Clustal Omega.
+        """
+        # output_path_align = output_path_align.replace('.aln','_clustalo.aln')
+        clustalo_cline = ClustalOmegaCommandline(
+            infile=fasta_path,
+            outfile=output_path_align,
+            threads=self.num_threads,
+            auto=True,          # Diz ao ClustalO para definir os parâmetros de iteração automaticamente
+            force=True,         # Força a sobrescrita do arquivo de saída se ele já existir
+            outfmt="fasta"      # Define o formato de saída para FASTA
+        )
+
+        stdout, stderr = clustalo_cline()
+
+        if stderr:
+            # ClustalO às vezes imprime status em stderr, então verificar se não é um erro fatal
+            if "ERROR" in stderr or "Error" in stderr:
+                 raise RuntimeError(f"Erro no Clustal Omega: {stderr}")
+            else:
+                 print(f"Status/Avisos do Clustal Omega:\n{stderr}")
+
+        alignment = AlignIO.read(output_path_align, "fasta")
+
+        return alignment
+    
     def align_sequences_clustalw(self,
                                  fasta_path: str,
                                  path_dnd: str,
@@ -41,18 +80,20 @@ class AlignmentSeqs():
         Bio.Align.MultipleSeqAlignment
             Objeto de alinhamento resultante do ClustalW.
         """
+        # output_path_align = output_path_align.replace('.aln','_clustalW.aln')
         clustalw_cline = ClustalwCommandline("clustalw", infile=fasta_path, outfile=output_path_align)
         clustalw_cline()
 
         os.rename(path_dnd, output_path_dnd)
         alignment = AlignIO.read(output_path_align, "clustal")
 
-        self.save_alignment_as_html_from_file(output_path_align, output_path_html)
+        # self.save_alignment_as_html_from_file(output_path_align, output_path_html)
 
         return alignment
 
     def align_sequences_mafft(self,
                               fasta_path: str,
+                              output_path_align: str,
                               output_path_html: str):
         """
         Alinha sequências utilizando o MAFFT.
@@ -65,9 +106,22 @@ class AlignmentSeqs():
         str
             Alinhamento gerado pelo MAFFT como uma string no formato padrão de saída.
         """
-        mafft_cline = MafftCommandline(input=fasta_path)
+        # output_path_align = output_path_align.replace('.aln','_mafft.aln')
+        mafft_cline = MafftCommandline(input=fasta_path, thread=self.num_threads, auto=True)
         stdout, stderr = mafft_cline()
-        return stdout
+        
+        if stderr:
+            print("Erro durante a execução do MAFFT:")
+            print(stderr)
+        
+        with open(output_path_align, "w") as f:
+            f.write(stdout)
+        
+        alignment = AlignIO.read(output_path_align, "fasta")
+        
+        # self.save_alignment_as_html_from_file(output_path_align, output_path_html)
+
+        return alignment
     
     # def save_alignment_as_html(self, alignment, output_html_path):
     #     with open(output_html_path, "w") as html_file:
