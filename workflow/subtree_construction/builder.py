@@ -42,6 +42,8 @@ class SubtreeBuilder:
         """
         for key, value in kwargs.items():
             setattr(self, key, value)
+            
+        self.messagesManager = Messages(logPath=self.output_path)
         
         self.count_subtrees = 0
 
@@ -76,7 +78,7 @@ class SubtreeBuilder:
 
         if self.resume_infos:
             print('======================================================')        
-            Messages.print_tree_info(name=name_tree, hash_value=tree_hash)
+            self.messagesManager.print_tree_info(name=name_tree, hash_value=tree_hash)
 
         dict_tree_terminals_hash = dict()
         dict_aux = dict()
@@ -96,7 +98,7 @@ class SubtreeBuilder:
             if subtree.count_terminals() > 1:
                 self.count_subtrees += 1 
                 if self.resume_infos:
-                    Messages.print_subtree_info(subtree=subtree, name=name_subtree)
+                    self.messagesManager.print_subtree_info(subtree=subtree, name=name_subtree)
 
                 filepath_out = os.path.join(self.output_path, 'Subtrees', f'{name_tree}_{clade.name}.{self.output_format}')
                 Phylo.write(subtree, filepath_out, self.output_format)
@@ -108,8 +110,8 @@ class SubtreeBuilder:
                         hash_list.append(hash_result)
                         subtree_list_termials.append(hash_result['terminal_hash'])
 
-                        if self.resume_infos:
-                            Messages.print_subtree_clade_info(clade=subtree_clade, decode=self._decode_tree_hash(hash_result), hash_dict=hash_result)
+                        # if self.resume_infos:
+                        #     self.messagesManager.print_subtree_clade_info(clade=subtree_clade, decode=self._decode_tree_hash(hash_result), hash_dict=hash_result)
 
                 dict_aux[name_subtree] = {
                     'Terminals': subtree_list_termials,
@@ -119,12 +121,12 @@ class SubtreeBuilder:
                 }
 
                 if self.resume_infos:
-                    Messages.print_list_clade(list_clades=subtree_list_termials, hash_value=encode_list_to_int(subtree_list_termials))
+                    self.messagesManager.print_list_clade(list_clades=subtree_list_termials, hash_value=encode_list_to_int(subtree_list_termials))
 
         result_dict[name_tree] = dict_aux 
 
         if self.resume_infos:
-            Messages.print_tree_clade_info(name=name_tree, dict_terminals=dict_tree_terminals_hash)
+            self.messagesManager.print_tree_clade_info(name=name_tree, dict_terminals=dict_tree_terminals_hash)
         
         return result_dict
 

@@ -73,6 +73,7 @@ class SubtreeMinerController:
         """
         grouped_data = {}
         logging.debug("Iniciando agrupamento de dados por base de árvore.")
+        logging.debug("STEP: data grouping")
         for item in data:
             for tree_name in item.keys():
                 base_name = '_'.join(tree_name.split('_')[:2])

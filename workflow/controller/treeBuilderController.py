@@ -60,7 +60,7 @@ class TreeBuilderController:
         """
         for k, v in kwargs.items():
             setattr(self, k, v)
-            
+                        
         self.msg = Messages(logPath=os.path.join(self.output_path,'outputs'))
         self.start = time.time()
         
@@ -104,12 +104,15 @@ class TreeBuilderController:
         if self.mode == "distance":
             print("Iniciando construção das árvores utilizando o método: DISTANCE TREE CONSTRUCTOR + CLUSTALW\n")
             logging.info("Iniciando construção das árvores utilizando o método: DISTANCE TREE CONSTRUCTOR + CLUSTALW")
+            logging.info("STEP: construction of trees using the method: DISTANCE TREE CONSTRUCTOR + CLUSTALW")
         elif self.mode == "parsimony":
             print("Iniciando construção das árvores utilizando o método: PARSIMONY + CLUSTALW\n")
-            logging.info("Iniciando construção das árvores utilizando o método: PARSIMONY + CLUSTALW")
+            logging.info("Iniciando construção das árvores utilizando o método: PARSIMONY + CLUSTALW") 
+            logging.info("STEP: construction of trees using the method: PARSIMONY + CLUSTALW")                           
         elif self.mode == "auto":
             print("Iniciando construção das árvores utilizando ambos os métodos: DISTANCE TREE CONSTRUCTOR e PARSIMONY\n")
             logging.info("Iniciando construção das árvores utilizando ambos os métodos: DISTANCE TREE CONSTRUCTOR e PARSIMONY")
+            logging.info("STEP: construction of trees using both methods: DISTANCE TREE CONSTRUCTOR and PARSIMONY")
         else:
             logging.error(f"Modo desconhecido: {self.mode}")
             raise ValueError(f"Modo desconhecido: {self.mode}")
@@ -123,10 +126,10 @@ class TreeBuilderController:
                         "clustalw": {"distance": {"nj": [], "upgma": []}, "parsimony": {"nj": [], "upgma": []}},
                         "mafft": {"distance": {"nj": [], "upgma": []}, "parsimony": {"nj": [], "upgma": []}}
                     }
-
+        base_folder = self.input_path.split('/')[-1]
 
         for file in tqdm(self.files, desc="Construindo árvores...", ascii="░▒█"):
-            logging.info(f"Iniciando processamento do arquivo: {file}")
+            logging.info(f"Iniciando processamento do arquivo: {os.path.join(base_folder,file)}")
             if '.dnd' in file:
                 logging.debug(f"Arquivo {file} ignorado por ser .dnd")
                 continue
@@ -172,26 +175,30 @@ class TreeBuilderController:
                             name_distance = f'tree_{Path(file).stem}_{alg}_{method}_distance.{self.output_format}'
                             name_parsimony = f'tree_{Path(file).stem}_{alg}_{method}_parsimony.{self.output_format}'
 
-                            if os.path.exists(name_distance):
-                                continue
-                            
-                            if os.path.exists(name_parsimony):
-                                continue
 
                             output_path_tree_distance = os.path.join(self.output_path, 'Trees', name_distance)
                             output_path_tree_parsimony = os.path.join(self.output_path, 'Trees', name_parsimony)
+
+                            if os.path.exists(output_path_tree_distance) and os.path.exists(output_path_tree_parsimony):
+                                
+                                tree_distance = Phylo.read(output_path_tree_distance, self.output_format)
+                                tree_parsimony = Phylo.read(output_path_tree_parsimony, self.output_format)
+                                multi_trees[alg]['distance'][method].append(tree_parsimony)
+                                multi_trees[alg]['parsimony'][method].append(tree_parsimony)
+                                continue
+
                             self.construct_tree_method = method
 
                             if self.ignore_mode.lower() and multi_trees.get(self.ignore_mode.lower()):
                                 multi_trees[alg].pop(self.ignore_mode.lower())
                             
-                            if not self.ignore_mode.lower() == "distance":
+                            if not self.ignore_mode.lower() == "distance" and not os.path.exists(output_path_tree_distance):
                                 logging.debug(f"Construindo árvore de distância ({alg} - {method}) para o arquivo {file}")
                                 tree_distance = self.build_tree_distance_matrix(fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree_distance, alg, output_path_align_html)
                                 self.save_tree_image(title=name_distance, tree=[tree_distance], path=os.path.join(output_path_tree_image, name_distance).replace('Trees', 'outputs/Plots'))
                                 multi_trees[alg]['distance'][method].append(tree_distance)
                             
-                            if not self.ignore_mode.lower() == "parsimony":
+                            if not self.ignore_mode.lower() == "parsimony" and not os.path.exists(output_path_tree_parsimony):
                                 logging.debug(f"Construindo árvore por parcimônia ({alg} - {method}) para o arquivo {file}")
                                 tree_parsimony = self.build_tree_parsimony(fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree_parsimony, alg, output_path_align_html)
                                 self.save_tree_image(title=name_parsimony, tree=[tree_parsimony], path=os.path.join(output_path_tree_image, name_parsimony).replace('Trees', 'outputs/Plots'))
@@ -213,10 +220,10 @@ class TreeBuilderController:
             except Exception as e:
                 logging.error(f"Erro ao processar o arquivo {file}: {e}", exc_info=True)
                 
-        if self.mode == "auto":
-            plot_heatmap_distances(data_dict=multi_trees, base_name='Acumulate', 
-                               path=os.path.join(self.output_path, 'outputs/Plots'), distance_matrix=heatmap_matrix)
-            logging.info("Heatmap acumulado gerado com sucesso.")
+        # if self.mode == "auto":
+        #     plot_heatmap_distances(data_dict=multi_trees, base_name='Acumulate', 
+        #                        path=os.path.join(self.output_path, 'outputs/Plots'), distance_matrix=heatmap_matrix)
+        #     logging.info("Heatmap acumulado gerado com sucesso.")
         
         # clean_tmp(self.output_path)
         clean_NoPipe(self.input_path)
@@ -282,6 +289,7 @@ class TreeBuilderController:
             A árvore filogenética construída.
         """
         logging.info(f"Iniciando construção de árvore por matriz de distância para {fasta_path}")
+        logging.info(f"STEP: Construction of distance matrix.")
         builder = TreeBuilder(fasta_path=fasta_path, 
                               output_path_align=output_path_align, 
                               output_path_dnd=output_path_dnd, 
@@ -291,7 +299,17 @@ class TreeBuilderController:
         try:
             if os.path.exists(output_path_align):
                 logging.info(f"Arquivo de alinhamento já existe: {output_path_align}. Reutilizando.")
-                alng = AlignIO.read(output_path_align, "clustal" if align_method == "clustalw" else "fasta")
+                with open(output_path_align, "rb") as f:
+                    content = f.read().decode("utf-8-sig")
+                tmp_path = os.path.dirname(os.path.abspath(output_path_align))
+                tmp_alg_path = os.path.join(tmp_path,"temp.aln")
+                with open(tmp_alg_path, "w") as f:
+                    f.write(content)
+                alng = AlignIO.read(tmp_alg_path, "clustal")
+                
+                
+                
+                # alng = AlignIO.read(output_path_align, "clustal" if align_method == "clustalw" else "fasta")
             else:
                 if align_method == "clustalw":
                     logging.debug(f"Alinhando sequências com ClustalW para {fasta_path}.")
@@ -366,6 +384,7 @@ class TreeBuilderController:
             A árvore filogenética construída.
         """
         logging.info(f"Iniciando construção de árvore por parcimônia para {fasta_path}")
+        logging.info(f"STEP: Tree Construction.")
         builder = TreeBuilder(fasta_path=fasta_path, 
                             output_path_align=output_path_align, 
                             output_path_dnd=output_path_dnd, 
@@ -375,7 +394,17 @@ class TreeBuilderController:
         try:
             if os.path.exists(output_path_align):
                 logging.info(f"Arquivo de alinhamento já existe: {output_path_align}. Reutilizando.")
-                alng = AlignIO.read(output_path_align, "clustal" if align_method == "clustalw" else "fasta")
+                with open(output_path_align, "rb") as f:
+                    content = f.read().decode("utf-8-sig")
+                tmp_path = os.path.dirname(os.path.abspath(output_path_align))
+                tmp_alg_path = os.path.join(tmp_path,"temp.aln")
+                with open(tmp_alg_path, "w") as f:
+                    f.write(content)
+                alng = AlignIO.read(tmp_alg_path, "clustal")
+                
+                
+                
+                # alng = AlignIO.read(output_path_align, "clustal" if align_method == "clustalw" else "fasta")
             else:
                 if align_method == "clustalw":
                     logging.debug(f"Alinhando sequências com ClustalW para {fasta_path}.")
@@ -442,13 +471,14 @@ class TreeBuilderController:
         ------
         None
         """
-        logging.info(f"Iniciando salvamento da imagem da árvore: {title}")
+        logging.info(f"Starting to save the tree image: {title}")
+        logging.info(f"STEP: saving the tree image.STEP: saving the tree image.")
         try:
             if isinstance(tree, list):
                 fig = plt.figure(figsize=(21, 10))
                 ax = fig.add_subplot(1, 1, 1)
                 Phylo.draw(tree[0], do_show=False, axes=ax, 
-                           label_func=lambda x: None if 'Inner' in x.name else x.name)
+                           label_func=lambda x: None if x.name is None or ('Inner' in x.name if x.name else False) else x.name)
                 plt.title(title)
                 plt.tight_layout()
                 img_path = path.replace(self.output_format, 'png')

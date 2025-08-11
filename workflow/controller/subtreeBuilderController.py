@@ -101,6 +101,7 @@ class SubtreeBuilderController:
             Lista contendo os dados das subárvores processadas e mineradas.
         """
         logging.info("Início da construção das subárvores.")
+        logging.info("STEP: Construction of Subtrees.")
         for name in tqdm(self.files, desc="Gerando subárvores....", ascii="░▒█"):
             path = os.path.join(self.input_path, name)
             logging.debug(f"Iniciando construção da subárvore para o arquivo: {name}")
@@ -128,6 +129,7 @@ class SubtreeBuilderController:
         
         if self.subtree_miner:
             logging.info("Iniciando mineração de subárvores frequentes.")
+            logging.info("STEP: Frequent subtree mining.")
             try:
                 miner = SubtreeMiner(**self.subtree_miner_configs)
                 data = miner.miner(data=self.raw_data)
@@ -152,7 +154,10 @@ class SubtreeBuilderController:
         except Exception as e:
             logging.error(f"Erro ao processar histograma de frequência: {e}", exc_info=True)
             raise
+        logging.info(f"STEP: Completed successfully!")
+        
         return data
+
 
     def builder(self, path: str, name: str) -> Dict[str, Any]:
         """
