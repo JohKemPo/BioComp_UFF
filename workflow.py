@@ -63,22 +63,17 @@ if not args.config_workflow:
 
 
 
-# Create output directories if they do not exist
 os.makedirs(params['output_log'], exist_ok=True)
 os.makedirs(os.path.join(params['output_log'], 'outputs'), exist_ok=True)
 
-# Save backup params
 with open(os.path.join(params['output_log'], 'outputs','config_backup.json'),'w') as f:
     json.dump(params, f,  indent=4)
     
-# Redirect output to log file if enabled
 if params.get('log_file'):
     sys.stdout = open(os.path.join(params['output_log'], 'outputs', 'output_log.txt'), "w")
 
-# Initialize and execute the TreeBuilderController
 tree_builder_controller = TreeBuilderController(**params["tree_config"])
 tree_builder_controller()
 
-# # Initialize and execute the SubtreeBuilderController
 subtree_builder_controller = SubtreeBuilderController(**params["subtree_config"])
 subtree_builder_controller()

@@ -28,7 +28,7 @@ To install the dependencies on Linux (Ubuntu):
 
 ```
 sudo apt update
-sudo apt-get install clustalw
+sudo apt-get install clustalw clustalo
 ```
 
 ### Installation of other necessary tools:
@@ -48,9 +48,9 @@ tar -xzvf muscle3.8.31_i86linux64.tar.gz
 conda install -c etetoolkit ete3 ete_toolchain
 ete3 build check
 ``` -->
-**Clustalw**
+**Clustal Omega**
 ```
-sudo apt install clustalw 
+sudo apt-get install clustalo
 ``` 
 
 **Mafft** 

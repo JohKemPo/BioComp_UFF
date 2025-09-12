@@ -100,3 +100,18 @@ def clean_NoPipe(path: str) -> None:
         if 'NoPipe' in file_name:
             file_path = os.path.join(dir_NoPipe, file_name)
             os.remove(file_path)
+
+def copiar_arquivos(origem, destino):
+    """
+    Copia todos os arquivos da pasta 'origem' para a pasta 'destino'.
+    Cria a pasta destino se não existir.
+    """
+    os.makedirs(destino, exist_ok=True)
+    if not os.path.exists: return
+
+    for arquivo in os.listdir(origem):
+        caminho_origem = os.path.join(origem, arquivo)
+        caminho_destino = os.path.join(destino, arquivo)
+
+        if os.path.isfile(caminho_origem):
+            shutil.copy2(caminho_origem, caminho_destino)  

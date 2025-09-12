@@ -148,7 +148,7 @@ class SubtreeMiner:
                 
                 all_results_fpmax = pd.concat([all_results_fpmax, result_fpmax], ignore_index=True)
 
-            all_results_fpmax.to_csv(os.path.join(self.output_path, 'outputs', f'{base_name}_all_results_fpmax.csv'))
+            all_results_fpmax.to_csv(os.path.join(self.output_path, 'outputs', f'all_results_fpmax.csv'))
         else:
             print(f"Iniciando FPMAX no modo: Fixo em {self.support_fpmax}")
             result_fpmax = fpmax(df, min_support=self.support_fpmax, use_colnames=True)

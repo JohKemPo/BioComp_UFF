@@ -1,0 +1,27 @@
+name: filogenia-env 
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  
+  - python=3.10
+  
+  - pdoc3
+  - biopython
+  - dendropy
+  - mlxtend
+  - pandas
+  - numpy
+  - parsl
+  - tqdm
+  - matplotlib
+  - seaborn
+  - neo4j
+  - dash
+  - dash-bio
+  
+  - mafft
+  - clustalo
+  - iqtree
+  - raxml-ng

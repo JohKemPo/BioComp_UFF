@@ -13,7 +13,7 @@ sys.path.append(os.path.join(current_dir, '../..'))
 
 from workflow.tree_construction.builder import TreeBuilder
 from workflow.utils.dataValidation import duplicate_names, duplicate_seq, validate_sequences, remove_pipe
-from workflow.utils.dataCleaning import clean_NoPipe, clean_tmp
+from workflow.utils.dataCleaning import clean_NoPipe, clean_tmp, copiar_arquivos
 from workflow.utils.messages import Messages
 from workflow.utils.metrics import process_rf_distance, plot_heatmap_distances
 from workflow.alignment.alignmentSeq import AlignmentSeqs
@@ -81,7 +81,7 @@ class TreeBuilderController:
         self.list_times = list()
         self.aligner = AlignmentSeqs({'num_threads': self.num_threads})
 
-        # clean_tmp(self.output_path)
+        clean_tmp(self.output_path)
         clean_NoPipe(self.input_path)
 
         date = datetime.datetime.now()
@@ -129,10 +129,11 @@ class TreeBuilderController:
         base_folder = self.input_path.split('/')[-1]
 
         for file in tqdm(self.files, desc="Construindo árvores...", ascii="░▒█"):
-            logging.info(f"Iniciando processamento do arquivo: {os.path.join(base_folder,file)}")
-            if '.dnd' in file:
-                logging.debug(f"Arquivo {file} ignorado por ser .dnd")
+            if '.dnd' in file or '.json' in file:
+                logging.debug(f"Arquivo {file} ignorado por ser .dnd/.json")
                 continue
+            
+            logging.info(f"Iniciando processamento do arquivo: {os.path.join(base_folder,file)}")
             
             start_cycle = time.time()
             fasta_path = os.path.join(self.input_path, file)
@@ -192,19 +193,25 @@ class TreeBuilderController:
                             if self.ignore_mode.lower() and multi_trees.get(self.ignore_mode.lower()):
                                 multi_trees[alg].pop(self.ignore_mode.lower())
                             
-                            if not self.ignore_mode.lower() == "distance" and not os.path.exists(output_path_tree_distance):
+                            if not self.ignore_mode.lower() == "distance" and \
+                                not os.path.exists(output_path_tree_distance) and \
+                                not self.ignore_mode.lower() == "distance":
+                                    
                                 logging.debug(f"Construindo árvore de distância ({alg} - {method}) para o arquivo {file}")
                                 tree_distance = self.build_tree_distance_matrix(fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree_distance, alg, output_path_align_html)
                                 self.save_tree_image(title=name_distance, tree=[tree_distance], path=os.path.join(output_path_tree_image, name_distance).replace('Trees', 'outputs/Plots'))
                                 multi_trees[alg]['distance'][method].append(tree_distance)
                             
-                            if not self.ignore_mode.lower() == "parsimony" and not os.path.exists(output_path_tree_parsimony):
+                            if not self.ignore_mode.lower() == "parsimony" and\
+                                not os.path.exists(output_path_tree_parsimony) and\
+                                not self.ignore_mode.lower() == "parsimony":
+                                        
                                 logging.debug(f"Construindo árvore por parcimônia ({alg} - {method}) para o arquivo {file}")
                                 tree_parsimony = self.build_tree_parsimony(fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree_parsimony, alg, output_path_align_html)
                                 self.save_tree_image(title=name_parsimony, tree=[tree_parsimony], path=os.path.join(output_path_tree_image, name_parsimony).replace('Trees', 'outputs/Plots'))
                                 multi_trees[alg]['parsimony'][method].append(tree_parsimony)
                     
-                    self.save_tree_image(title=f'tree_{Path(file).stem}', tree=multi_trees, path=os.path.join(output_path_tree_image, f'tree_{Path(file).stem}').replace('Trees', 'outputs/Plots'))
+                    # self.save_tree_image(title=f'tree_{Path(file).stem}', tree=multi_trees, path=os.path.join(output_path_tree_image, f'tree_{Path(file).stem}').replace('Trees', 'outputs/Plots'))
                     end_time = time.time()
                     rf_scores = process_rf_distance(multi_trees)
                     heatmap_matrix = self.somarMatrizes(
@@ -225,8 +232,9 @@ class TreeBuilderController:
                                path=os.path.join(self.output_path, 'outputs/Plots'), distance_matrix=heatmap_matrix)
             logging.info("Heatmap acumulado gerado com sucesso.")
         
-        # clean_tmp(self.output_path)
         clean_NoPipe(self.input_path)
+        copiar_arquivos(os.path.join(self.output_path, 'tmp'),os.path.join(self.output_path, 'Align'))
+        clean_tmp(self.output_path)
         logging.info("Diretórios temporários limpos.")
 
         self.msg.resume_tree(start=self.start, sum_time=self.list_times, num_trees=self.count_trees, 
@@ -466,7 +474,7 @@ class TreeBuilderController:
         None
         """
         logging.info(f"Starting to save the tree image: {title}")
-        logging.info(f"STEP: saving the tree image.STEP: saving the tree image.")
+        logging.info(f"STEP: saving the tree image.")
         try:
             if isinstance(tree, list):
                 fig = plt.figure(figsize=(21, 10))

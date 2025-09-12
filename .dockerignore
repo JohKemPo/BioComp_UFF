@@ -1,0 +1,15 @@
+# data/
+projects/
+
+.git
+.gitignore
+
+__pycache__/
+*.pyc
+
+Dockerfile
+# environment.yml
+.dockerignore
+
+.vscode/
+.idea/

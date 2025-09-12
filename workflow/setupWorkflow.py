@@ -119,7 +119,7 @@ def install_bioinformatics_tools():
     PhyML instalado com sucesso.
     """
 
-    tools = ['clustalw', 'mafft', 'phyml']
+    tools = ['clustalw', 'clustalo','mafft', 'phyml']
 
     for tool in tools:
         try:

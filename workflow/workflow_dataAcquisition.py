@@ -414,7 +414,7 @@ class ZikaWorkflow:
 if __name__ == "__main__":
     path = "workflow_dataAcquisition_SupplementaryTable_filtered_1"
     workflow = ZikaWorkflow(work_dir=path,
-                            email="joaovitormoraesjp@gmail.com",
+                            email="email@gmail.com",
                             utr5_end=True,  
                             utr3_start=True,  
                             initial_min_length=700,

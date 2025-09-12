@@ -3,7 +3,6 @@ biopython==1.81
 dendropy==4.6.1
 mlxtend==0.23.1  
 pandas==2.2.2
-pysqlite3==0.5.2
 numpy==1.26.4
 parsl==2024.8.26
 tqdm==4.65.1
@@ -12,3 +11,5 @@ seaborn==0.13.2
 neo4j==5.20.0
 dash==3.1.1
 dash-bio==1.0.1
+fastapi
+uvicorn

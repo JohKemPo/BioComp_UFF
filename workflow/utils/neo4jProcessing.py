@@ -22,6 +22,11 @@ def parse_tree(trees: list, path: str = None, mode: str = "completo"):
         with open(os.path.join(path, f'neo4j_commands_{mode}.cql'), "w") as f:
             f.write("\n".join(cypher_commands))
 
+def sanitize_json_string(json_obj):
+    """Transforma o dicionário JSON em string corretamente escapada para Cypher."""
+    json_str = json.dumps(json_obj, separators=(",", ":"))  
+    return json_str.replace("'", "\\'")
+
 def generate_cypher(tree_name, subtrees):
     cypher_statements = []
     cypher_statements.append(f"CREATE (t:Tree {{name: '{tree_name}'}});")
@@ -52,9 +57,10 @@ def create_subtree(parent_name, subtree_name, subtree_data):
         """)
         
     for metadata in metadatas:
+        json_escaped = sanitize_json_string(metadata)
         cypher_statements.append(f"""
         MATCH (child:Subtree {{name: '{subtree_name}'}})
-        MERGE (m:Metadata {{value: '{json.dumps(metadata)}'}})
+        MERGE (m:Metadata {{value: '{json_escaped}'}})
         CREATE (child)-[:HAS_METADATA]->(m);
         """)
         
