@@ -1,0 +1,14 @@
+{
+  "species": "Gammacoronavirus",
+  "query": "Coronavirus",
+  "sequence_count": 169,
+  "file_path": "/home/joh/Documentos/GIT/FPM-Tree/BioComp_UFF/data/Gammacoronavirus/Gammacoronavirus.fasta",
+  "download_date": "2025-09-05T14:35:33.167435",
+  "processing_params": {
+    "initial_min_length": 700,
+    "refined_min_length": 9000,
+    "utr5_end": 0,
+    "utr3_start": 10000,
+    "similarity_threshold": 0.99
+  }
+}
