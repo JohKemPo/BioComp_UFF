@@ -1,12 +1,20 @@
 
 
-from Bio import Phylo
+from Bio import Phylo, AlignIO, SeqIO
 from Bio.Phylo.TreeConstruction import (DistanceCalculator, 
                                         DistanceTreeConstructor, 
                                         ParsimonyTreeConstructor, 
                                         ParsimonyScorer, 
                                         NNITreeSearcher)
+import subprocess
+import os
+import re
+import logging
+from dendropy import Tree, DataSet
+from io import StringIO
 
+
+#TODO: Melhorias de parametros dos novos metodos ( esta é somente a versão estavel )
 class TreeBuilder:
     """
     Classe responsável pela construção de árvores filogenéticas a partir de alinhamentos de sequências.
@@ -121,6 +129,261 @@ class TreeBuilder:
 
         return tree
 
+    def iqtree_constructor(self, alignment, output_path_tree):
+        """
+        Constrói árvore usando IQ-TREE 2.
+        Arquivos extras são salvos na pasta tmp.
+        """
+        try:
+            base_name = os.path.basename(output_path_tree).replace('.nexus', '').replace('.nwk', '')
+            tmp_dir = os.path.join(os.path.dirname(output_path_tree).split('/Trees')[0], 'tmp', f'iqtree_{base_name}')
+            os.makedirs(tmp_dir, exist_ok=True)
+            
+            align_path = os.path.join(tmp_dir, f'{base_name}.phylip')
+            AlignIO.write(alignment, align_path, 'phylip')
+            
+            prefix = os.path.join(tmp_dir, base_name)
+            
+            cmd = [
+                'iqtree2', '-s', align_path, 
+                '-m', 'GTR+G', '-bb', '1000', 
+                '-pre', prefix,
+                '-nt', 'AUTO'
+            ]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            
+            possible_tree_files = [
+                prefix + '.treefile',
+                prefix + '.contree',
+                prefix + '.tre'
+            ]
+            
+            tree_file_found = None
+            for tree_file in possible_tree_files:
+                if os.path.exists(tree_file):
+                    tree_file_found = tree_file
+                    break
+            
+            if tree_file_found:
+                tree = Phylo.read(tree_file_found, 'newick')
+                Phylo.write(tree, output_path_tree, 'nexus')
+                
+                logging.info(f"Arquivos IQ-TREE salvos em: {tmp_dir}")
+                return tree
+            else:
+                raise FileNotFoundError(f"Nenhum arquivo de árvore encontrado em: {tmp_dir}")
+                
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Erro no IQ-TREE: {e.stderr}")
+            logging.info(f"Output do IQ-TREE: {e.stdout}")
+            raise
+    
+    def fasttree_constructor(self, alignment, output_path_tree):
+        """
+        Constrói árvore usando FastTree.
+        Arquivos extras são salvos na pasta tmp.
+        """
+        try:
+            base_name = os.path.basename(output_path_tree).replace('.nexus', '').replace('.nwk', '')
+            tmp_dir = os.path.join(os.path.dirname(output_path_tree).split('/Trees')[0], 'tmp', f'fasttree_{base_name}')
+            os.makedirs(tmp_dir, exist_ok=True)
+            
+            align_path = os.path.join(tmp_dir, f'{base_name}.fasta')
+            AlignIO.write(alignment, align_path, 'fasta')
+            
+            cmd = ['FastTree', '-nt', '-gtr', align_path]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            
+            tree = Phylo.read(StringIO(result.stdout), 'newick')
+            
+            Phylo.write(tree, output_path_tree, 'nexus')
+            
+            log_path = os.path.join(tmp_dir, f'{base_name}.log')
+            with open(log_path, 'w') as log_file:
+                log_file.write(result.stderr)
+            
+            logging.info(f"Arquivos FastTree salvos em: {tmp_dir}")
+            return Phylo.read(output_path_tree, 'nexus')
+                    
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Erro no FastTree: {e.stderr}")
+            logging.info(f"Output do FastTree: {e.stdout}")
+            raise
+    
+    def raxml_ng_constructor(self, alignment, output_path_tree):
+        """
+        Constrói árvore usando RAxML-NG.
+        Arquivos extras são salvos na pasta tmp.
+        """
+        try:
+            base_name = os.path.basename(output_path_tree).replace('.nexus', '').replace('.nwk', '')
+            tmp_dir = os.path.join(os.path.dirname(output_path_tree).split('/Trees')[0], 'tmp', f'raxml_{base_name}')
+            os.makedirs(tmp_dir, exist_ok=True)
+            
+            align_path = os.path.join(tmp_dir, f'{base_name}.phylip')
+            AlignIO.write(alignment, align_path, 'phylip')
+            
+            prefix = os.path.join(tmp_dir, base_name)
+            
+            cmd = [
+                'raxml-ng', '--msa', align_path, 
+                '--model', 'GTR+G', '--threads', 'auto', 
+                '--seed', '12345', '--tree', 'rand{10}',
+                '--prefix', prefix
+            ]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            
+            tree_file = prefix + '.raxml.bestTree'
+            if os.path.exists(tree_file):
+                tree = Phylo.read(tree_file, 'newick')
+                
+                Phylo.write(tree, output_path_tree, 'nexus')
+                
+                logging.info(f"Arquivos RAxML-NG salvos em: {tmp_dir}")
+                return tree
+            else:
+                raise FileNotFoundError(f"Arquivo de árvore não encontrado: {tree_file}")
+                    
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Erro no RAxML-NG: {e.stderr}")
+            logging.info(f"Output do RAxML-NG: {e.stdout}")
+            raise
+    
+    
+    
+    def _clean_mrbayes_tree(self, tree_path, output_newick):
+        with open(tree_path, "r") as f:
+            content = f.read()
+
+        translate_dict = {}
+        translate_match = re.search(r"translate\s*((?:.|\n)+?);", content, re.IGNORECASE)
+        if translate_match:
+            translate_text = translate_match.group(1)
+            for match in re.finditer(r'(\d+)\s+([^,\n]+)', translate_text):
+                num, label = match.groups()
+                translate_dict[num] = label.strip().rstrip(',')
+
+        tree_match = re.search(r"tree.*?=.*?\((.*?)\);", content, re.DOTALL)
+        if not tree_match:
+            raise ValueError("Árvore não encontrada")
+        
+        tree_str = f"({tree_match.group(1)})"
+        
+        tree_str = re.sub(r"\[.*?\]", "", tree_str)
+        
+        for num, label in translate_dict.items():
+            tree_str = re.sub(rf'(?<=[\(,]){num}(?=[:\),])', label, tree_str)
+        
+        #tree_str = re.sub(r":[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?", "", tree_str)
+        
+        inner_count = 1
+        result = []
+        for char in tree_str:
+           if char == ')':
+                result.append(f')inner{inner_count}')
+                inner_count += 1
+           else:
+                result.append(char)
+        
+        #final_tree = ''.join(result)
+        
+        with open(output_newick, "w") as f:
+            f.write(tree_str + ";\n")
+        
+        return output_newick
+    
+
+    def mrbayes_constructor(self, alignment, output_path_tree, generations=1000000):
+        """
+        Constrói árvore usando MrBayes.
+        Arquivos extras são salvos na pasta tmp.
+        """
+        try:
+            base_name = os.path.basename(output_path_tree).replace('.nexus', '').replace('.nwk', '')
+            tmp_dir = os.path.join((os.path.dirname(output_path_tree).split('/FPM-Tree/')[-1]).split('/Trees')[0],'tmp', f'mrbayes_{base_name}')
+            os.makedirs(tmp_dir, exist_ok=True)
+            
+            nexus_path = os.path.join(tmp_dir, 'alignment.nexus')
+        
+            for record in alignment:
+                if not hasattr(record, 'annotations'):
+                    record.annotations = {}
+                record.annotations['molecule_type'] = 'DNA'
+            
+            AlignIO.write(alignment, nexus_path, 'nexus')
+            
+            mrbayes_script = f"""set autoclose=yes nowarn=yes
+    execute {os.path.basename(nexus_path)}
+    lset nst=6 rates=gamma
+    mcmc ngen={generations} printfreq=1000 samplefreq=100
+    sump
+    sumt burnin=250
+    quit
+    """
+            
+            script_path = os.path.join(tmp_dir, 'run_mb.txt')
+            with open(script_path, 'w') as f:
+                f.write(mrbayes_script)
+            
+            result = subprocess.run(
+                ['mb'],
+                stdin=open(script_path, 'r'),
+                capture_output=True,
+                timeout=3600,
+                cwd=tmp_dir
+            )
+            
+            stdout_text = result.stdout.decode('utf-8', errors='ignore') if result.stdout else ''
+            stderr_text = result.stderr.decode('utf-8', errors='ignore') if result.stderr else ''
+            
+            if result.returncode != 0:
+                logging.error(f"MrBayes exit code: {result.returncode}")
+                logging.error(f"MrBayes stdout: {stdout_text[:1000]}")  
+                logging.error(f"MrBayes stderr: {stderr_text[:1000]}")
+                raise subprocess.CalledProcessError(result.returncode, ['mb'], stdout_text, stderr_text)
+            
+            tree_files = [
+                'alignment.nexus.con.tre',
+                'alignment.con.tre',
+                'alignment.t',
+                'alignment.nex.con.tre'
+            ]
+            
+            for tree_file in tree_files:
+                tree_path = os.path.join(tmp_dir, tree_file)
+                if os.path.exists(tree_path):
+                    try:
+                        nwk_file = self._clean_mrbayes_tree(tree_path,os.path.join(tmp_dir,"tree_clean.nwk") )
+                        tree = Phylo.read(nwk_file, "newick")
+
+                        Phylo.write(tree, output_path_tree, "nexus")
+                        logging.info(f"Árvore MrBayes salva em: {output_path_tree}")
+                        return tree
+                    except Exception as e:
+                        logging.warning(f"Erro ao ler árvore {tree_file}: {e}")
+                        continue
+            
+            
+            
+            raise FileNotFoundError(f"Arquivo de árvore não encontrado em: {tmp_dir}. Arquivos: {os.listdir(tmp_dir)}")
+                
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Erro no MrBayes - exit code: {e.returncode}")
+            if hasattr(e, 'stdout') and e.stdout:
+                logging.error(f"Stdout: {e.stdout[:1000]}")
+            if hasattr(e, 'stderr') and e.stderr:
+                logging.error(f"Stderr: {e.stderr[:1000]}")
+            raise
+        except subprocess.TimeoutExpired:
+            logging.error("MrBayes excedeu o tempo limite de execução")
+            raise
+        except Exception as e:
+            logging.error(f"Erro inesperado: {e}")
+            raise
+
     def save_tree(self, tree, path, format):
         """
         Salva a árvore filogenética em um arquivo.
@@ -140,4 +403,7 @@ class TreeBuilder:
         ------
         None
         """
-        Phylo.write(tree, path, format)
+        if isinstance(tree, list):
+            Phylo.write(tree, path, format)
+        else:
+            Phylo.write([tree], path, format)

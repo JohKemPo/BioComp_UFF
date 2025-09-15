@@ -1,5 +1,4 @@
-import os
-import shutil
+import os, shutil, fnmatch
 
 def clean_Trees(output_path: str) -> None:
     """
@@ -101,17 +100,14 @@ def clean_NoPipe(path: str) -> None:
             file_path = os.path.join(dir_NoPipe, file_name)
             os.remove(file_path)
 
-def copiar_arquivos(origem, destino):
+def copiar_arquivos(origem, destino, pattern='*'):
     """
-    Copia todos os arquivos da pasta 'origem' para a pasta 'destino'.
-    Cria a pasta destino se não existir.
+    Copia arquivos com padrão específico, mantendo estrutura de diretórios.
     """
     os.makedirs(destino, exist_ok=True)
-    if not os.path.exists: return
-
-    for arquivo in os.listdir(origem):
-        caminho_origem = os.path.join(origem, arquivo)
-        caminho_destino = os.path.join(destino, arquivo)
-
-        if os.path.isfile(caminho_origem):
-            shutil.copy2(caminho_origem, caminho_destino)  
+    for item in os.listdir(origem):
+        if fnmatch.fnmatch(item, pattern):
+            src_path = os.path.join(origem, item)
+            dst_path = os.path.join(destino, item)
+            if os.path.isfile(src_path):
+                shutil.copy2(src_path, dst_path)

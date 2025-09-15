@@ -46,6 +46,17 @@ class SubtreeBuilder:
         self.messagesManager = Messages(logPath=self.output_path)
         
         self.count_subtrees = 0
+        
+    def _add_internal_labels(self, tree):
+        """
+        Adiciona labels 'inner_X' aos nós internos que não possuem nome.
+        """
+        inner_count = 1
+        for clade in tree.find_clades(order='postorder'):
+            if not clade.is_terminal():  
+                if not clade.name or clade.name.strip() == '' or clade.name == 'None':
+                    clade.name = f'Inner{inner_count}'
+                    inner_count += 1
 
     def subtree_constructor(self, path: str , name: str ) -> dict:
         """
@@ -68,6 +79,9 @@ class SubtreeBuilder:
             Um dicionário contendo informações sobre todas as subárvores geradas, incluindo seus terminais e metadados.
         """
         tree = Phylo.read(path, self.input_format)
+        
+        self._add_internal_labels(tree)
+        
         name_tree = str(name.rsplit(".", 1)[0])
         tree_hash = calculate_tree_hash(tree)['terminal_hash']
         
@@ -92,6 +106,8 @@ class SubtreeBuilder:
             name_subtree = f'{name_tree}_{clade.name}'
 
             if clade.is_terminal():
+                if not clade.name or clade.name == 'None':
+                    continue 
                 clade_hash = calculate_tree_hash(clade.name)['terminal_hash']
                 dict_tree_terminals_hash[clade.name] = clade_hash
             

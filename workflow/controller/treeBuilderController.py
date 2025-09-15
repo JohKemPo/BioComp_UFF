@@ -8,6 +8,7 @@ from Bio import AlignIO
 import numpy as np
 import logging, datetime
 
+
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, '../..'))
 
@@ -81,7 +82,7 @@ class TreeBuilderController:
         self.list_times = list()
         self.aligner = AlignmentSeqs({'num_threads': self.num_threads})
 
-        clean_tmp(self.output_path)
+        # clean_tmp(self.output_path)
         clean_NoPipe(self.input_path)
 
         date = datetime.datetime.now()
@@ -113,6 +114,9 @@ class TreeBuilderController:
             print("Iniciando construção das árvores utilizando ambos os métodos: DISTANCE TREE CONSTRUCTOR e PARSIMONY\n")
             logging.info("Iniciando construção das árvores utilizando ambos os métodos: DISTANCE TREE CONSTRUCTOR e PARSIMONY")
             logging.info("STEP: construction of trees using both methods: DISTANCE TREE CONSTRUCTOR and PARSIMONY")
+        elif self.mode == "advanced":
+            print("Iniciando construção das árvores utilizando métodos avançados\n")
+            logging.info("Iniciando construção das árvores utilizando métodos avançados")
         else:
             logging.error(f"Modo desconhecido: {self.mode}")
             raise ValueError(f"Modo desconhecido: {self.mode}")
@@ -123,9 +127,24 @@ class TreeBuilderController:
         heatmap_matrix = np.zeros((8, 8))
 
         multi_trees = {
-                        "clustalo": {"distance": {"nj": [], "upgma": []}, "parsimony": {"nj": [], "upgma": []}},
-                        "mafft": {"distance": {"nj": [], "upgma": []}, "parsimony": {"nj": [], "upgma": []}}
-                    }
+            "clustalo": {
+                "distance": {"nj": [], "upgma": []}, 
+                "parsimony": {"nj": [], "upgma": []},
+                "iqtree": [],
+                "fasttree": [],
+                "raxml": [],
+                "mrbayes": []
+            },
+            "mafft": {
+                "distance": {"nj": [], "upgma": []}, 
+                "parsimony": {"nj": [], "upgma": []},
+                "iqtree": [],
+                "fasttree": [],
+                "raxml": [],
+                "mrbayes": []
+            }
+        }
+        
         base_folder = self.input_path.split('/')[-1]
 
         for file in tqdm(self.files, desc="Construindo árvores...", ascii="░▒█"):
@@ -210,8 +229,119 @@ class TreeBuilderController:
                                 tree_parsimony = self.build_tree_parsimony(fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree_parsimony, alg, output_path_align_html)
                                 self.save_tree_image(title=name_parsimony, tree=[tree_parsimony], path=os.path.join(output_path_tree_image, name_parsimony).replace('Trees', 'outputs/Plots'))
                                 multi_trees[alg]['parsimony'][method].append(tree_parsimony)
-                    
+                        
                     # self.save_tree_image(title=f'tree_{Path(file).stem}', tree=multi_trees, path=os.path.join(output_path_tree_image, f'tree_{Path(file).stem}').replace('Trees', 'outputs/Plots'))
+                    end_time = time.time()
+                    rf_scores = process_rf_distance(multi_trees)
+                    heatmap_matrix = self.somarMatrizes(
+                        heatmap_matrix,
+                        plot_heatmap_distances(data_dict=multi_trees, scores=rf_scores, base_name=Path(file).stem, path=os.path.join(self.output_path, 'outputs/Plots'))
+                    )
+                elif self.mode == "advanced":
+                    for alg in ['clustalo', 'mafft']:
+                        for method in ['nj', 'upgma']:
+                            name_distance = f'tree_{Path(file).stem}_{alg}_{method}_distance.{self.output_format}'
+                            name_parsimony = f'tree_{Path(file).stem}_{alg}_{method}_parsimony.{self.output_format}'
+                            name_iqtree = f'tree_{Path(file).stem}_{alg}_iqtree.{self.output_format}'
+                            name_fasttree = f'tree_{Path(file).stem}_{alg}_fasttree.{self.output_format}'
+                            name_raxml = f'tree_{Path(file).stem}_{alg}_raxml.{self.output_format}'
+                            name_mrbayes = f'tree_{Path(file).stem}_{alg}_mrbayes.{self.output_format}'
+                           
+                            output_path_align = output_path_align_base.replace('.aln',f'_{alg}.aln')
+
+                            output_path_tree_distance = os.path.join(self.output_path, 'Trees', name_distance)
+                            output_path_tree_parsimony = os.path.join(self.output_path, 'Trees', name_parsimony)
+                            output_path_tree_iqtree = os.path.join(self.output_path, 'Trees', name_iqtree)
+                            output_path_tree_fasttree = os.path.join(self.output_path, 'Trees', name_fasttree)
+                            output_path_tree_raxml = os.path.join(self.output_path, 'Trees', name_raxml)
+                            output_path_tree_mrbayes = os.path.join(self.output_path, 'Trees', name_mrbayes)
+
+                            if os.path.exists(output_path_tree_distance):
+
+                                tree_distance = Phylo.read(output_path_tree_distance, self.output_format)
+                                tree_parsimony = Phylo.read(output_path_tree_parsimony, self.output_format)
+                                tree_iqtree = Phylo.read(output_path_tree_iqtree, self.output_format)
+                                tree_fasttree = Phylo.read(output_path_tree_fasttree, self.output_format)
+                                tree_raxml = Phylo.read(output_path_tree_raxml, self.output_format)
+                                tree_mrbayes = Phylo.read(output_path_tree_mrbayes, self.output_format)
+                                multi_trees[alg]['distance'][method].append(tree_distance)
+                                multi_trees[alg]['parsimony'][method].append(tree_parsimony)
+                                multi_trees[alg]['iqtree'].append(tree_iqtree)
+                                multi_trees[alg]['fasttree'].append(tree_fasttree)
+                                multi_trees[alg]['raxml'].append(tree_raxml)
+                                multi_trees[alg]['mrbayes'].append(tree_mrbayes)
+                                self.count_trees = 12
+                                continue
+
+                            self.construct_tree_method = method
+
+                            if self.ignore_mode.lower() and multi_trees.get(self.ignore_mode.lower()):
+                                multi_trees[alg].pop(self.ignore_mode.lower())
+                            
+                            if not self.ignore_mode.lower() == "distance" and \
+                                not os.path.exists(output_path_tree_distance) and \
+                                not self.ignore_mode.lower() == "distance":
+                                    
+                                self.count_trees += 1
+                                logging.debug(f"Construindo árvore de distância ({alg} - {method}) para o arquivo {file}")
+                                tree_distance = self.build_tree_distance_matrix(fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree_distance, alg, output_path_align_html)
+                                self.save_tree_image(title=name_distance, tree=[tree_distance], path=os.path.join(output_path_tree_image, name_distance).replace('Trees', 'outputs/Plots'))
+                                multi_trees[alg]['distance'][method].append(tree_distance)
+                            
+                            if not self.ignore_mode.lower() == "parsimony" and\
+                                not os.path.exists(output_path_tree_parsimony) and\
+                                not self.ignore_mode.lower() == "parsimony":
+                                        
+                                self.count_trees += 1
+                                logging.debug(f"Construindo árvore por parcimônia ({alg} - {method}) para o arquivo {file}")
+                                tree_parsimony = self.build_tree_parsimony(fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree_parsimony, alg, output_path_align_html)
+                                self.save_tree_image(title=name_parsimony, tree=[tree_parsimony], path=os.path.join(output_path_tree_image, name_parsimony).replace('Trees', 'outputs/Plots'))
+                                multi_trees[alg]['parsimony'][method].append(tree_parsimony)
+                            
+                            if not self.ignore_mode.lower() == "iqtree" and \
+                                not os.path.exists(output_path_tree_iqtree) and \
+                                not self.ignore_mode.lower() == "iqtree":
+
+                                self.count_trees += 1
+                                logging.debug(f"Construindo árvore por iqtree  ({alg} - {method}) para o arquivo {file}")
+                                tree_iqtree = self.build_tree_iqtree(fasta_path, output_path_align, output_path_tree_iqtree, alg, output_path_align_html)
+                                self.save_tree_image(title=name_iqtree, tree=[tree_iqtree], path=os.path.join(output_path_tree_image, name_iqtree).replace('Trees', 'outputs/Plots'))
+
+                                multi_trees[alg]['iqtree'].append(tree_iqtree)
+                            
+                            if not self.ignore_mode.lower() == "fasttree" and \
+                                not os.path.exists(output_path_tree_fasttree) and \
+                                not self.ignore_mode.lower() == "fasttree":
+
+                                self.count_trees += 1
+                                logging.debug(f"Construindo árvore por fasttree  ({alg} - {method}) para o arquivo {file}")
+                                tree_fasttree = self.build_tree_fasttree(fasta_path, output_path_align, output_path_tree_fasttree, alg, output_path_align_html)
+                                self.save_tree_image(title=name_fasttree, tree=[tree_fasttree], path=os.path.join(output_path_tree_image, name_fasttree).replace('Trees', 'outputs/Plots'))
+
+                                multi_trees[alg]['fasttree'].append(tree_fasttree)
+                            
+                            if not self.ignore_mode.lower() == "raxml" and \
+                                not os.path.exists(output_path_tree_raxml) and \
+                                not self.ignore_mode.lower() == "raxml":
+
+                                self.count_trees += 1
+                                logging.debug(f"Construindo árvore por raxml  ({alg} - {method}) para o arquivo {file}")
+                                tree_raxml = self.build_tree_raxml(fasta_path, output_path_align, output_path_tree_raxml, alg, output_path_align_html)
+                                self.save_tree_image(title=name_raxml, tree=[tree_raxml], path=os.path.join(output_path_tree_image, name_raxml).replace('Trees', 'outputs/Plots'))
+
+                                multi_trees[alg]['raxml'].append(tree_raxml)
+                            
+                            if not self.ignore_mode.lower() == "mrbayes" and \
+                                not os.path.exists(output_path_tree_mrbayes) and \
+                                not self.ignore_mode.lower() == "mrbayes":
+
+                                self.count_trees += 1
+                                logging.debug(f"Construindo árvore por mrbayes  ({alg} - {method}) para o arquivo {file}")
+                                tree_mrbayes = self.build_tree_mrbayes(fasta_path, output_path_align, output_path_tree_mrbayes, alg, output_path_align_html)
+                                self.save_tree_image(title=name_mrbayes, tree=[tree_mrbayes], path=os.path.join(output_path_tree_image, name_mrbayes).replace('Trees', 'outputs/Plots'))
+
+                                multi_trees[alg]['mrbayes'].append(tree_mrbayes)
+                                
                     end_time = time.time()
                     rf_scores = process_rf_distance(multi_trees)
                     heatmap_matrix = self.somarMatrizes(
@@ -226,15 +356,16 @@ class TreeBuilderController:
                 logging.info(f"Arquivo {file} processado com sucesso em {cycle_time:.2f} segundos.")
             except Exception as e:
                 logging.error(f"Erro ao processar o arquivo {file}: {e}", exc_info=True)
+                exit(1)
                 
-        if self.mode == "auto":
+        if self.mode == "auto" :
             plot_heatmap_distances(data_dict=multi_trees, base_name='Acumulate', 
                                path=os.path.join(self.output_path, 'outputs/Plots'), distance_matrix=heatmap_matrix)
             logging.info("Heatmap acumulado gerado com sucesso.")
         
         clean_NoPipe(self.input_path)
         copiar_arquivos(os.path.join(self.output_path, 'tmp'),os.path.join(self.output_path, 'Align'))
-        clean_tmp(self.output_path)
+        # clean_tmp(self.output_path)
         logging.info("Diretórios temporários limpos.")
 
         self.msg.resume_tree(start=self.start, sum_time=self.list_times, num_trees=self.count_trees, 
@@ -452,6 +583,77 @@ class TreeBuilderController:
             logging.error(f"Erro na construção da árvore por parcimônia para {fasta_path}: {e}", exc_info=True)
             raise
         return tree
+    
+    def build_tree_iqtree(self, fasta_path, output_path_align, output_path_tree, align_method, output_path_align_html):
+        """Constrói árvore usando IQ-TREE."""
+        logging.info(f"Iniciando construção de árvore com IQ-TREE para {fasta_path}")
+        logging.info(f"STEP: Tree Construction with IQ-TREE method.")
+
+        builder = TreeBuilder(fasta_path=fasta_path, output_path_tree=output_path_tree)
+        
+        alng = self._get_alignment(fasta_path, output_path_align, align_method, output_path_align_html)
+        tree = builder.iqtree_constructor(alng, output_path_tree)
+        self.count_nodes.append(tree.count_terminals())
+        return tree
+    
+    def build_tree_fasttree(self, fasta_path, output_path_align, output_path_tree, align_method, output_path_align_html):
+        """Constrói árvore usando FastTree."""
+        logging.info(f"Iniciando construção de árvore com FastTree para {fasta_path}")
+        logging.info(f"STEP: Tree Construction with FastTree method.")
+
+        builder = TreeBuilder(fasta_path=fasta_path, output_path_tree=output_path_tree)
+        
+        alng = self._get_alignment(fasta_path, output_path_align, align_method, output_path_align_html)
+        tree = builder.fasttree_constructor(alng, output_path_tree)
+        self.count_nodes.append(tree.count_terminals())
+        return tree
+    
+    def build_tree_raxml(self, fasta_path, output_path_align, output_path_tree, align_method, output_path_align_html):
+        """Constrói árvore usando RAxML-NG."""
+        logging.info(f"Iniciando construção de árvore com RAxML-NG para {fasta_path}")
+        logging.info(f"STEP: Tree Construction with RAxML-NG method.")
+
+        builder = TreeBuilder(fasta_path=fasta_path, output_path_tree=output_path_tree)
+        
+        alng = self._get_alignment(fasta_path, output_path_align, align_method, output_path_align_html)
+        tree = builder.raxml_ng_constructor(alng, output_path_tree)
+        self.count_nodes.append(tree.count_terminals())
+        return tree
+    
+    def build_tree_mrbayes(self, fasta_path, output_path_align, output_path_tree, align_method, output_path_align_html):
+        """Constrói árvore usando MrBayes."""
+        logging.info(f"Iniciando construção de árvore com MrBayes para {fasta_path}")
+        logging.info(f"STEP: Tree Construction with MrBayes method.")
+
+        builder = TreeBuilder(fasta_path=fasta_path, output_path_tree=output_path_tree)
+        
+        alng = self._get_alignment(fasta_path, output_path_align, align_method, output_path_align_html)
+        tree = builder.mrbayes_constructor(alng, output_path_tree)
+        self.count_nodes.append(tree.count_terminals())
+        return tree
+    
+    def _get_alignment(self, fasta_path, output_path_align, align_method, output_path_align_html):
+        """Método auxiliar para obter alinhamento."""
+        try:
+            if os.path.exists(output_path_align):
+                logging.info(f"Arquivo de alinhamento já existe: {output_path_align}. Reutilizando.")
+                return AlignIO.read(output_path_align, "fasta")
+            else:
+                if align_method == "clustalo":
+                    return self.aligner.align_sequences_clustalo(
+                        fasta_path=fasta_path,
+                        output_path_align=output_path_align,
+                        output_path_html=output_path_align_html
+                    )
+                elif align_method == "mafft":
+                    return self.aligner.align_sequences_mafft(
+                        fasta_path=fasta_path,
+                        output_path_align=output_path_align,
+                        output_path_html=output_path_align_html
+                    )
+        except Exception as e:
+            logging.error(f"Erro ao obter alinhamento: {e}")
+            raise
 
     def save_tree_image(self, title, tree, path):
         """
@@ -488,24 +690,23 @@ class TreeBuilderController:
                 plt.close(fig)
                 logging.info(f"Imagem da árvore {title} salva em {img_path}.")
             else:
-                ax_index = 0
-                fig, axs = plt.subplots(2, 4, figsize=(42, 18))
+                fig, axs = plt.subplots(4, 4, figsize=(42, 36))  
                 axs = axs.flatten()
+                ax_index = 0
 
-                width, height = fig.get_size_inches()
-                fontsize = min(width, height) * 6
-                plt.xticks(fontsize=fontsize * 0.2)
-                plt.subplots_adjust(wspace=0.2, hspace=0.2)
-
-                for alg, trs in tree.items():
-                    for method, trees in trs.items():
-                        for mtd, tr in trees.items():
-                            if ax_index < len(axs) and len(tr) > 0:
-                                Phylo.draw(tr[0], do_show=False, axes=axs[ax_index], 
-                                           label_func=lambda x: None if x.name is None or 'Inner' in x.name else x.name)
-                                axs[ax_index].set_title(f"{title} - {alg.lower()} - {method.lower()} - {mtd}", 
-                                                         fontsize=fontsize * 0.15)
-                            ax_index += 1
+                for alg, methods in tree.items():
+                    for method_name, trees in methods.items():
+                        if isinstance(trees, dict): 
+                            for sub_method, tree_list in trees.items():
+                                if ax_index < len(axs) and len(tree_list) > 0:
+                                    Phylo.draw(tree_list[0], do_show=False, axes=axs[ax_index])
+                                    axs[ax_index].set_title(f"{alg} - {method_name} - {sub_method}", fontsize=8)
+                                    ax_index += 1
+                        else: 
+                            if ax_index < len(axs) and len(trees) > 0:
+                                Phylo.draw(trees[0], do_show=False, axes=axs[ax_index])
+                                axs[ax_index].set_title(f"{alg} - {method_name}", fontsize=8)
+                                ax_index += 1
 
                 plt.tight_layout()
                 img_path = path.replace(self.output_format, 'png')

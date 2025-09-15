@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple, Set
+from typing import List, Dict, Tuple, Set, Any
 
 from Bio import Phylo
 from itertools import combinations
@@ -105,18 +105,81 @@ def process_rf_distance(data_dict: Dict) -> Dict[Tuple[str, str], int]:
     
     return rf_distances
 
-def plot_heatmap_distances(data_dict: Dict, 
-                           base_name: str, 
-                           path: str, 
-                           scores: Dict[Tuple[str, str], int] = None, 
-                           distance_matrix: np.ndarray = None) -> np.ndarray:
+def flatten_multi_trees(multi_trees: Dict) -> Dict[str, Any]:
     """
-    Plota um mapa de calor das distâncias RF entre árvores.
+    Converte a estrutura aninhada de multi_trees em um dicionário plano.
+    
+    Parameters
+    ----------
+    multi_trees : Dict
+        Dicionário com estrutura aninhada de árvores.
+        
+    Returns
+    -------
+    Dict[str, Any]
+        Dicionário plano com nomes únicos para cada árvore.
+    """
+    flat_trees = {}
+    
+    for alignment_method, methods_dict in multi_trees.items():
+        for method_type, trees in methods_dict.items():
+            if method_type in ["iqtree", "fasttree", "raxml", "mrbayes"]:
+                for i, tree in enumerate(trees):
+                    tree_name = f"{alignment_method}_{method_type}_{i}"
+                    flat_trees[tree_name] = tree
+            elif method_type in ["distance", "parsimony"]:
+                for submethod, sub_trees in trees.items():
+                    for i, tree in enumerate(sub_trees):
+                        tree_name = f"{alignment_method}_{method_type}_{submethod}_{i}"
+                        flat_trees[tree_name] = tree
+    
+    return flat_trees
 
+def process_rf_distance(multi_trees: Dict) -> Dict[Tuple[str, str], int]:
+    """
+    Processa e calcula a distância RF entre todas as combinações de árvores em multi_trees.
+    
+    Parameters
+    ----------
+    multi_trees : Dict
+        Dicionário contendo as árvores filogenéticas a serem comparadas no formato multi_trees.
+        
+    Returns
+    -------
+    Dict[Tuple[str, str], int]
+        Dicionário contendo as distâncias RF entre todas as combinações de árvores.
+    """
+    rf_distances = {}
+    
+    flat_trees = flatten_multi_trees(multi_trees)
+    
+    tree_names = list(flat_trees.keys())
+    
+    for (name1, name2) in combinations(tree_names, 2):
+        tree1 = flat_trees[name1]
+        tree2 = flat_trees[name2]
+        
+        try:
+            distance = rf_distance(tree1, tree2)
+            rf_distances[(name1, name2)] = distance
+        except Exception as e:
+            print(f"Erro ao calcular distância RF entre {name1} e {name2}: {e}")
+            rf_distances[(name1, name2)] = -1  
+    
+    return rf_distances
+
+def plot_heatmap_distances(data_dict: Dict, 
+                          base_name: str, 
+                          path: str, 
+                          scores: Dict[Tuple[str, str], int] = None, 
+                          distance_matrix: np.ndarray = None) -> np.ndarray:
+    """
+    Plota um mapa de calor das distâncias RF entre árvores do formato data_dict.
+    
     Parameters
     ----------
     data_dict : Dict
-        Dicionário contendo informações sobre as árvores.
+        Dicionário contendo as árvores no formato data_dict.
     base_name : str
         Nome base para o arquivo de saída.
     path : str
@@ -125,33 +188,84 @@ def plot_heatmap_distances(data_dict: Dict,
         Dicionário de distâncias RF calculadas entre as árvores.
     distance_matrix : np.ndarray, optional
         Matriz de distâncias para ser usada no mapa de calor.
-
+        
     Returns
     -------
     np.ndarray
         Matriz de distâncias utilizada para o mapa de calor.
     """
-    trees = get_trees_data_list(data_dict)
-    tree_names = [list(tree.keys())[0] for tree in trees]
-
+    flat_trees = flatten_multi_trees(data_dict)
+    tree_names = list(flat_trees.keys())
+    n_trees = len(tree_names)
+    
     if distance_matrix is None and scores:
-        distance_matrix = np.zeros((len(trees), len(trees)))
+        distance_matrix = np.zeros((n_trees, n_trees))
+        
         for (name1, name2), distance in scores.items():
-            i = tree_names.index(name1)
-            j = tree_names.index(name2)
-            distance_matrix[i, j] = distance
-            distance_matrix[j, i] = distance
-
+            try:
+                i = tree_names.index(name1)
+                j = tree_names.index(name2)
+                distance_matrix[i, j] = distance
+                distance_matrix[j, i] = distance
+            except ValueError:
+                print(f"Árvore não encontrada: {name1} ou {name2}")
+    
     df = pd.DataFrame(distance_matrix, index=tree_names, columns=tree_names)
-
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(df, annot=True, cmap='coolwarm', linewidths=.5, fmt=".0f")
+    
+    plt.figure(figsize=(max(12, n_trees), max(10, n_trees)))
+    sns.heatmap(df, annot=True, cmap='coolwarm', linewidths=.5, fmt=".0f",
+                cbar_kws={'label': 'Robinson-Foulds Distance'})
+    
     plt.title('Robinson-Foulds Distance Heatmap')
+    plt.xticks(rotation=45, ha='right')
+    plt.yticks(rotation=0)
     plt.tight_layout()
-    plt.savefig(f"{path}/tree_{base_name}_heatmap_of_distances.png")
+    
+    plt.savefig(f"{path}/tree_{base_name}_heatmap_of_distances.png", 
+                dpi=300, bbox_inches='tight')
     plt.close()
-
+    
     return distance_matrix
+
+def analyze_rf_distances(multi_trees: Dict, scores: Dict[Tuple[str, str], int]) -> Dict:
+    """
+    Analisa estatísticas das distâncias RF.
+    
+    Parameters
+    ----------
+    multi_trees : Dict
+        Dicionário com as árvores.
+    scores : Dict[Tuple[str, str], int]
+        Distâncias RF calculadas.
+        
+    Returns
+    -------
+    Dict
+        Estatísticas das distâncias.
+    """
+    flat_trees = flatten_multi_trees(multi_trees)
+    tree_names = list(flat_trees.keys())
+    
+    method_groups = {}
+    for name in tree_names:
+        parts = name.split('_')
+        method_key = '_'.join(parts[:2])  
+        if method_key not in method_groups:
+            method_groups[method_key] = []
+        method_groups[method_key].append(name)
+    
+    distances = list(scores.values())
+    stats = {
+        'total_trees': len(tree_names),
+        'total_comparisons': len(scores),
+        'mean_distance': np.mean(distances),
+        'median_distance': np.median(distances),
+        'min_distance': np.min(distances),
+        'max_distance': np.max(distances),
+        'method_groups': method_groups
+    }
+    
+    return stats
 
 def get_clade_leaves(clade: Phylo.BaseTree.Clade) -> List[str]:
     """

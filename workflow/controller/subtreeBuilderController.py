@@ -176,6 +176,7 @@ class SubtreeBuilderController:
             Dados brutos das subárvores construídas.
         """
         logging.info(f"Iniciando a construção da subárvore para: {name}")
+        self.count_subtrees = 0
         try:
             builder = SubtreeBuilder(**self.subtree_kwargs)
             rawdata = builder.subtree_constructor(path, name)
