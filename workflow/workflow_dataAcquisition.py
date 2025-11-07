@@ -1,36 +1,14 @@
-
-# from Bio import SeqIO
-# from Bio import Entrez
-
-# Entrez.email = 'joaovitormoraesjp@gmail.com'
-# search_handler = Entrez.esearch(db="nucleotide", term="SPOV")
-
-# search_records = Entrez.read(search_handler)
-
-# for idx, record_id in enumerate(search_records['IdList']):
-
-#   fetch_handler = Entrez.efetch(db="nucleotide", id=record_id, rettype="gb", retmode="text")
-#   fetch_records = SeqIO.parse(fetch_handler, 'genbank')
-
-#   for record in fetch_records:
-
-#     print(f'\nId: {idx} -------------------------------')
-#     print(f'Record Id: {record_id}')
-#     print('Record accession: ', record.id)
-#     print('Record description: ', record.description)
-#     print('Record sequence length: ', len(record.seq))
-#     print('Record features count: ', len(record.features))
-
 import os
 import subprocess
 import logging
 from Bio import Entrez, SeqIO
 from Bio.SeqRecord import SeqRecord
 import pandas as pd
-
-class ZikaWorkflow:
+from Bio.Align import PairwiseAligner
+import hashlib
+class workflowAquisitionDatasetNCBI:
     def __init__(self, email, work_dir="workflow_dataAcquisition",
-                 initial_min_length=700, refined_min_length=9000,
+                 initial_min_length=700, refined_min_length=700,
                  utr5_end=None, utr3_start=None, similarity_threshold=0.99, retmax=1000):
         """
         Inicializa os parâmetros do workflow.
@@ -55,6 +33,9 @@ class ZikaWorkflow:
         retmax : int
             Limite de sequências que serão baixadas.
         """
+        if initial_min_length and refined_min_length and initial_min_length > refined_min_length:
+            raise ValueError("initial_min_length não pode ser maior que refined_min_length")
+        
         Entrez.email = email
         self.work_dir = work_dir
         os.makedirs(self.work_dir, exist_ok=True)
@@ -84,23 +65,32 @@ class ZikaWorkflow:
         self.utr3_start = utr3_start
         self.similarity_threshold = similarity_threshold
         self.retmax = retmax
+        
+        self.custom_filters = []
 
     def download_sequences(self, query, output_file):
         """
-        Passo 1: Baixa sequências do GenBank usando o Biopython.
+        Baixa sequências do GenBank usando o Biopython.
         
         Parameters
         ----------
-
-        query: str
-            String de consulta para o GenBank.
-        output_file: str
+        query : str
+            String de consulta para o GenBank. Se vazia, cria arquivo vazio.
+        output_file : str
             Caminho para salvar as sequências baixadas (formato GenBank).
+            
+        Raises
+        ------
+        ValueError
+            Se os parâmetros forem inválidos.
+        IOError
+            Se não for possível escrever o arquivo de saída.
         """
         self.logger.info(f"Baixando sequências com query: {query}")
         print(f"Baixando sequências com query: {query}")
         try:
-            if not query:
+            if not query or query.strip() == "":
+                self.logger.warning("Query vazia, criando arquivo vazio")
                 with open(output_file, "w") as f:
                     f.write("")
                 return
@@ -108,6 +98,13 @@ class ZikaWorkflow:
             handle = Entrez.esearch(db="nucleotide", term=query, retmax=self.retmax)
             record = Entrez.read(handle)
             handle.close()
+            
+            if not record["IdList"]:
+                self.logger.warning("Nenhum resultado encontrado para a query")
+                with open(output_file, "w") as f:
+                    f.write("")
+                return
+            
             id_list = record["IdList"]
             self.logger.info(f"Número de IDs encontrados: {len(id_list)}")
             handle = Entrez.efetch(db="nucleotide", id=id_list, rettype="gb", retmode="text")
@@ -116,7 +113,10 @@ class ZikaWorkflow:
             handle.close()
             self.logger.info(f"Sequências salvas em: {output_file}")
         except Exception as e:
-            self.logger.error(f"Erro no download de sequências: {e}")
+            self.logger.error(f"Erro no download: {e}")
+            # Criar arquivo vazio para não quebrar o pipeline
+            with open(output_file, "w") as f:
+                f.write("")
 
     
     def download_from_csv(self, csv_path, output_file):
@@ -163,24 +163,52 @@ class ZikaWorkflow:
         """
         print(f"Iniciando filtragem de sequências: {input_file}")
         self.logger.info(f"Iniciando filtragem de sequências: {input_file}")
+        
+        # Verificar se o arquivo existe e não está vazio
+        if not os.path.exists(input_file) or os.path.getsize(input_file) == 0:
+            self.logger.warning(f"Arquivo de entrada vazio ou não existe: {input_file}")
+            # Criar arquivo de saída vazio
+            with open(output_file, "w") as f:
+                f.write("")
+            return
+        
         try:
             records = list(SeqIO.parse(input_file, "genbank"))
             filtered = []
             seen_seqs = set()
+            
             for rec in records:
-                # Verifica se a sequência tem metadados (ex.: data, local) e comprimento mínimo
-                if self.initial_min_length is not None and len(rec.seq) < self.initial_min_length:
+                try:
+                    # Pular sequências com conteúdo indefinido
+                    if rec.seq is None or len(rec.seq) == 0:
+                        self.logger.warning(f"Sequência {rec.id} tem conteúdo indefinido, pulando")
+                        continue
+                        
+                    # Verificar comprimento mínimo
+                    if self.initial_min_length is not None and len(rec.seq) < self.initial_min_length:
+                        continue
+                        
+                    seq_str = str(rec.seq).upper()
+                    if seq_str in seen_seqs:
+                        continue
+                        
+                    seen_seqs.add(seq_str)
+                    filtered.append(rec)
+                    
+                except Exception as e:
+                    self.logger.warning(f"Erro ao processar sequência {rec.id}: {e}")
                     continue
-                seq_str = str(rec.seq).upper()
-                if seq_str in seen_seqs:
-                    continue
-                seen_seqs.add(seq_str)
-                filtered.append(rec)
+                    
             SeqIO.write(filtered, output_file, "genbank")
             self.logger.info(f"Total de sequências filtradas: {len(filtered)}")
             self.logger.info(f"Arquivo filtrado salvo em: {output_file}")
+            return filtered
+            
         except Exception as e:
             self.logger.error(f"Erro na filtragem de sequências: {e}")
+            # Criar arquivo vazio para não quebrar o pipeline
+            with open(output_file, "w") as f:
+                f.write("")
 
     def remove_utrs(self, input_file, output_file):
         """
@@ -200,15 +228,21 @@ class ZikaWorkflow:
             records = []
             for rec in SeqIO.parse(input_file, "genbank"):
                 if self.utr5_end is not None and self.utr3_start is not None:
-                    # Considerando que a CDS esteja entre utr5_end+1 e utr3_start-1
-                    cds_seq = rec.seq[rec.features[1].location.start:rec.features[1].location.end]
-                    new_rec = SeqRecord(cds_seq, id=rec.id, name=rec.name,
-                                        description=rec.description, annotations=rec.annotations)
-                    records.append(new_rec)
+                    # Encontrar feature CDS explicitamente
+                    cds_features = [feat for feat in rec.features if feat.type == "CDS"]
+                    if cds_features:
+                        cds = cds_features[0]
+                        cds_seq = cds.extract(rec.seq)
+                        new_rec = SeqRecord(cds_seq, id=rec.id, name=rec.name,
+                                        description=rec.description + " | CDS only", 
+                                        annotations=rec.annotations)
+                        records.append(new_rec)
+                    else:
+                        self.logger.warning(f"Sequência {rec.id} não tem feature CDS, mantendo original")
+                        records.append(rec)
                 else:
                     records.append(rec)
             SeqIO.write(records, output_file, "genbank")
-            self.logger.info(f"Sequências sem UTRs salvas em: {output_file}")
         except Exception as e:
             self.logger.error(f"Erro ao remover UTRs: {e}")
 
@@ -231,24 +265,70 @@ class ZikaWorkflow:
         try:
             records = list(SeqIO.parse(input_file, "genbank"))
             refined = []
+            seq_hashes = set()
+            
             for rec in records:
                 if self.refined_min_length is not None and len(rec.seq) < self.refined_min_length:
                     continue
-                duplicate = False
-                for existing in refined:
-                    # Similaridade simples
-                    matches = sum(1 for a, b in zip(str(rec.seq).upper(), str(existing.seq).upper()) if a == b)
-                    similarity = matches / min(len(rec.seq), len(existing.seq))
-                    if similarity >= self.similarity_threshold:
-                        duplicate = True
-                        break
-                if not duplicate:
+                
+                # Usar hash para detecção rápida de duplicatas exatas
+                seq_hash = hashlib.md5(str(rec.seq).encode()).hexdigest()
+                if seq_hash in seq_hashes:
+                    continue
+                    
+                # Para similaridade, usar amostragem ou métodos mais eficientes
+                if not self.is_similar_to_existing(rec, refined):
                     refined.append(rec)
+                    seq_hashes.add(seq_hash)
+                    
             SeqIO.write(refined, output_file, "genbank")
-            self.logger.info(f"Total de sequências no dataset refinado: {len(refined)}")
-            self.logger.info(f"Dataset refinado salvo em: {output_file}")
         except Exception as e:
-            self.logger.error(f"Erro ao refinar o dataset: {e}")
+            self.logger.error(f"Erro ao Refinar dataset: {e}")
+
+
+    def is_similar_to_existing(self, record, existing_records, sample_size=5):
+        """
+        Verifica se uma sequência é similar às sequências existentes.
+        Usa amostragem para melhor performance com grandes datasets.
+        
+        Parameters
+        ----------
+        record : SeqRecord
+            Sequência a ser verificada.
+        existing_records : list
+            Lista de SeqRecords já incluídos.
+        sample_size : int
+            Número máximo de sequências para comparar (amostragem).
+            
+        Returns
+        -------
+        bool
+            True se similar acima do threshold, False caso contrário.
+        """
+        if not existing_records:
+            return False
+            
+        aligner = PairwiseAligner()
+        aligner.mode = 'global'
+        
+        # Amostra aleatória para melhor performance
+        import random
+        sample_records = random.sample(existing_records, min(sample_size, len(existing_records)))
+        
+        for existing_rec in sample_records:
+            try:
+                alignment = aligner.align(record.seq, existing_rec.seq)
+                best_score = alignment[0].score
+                max_possible = max(len(record.seq), len(existing_rec.seq))
+                similarity = best_score / max_possible
+                
+                if similarity >= self.similarity_threshold:
+                    return True
+            except Exception as e:
+                self.logger.warning(f"Erro no alinhamento entre {record.id} e {existing_rec.id}: {e}")
+                continue
+                
+        return False
 
     def add_outgroup(self, input_file, outgroup_file, output_file):
         """
@@ -335,13 +415,20 @@ class ZikaWorkflow:
         if download_method == "query":
             self.download_sequences(query, raw_file)
         elif download_method == "csv":
-            workflow.download_from_csv(csv_path, raw_file)
+            self.download_from_csv(csv_path, raw_file)
         
         # Passo 2: Filtrar sequências
-        self.filter_sequences(raw_file, filtered_file)
+        filtered = self.filter_sequences(raw_file, filtered_file)
+        if len(filtered) == 0:
+            filtered_file = raw_file
+            
         
         # Passo 3: Remover UTRs (se parâmetros definidos)
-        self.remove_utrs(filtered_file, no_utrs_file)
+        if self.utr5_end is not None and self.utr3_start is not None:
+            self.remove_utrs(filtered_file, no_utrs_file)
+        else:
+            self.logger.info("Parâmetros UTR não definidos, pulando remoção")
+            no_utrs_file = filtered_file  # Usa o mesmo arquivo
         
         # Passo 4: Refinar o dataset
         self.refine_dataset(no_utrs_file, refined_file)
@@ -412,14 +499,14 @@ class ZikaWorkflow:
             self.logger.error(f"Erro ao dividir o arquivo: {e}")
     
 if __name__ == "__main__":
-    path = "workflow_dataAcquisition_SupplementaryTable_filtered_1"
-    workflow = ZikaWorkflow(work_dir=path,
-                            email="email@gmail.com",
-                            utr5_end=True,  
-                            utr3_start=True,  
-                            initial_min_length=700,
-                            refined_min_length=9000,
-                            similarity_threshold=0.99)
+    # path = "workflow_dataAcquisition_SupplementaryTable_filtered_1"
+    # workflow = workflowAquisitionDatasetNCBI(work_dir=path,
+    #                         email="email@gmail.com",
+    #                         utr5_end=True,  
+    #                         utr3_start=True,  
+    #                         initial_min_length=700,
+    #                         refined_min_length=9000,
+    #                         similarity_threshold=0.99)
     
     # QUERY: Primeira tentativa 270hits
     # zika_query = "Zika virus[Organism] AND complete genome"
@@ -434,14 +521,62 @@ if __name__ == "__main__":
     # outgroup_query = ""
     
     
-    workflow.run_workflow(csv_path="data/dataset_zikaVirus.csv", outgroup_query_or_file="", download_method="csv")
+    # workflow.run_workflow(csv_path="data/dataset_zikaVirus.csv", outgroup_query_or_file="", download_method="csv")
     
     
-    input_genbank = f"{path}/dataset_with_outgroup.gb"
+    # input_genbank = f"{path}/dataset_with_outgroup.gb"
 
     # input_genbank = f"{path}/raw_sequences.gb" # processamento do csv.
-    output_fasta = f"{path}/dataset_final.fasta"
-    workflow.generate_fasta(input_genbank, output_fasta)
+    # output_fasta = f"{path}/dataset_final.fasta"
+    # workflow.generate_fasta(input_genbank, output_fasta)
     
     # input_fasta = f"{path}/dataset_final.fasta"
     # workflow.slice_file(input_fasta, output_prefix="dataset_slice", slice_size=50)
+    
+    # EXPERIMENTO - CORONAVIRUS ----------------------------------------------------------------------------
+    # path = "workflow_dataAcquisition_coronavirus"
+    # covid_workflow = workflowAquisitionDatasetNCBI(
+    #     email="email@dominio.com",
+    #     work_dir=path,
+    #     initial_min_length=29000,    # Genomas completos
+    #     refined_min_length=29500,    # Filtro mais rigoroso
+    #     utr5_end=None,              # Manter UTRs para estudos de regulação
+    #     utr3_start=None,
+    #     similarity_threshold=0.999,  # Alta similaridade devido à conservação
+    #     retmax=100                 # Muitas sequências disponíveis
+    # )
+    
+    # covid_workflow.run_workflow(
+    #     query='("Severe acute respiratory syndrome coronavirus 2"[Organism] AND complete genome) AND 2023[PDAT]',
+    #     outgroup_query_or_file='"SARS coronavirus"[Organism]',
+    #     download_method="query"
+    # )
+    
+    # input_genbank = f"{path}/dataset_with_outgroup.gb"
+    # output_fasta = f"{path}/dataset_final.fasta"
+    # covid_workflow.generate_fasta(input_genbank, output_fasta)
+    
+    # EXPERIMENTO - TUBERCULOSE ----------------------------------------------------------------------------
+    path = "workflow_dataAcquisition_tuberculosis"
+    tb_workflow = workflowAquisitionDatasetNCBI(
+        email="email@dominio.com",
+        work_dir=path,
+        # initial_min_length=40000,   # Genoma bacteriano ~4.4Mb
+        # refined_min_length=42000,   # Filtro para genomas mais completos
+        utr5_end=None,               # Geralmente não se remove UTRs em bactérias
+        utr3_start=None,
+        similarity_threshold=0.98,    # Mais tolerante devido à diversidade
+        retmax=100                  # Menos sequências completas disponíveis
+    )
+    
+    tb_workflow.run_workflow(
+        query='"Mycobacterium tuberculosis"[Organism] AND complete genome',
+        outgroup_query_or_file='"Mycobacterium bovis"[Organism]', 
+        download_method="query"
+    )
+    
+    input_genbank = f"{path}/dataset_with_outgroup.gb"
+    output_fasta = f"{path}/dataset_final.fasta"
+    tb_workflow.generate_fasta(input_genbank, output_fasta)
+    
+    
