@@ -75,14 +75,16 @@ class Messages:
         """
         print('\n------------------------------------------------------\n')
         print(f'Tempo de execução: {"{:.2f}".format(time.time() - start)}s')
-        print(f'Tempo médio de execução por árvore: {"{:.2f}".format(sum(sum_time) / num_trees)}s')
+        if num_trees != 0:
+            print(f'Tempo médio de execução por árvore: {"{:.2f}".format(sum(sum_time) / num_trees)}s')
         print(f'Número de árvores do tipo {output_format} geradas: {num_trees}')
         # print(f'Número médio de terminais por árvore: {int(sum(n_nodes) / len(n_nodes))}')
         print(f'Método utilizado: {method}')
 
         logging.info('CONSTRUÇÃO DE ÁRVORES')
         logging.info(f'    Tempo de execução: {"{:.2f}".format(time.time() - start)}s')
-        logging.info(f'    Tempo médio de execução por árvore: {"{:.2f}".format(sum(sum_time) / num_trees)}s')
+        if num_trees != 0:
+            logging.info(f'    Tempo médio de execução por árvore: {"{:.2f}".format(sum(sum_time) / num_trees)}s')
         logging.info(f'    Número de árvores do tipo {output_format} geradas: {num_trees}')
         # logging.info(f'    Número médio de terminais por árvore: {int(sum(n_nodes) / len(n_nodes))}')
         logging.info(f'    Método utilizado: {method}')

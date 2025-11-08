@@ -210,6 +210,10 @@ def plot_heatmap_distances(data_dict: Dict,
             except ValueError:
                 print(f"Árvore não encontrada: {name1} ou {name2}")
     
+    if distance_matrix is None:
+        return
+    
+    
     df = pd.DataFrame(distance_matrix, index=tree_names, columns=tree_names)
     
     plt.figure(figsize=(max(12, n_trees), max(10, n_trees)))
@@ -383,9 +387,9 @@ def plot_quartet_distance_dendrogram(data_dict: Dict, scores: np.ndarray, base_n
     linked = linkage(scores, method='single')
 
     dendrogram(linked, labels=tree_names, orientation='top')
-    plt.title('Dendrograma das Árvores com base na Distância de Quarteto')
-    plt.xlabel('Árvores Filogenéticas')
-    plt.ylabel('Distância de Quarteto')
+    plt.title('Dendrogram of Trees based on Quartet Distance')
+    plt.xlabel('Phylogenetic Trees')
+    plt.ylabel('Quartet Distance')
     plt.xticks(rotation=90)
     plt.savefig(f"{path}/tree_{base_name}_quartet_distance_dendrogram.png")
     plt.close()
@@ -437,9 +441,9 @@ def process_histogram_frequence(data: List[Dict], path: str) -> None:
     
     plt.figure(figsize=(10, 6))
     plt.hist(support_values, bins=10, edgecolor='black')
-    plt.title('Histograma de Frequências das Subárvores')
-    plt.xlabel('Valor de Suporte')
-    plt.ylabel('Frequência')
+    plt.title('Subtree Frequency Histogram')
+    plt.xlabel('Support Value')
+    plt.ylabel('Frequency')
     plt.savefig(f'{path}/support_frequence_bar_plot.png')
     plt.close()
 
@@ -448,9 +452,9 @@ def process_histogram_frequence(data: List[Dict], path: str) -> None:
     
     plt.figure(figsize=(10, 6))
     plt.plot(bin_centers, counts, marker='o', linestyle='-', color='blue')
-    plt.title('Frequências das Subárvores')
-    plt.xlabel('Valor de Suporte')
-    plt.ylabel('Frequência')
+    plt.title('Subtree Frequencies')
+    plt.xlabel('Support Value')
+    plt.ylabel('Frequency')
     plt.grid(True)
     plt.savefig(f'{path}/support_frequence_frequency_polygon.png')
     plt.close()
