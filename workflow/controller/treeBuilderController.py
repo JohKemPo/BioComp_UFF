@@ -201,7 +201,7 @@ class TreeBuilderController:
             "distance": "DISTANCE TREE CONSTRUCTOR + CLUSTALW",
             "parsimony": "PARSIMONY + CLUSTALW", 
             "auto": "DISTANCE TREE CONSTRUCTOR e PARSIMONY",
-            "advanced": "métodos avançados"
+            "advanced": "Advanced Methods"
         }
         
         if self.mode in mode_descriptions:
@@ -220,7 +220,7 @@ class TreeBuilderController:
         multi_trees = self._initialize_multi_trees_structure()
         base_folder = self.input_path.split('/')[-1]
 
-        for file in tqdm(self.files, desc="Construindo árvores...", ascii="░▒█"):
+        for file in tqdm(self.files, desc="Building trees...", ascii="░▒█"):
             if any(ext in file for ext in ['.dnd', '.json']):
                 logging.debug(f"Arquivo {file} ignorado por ser .dnd/.json")
                 continue
@@ -637,10 +637,6 @@ class TreeBuilderController:
                 result[i].append(round(matriz1[i][j] + matriz2[i][j]))
         return result
 
-    # Os métodos build_tree_* e save_tree_image permanecem inalterados
-    # (build_tree_distance_matrix, build_tree_parsimony, build_tree_iqtree, 
-    # build_tree_fasttree, build_tree_raxml, build_tree_mrbayes, _get_alignment, save_tree_image)
-    
     def build_tree_distance_matrix(self, fasta_path, output_path_align, output_path_dnd, path_dnd, output_path_tree, align_method, output_path_align_html):
         """
         Constrói uma árvore filogenética usando matriz de distâncias.
