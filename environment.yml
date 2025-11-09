@@ -1,4 +1,4 @@
-name: filogenia-env 
+name: phylotreeminer-env
 channels:
   - conda-forge
   - bioconda
@@ -13,15 +13,17 @@ dependencies:
   - mlxtend
   - pandas
   - numpy
-  - parsl
   - tqdm
   - matplotlib
-  - seaborn
   - neo4j
-  - dash
-  - dash-bio
+  - fastapi
+  - uvicorn[standard]
+  - owid-catalog
+  - aiofiles
   
   - mafft
   - clustalo
   - iqtree
   - raxml-ng
+  - fasttree
+  - mrbayes
