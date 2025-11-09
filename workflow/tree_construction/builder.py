@@ -303,7 +303,7 @@ class TreeBuilder:
         """
         try:
             base_name = os.path.basename(output_path_tree).replace('.nexus', '').replace('.nwk', '')
-            tmp_dir = os.path.join((os.path.dirname(output_path_tree).split('/FPM-Tree/')[-1]).split('/Trees')[0],'tmp', f'mrbayes_{base_name}')
+            tmp_dir = os.path.join((os.path.dirname(output_path_tree).split('/PhyloTreeMiner/')[-1]).split('/Trees')[0],'tmp', f'mrbayes_{base_name}')
             os.makedirs(tmp_dir, exist_ok=True)
             
             nexus_path = os.path.join(tmp_dir, 'alignment.nexus')
