@@ -1,6 +1,8 @@
 import os, json
 from neo4j import GraphDatabase
 
+USER_PLACEHOLDER = "<<USER_UID>>"
+
 def parse_tree(trees: list, path: str = None, mode: str = "completo"):
     if all(isinstance(i, list) for i in trees):
         cypher_commands = []
@@ -29,7 +31,13 @@ def sanitize_json_string(json_obj):
 
 def generate_cypher(tree_name, subtrees):
     cypher_statements = []
-    cypher_statements.append(f"CREATE (t:Tree {{name: '{tree_name}'}});")
+    
+    cypher_statements.append(f"""
+    MERGE (u:User {{uid: '{USER_PLACEHOLDER}'}})
+    CREATE (t:Tree {{name: '{tree_name}', uid: '{USER_PLACEHOLDER}'}})
+    MERGE (u)-[:OWNS]->(t);
+    """)
+    
     for subtree_name, subtree_data in subtrees.items():
         cypher_statements.extend(create_subtree(tree_name, subtree_name, subtree_data))
     return cypher_statements
@@ -43,15 +51,16 @@ def create_subtree(parent_name, subtree_name, subtree_data):
     
     # Criar o nó da subárvore
     cypher_statements.append(f"""
-    MATCH (parent:Tree {{name: '{parent_name}'}})
-    CREATE (child:Subtree {{name: '{subtree_name}'}})
+    MATCH (parent {{name: '{parent_name}', uid: '{USER_PLACEHOLDER}'}})
+    WHERE parent:Tree OR parent:Subtree
+    CREATE (child:Subtree {{name: '{subtree_name}', uid: '{USER_PLACEHOLDER}'}})
     CREATE (parent)-[:HAS_SUBTREE]->(child);
     """)
     
     # Adicionar relacionamentos para cada suporte
     for support in supports:
         cypher_statements.append(f"""
-        MATCH (child:Subtree {{name: '{subtree_name}'}})
+        MATCH (child:Subtree {{name: '{subtree_name}', uid: '{USER_PLACEHOLDER}'}})
         MERGE (s:Support {{value: {support}}})
         CREATE (child)-[:HAS_SUPPORT]->(s);
         """)
@@ -59,7 +68,7 @@ def create_subtree(parent_name, subtree_name, subtree_data):
     for metadata in metadatas:
         json_escaped = sanitize_json_string(metadata)
         cypher_statements.append(f"""
-        MATCH (child:Subtree {{name: '{subtree_name}'}})
+        MATCH (child:Subtree {{name: '{subtree_name}', uid: '{USER_PLACEHOLDER}'}})
         MERGE (m:Metadata {{value: '{json_escaped}'}})
         CREATE (child)-[:HAS_METADATA]->(m);
         """)
