@@ -1,21 +1,23 @@
 {
     "log_file": true,
-    "project_name": "ABC_3",
-    "output_log": "./projects/#/out",
+    "project_name": "Teste_Neo4j",
+    "output_log": "/home/joh/Documentos/GIT/PhyloTreeMiner/BioComp_UFF/projects/Teste_Neo4j/out",
     "tree_config": {
-        "mode": "auto",
-        "ignore_mode": "",
-        "construct_tree_method": "distance",
+        "mode": "advanced",
+        "ignore_mode": [
+            "parsimony"
+        ],
+        "construct_tree_method": "nj",
         "align_method": "mafft",
-        "num_threads":1,
-        "input_path": "./data/Zika479_Test",
-        "output_path": "./projects/#/out",
+        "num_threads": 1,
+        "input_path": "/home/joh/Documentos/GIT/PhyloTreeMiner/BioComp_UFF/data/Zika479_Test",
+        "output_path": "/home/joh/Documentos/GIT/PhyloTreeMiner/BioComp_UFF/projects/Teste_Neo4j/out",
         "output_format": "nexus"
     },
     "subtree_config": {
         "construct_tree_method": "distance",
-        "input_path": "./projects/#/out/Trees",
-        "output_path": "./projects/#/out",
+        "input_path": "/home/joh/Documentos/GIT/PhyloTreeMiner/BioComp_UFF/projects/Teste_Neo4j/out/Trees",
+        "output_path": "/home/joh/Documentos/GIT/PhyloTreeMiner/BioComp_UFF/projects/Teste_Neo4j/out",
         "input_format": "nexus",
         "output_format": "nexus",
         "resume_infos": true,
@@ -24,7 +26,7 @@
         "subtree_miner_configs": {
             "mode": "OFST",
             "save_fpmax": true,
-            "output_path": "./projects/#/out",
+            "output_path": "/home/joh/Documentos/GIT/PhyloTreeMiner/BioComp_UFF/projects/Teste_Neo4j/out",
             "support_fpmax": "auto"
         }
     }

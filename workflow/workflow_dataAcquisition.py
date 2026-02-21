@@ -6,6 +6,8 @@ from Bio.SeqRecord import SeqRecord
 import pandas as pd
 from Bio.Align import PairwiseAligner
 import hashlib
+import gc
+
 class workflowAquisitionDatasetNCBI:
     def __init__(self, email, work_dir="workflow_dataAcquisition",
                  initial_min_length=700, refined_min_length=700,
@@ -150,41 +152,27 @@ class workflowAquisitionDatasetNCBI:
             
     def filter_sequences(self, input_file, output_file):
         """
-        Passo 2: Filtra as sequências para manter apenas aquelas com metadados e
-        comprimento mínimo (e remove duplicatas).
-        
-        Parameters
-        ----------
-
-        input_file: str
-            Arquivo de entrada com sequências (formato GenBank).
-        output_file: str
-            Arquivo de saída com sequências filtradas.
+        Versão otimizada com processamento em lote e limpeza de memória.
         """
-        print(f"Iniciando filtragem de sequências: {input_file}")
-        self.logger.info(f"Iniciando filtragem de sequências: {input_file}")
+        print(f"Iniciando filtragem otimizada: {input_file}")
+        self.logger.info(f"Iniciando filtragem otimizada: {input_file}")
         
-        # Verificar se o arquivo existe e não está vazio
         if not os.path.exists(input_file) or os.path.getsize(input_file) == 0:
-            self.logger.warning(f"Arquivo de entrada vazio ou não existe: {input_file}")
-            # Criar arquivo de saída vazio
             with open(output_file, "w") as f:
                 f.write("")
-            return
+            return []
         
         try:
-            records = list(SeqIO.parse(input_file, "genbank"))
             filtered = []
             seen_seqs = set()
+            batch_size = 5  # Processar em lotes pequenos
             
-            for rec in records:
+            # Usar gerador, NÃO list()
+            for i, rec in enumerate(SeqIO.parse(input_file, "genbank")):
                 try:
-                    # Pular sequências com conteúdo indefinido
                     if rec.seq is None or len(rec.seq) == 0:
-                        self.logger.warning(f"Sequência {rec.id} tem conteúdo indefinido, pulando")
                         continue
                         
-                    # Verificar comprimento mínimo
                     if self.initial_min_length is not None and len(rec.seq) < self.initial_min_length:
                         continue
                         
@@ -195,20 +183,30 @@ class workflowAquisitionDatasetNCBI:
                     seen_seqs.add(seq_str)
                     filtered.append(rec)
                     
+                    # A cada batch_size registros, forçar limpeza de memória
+                    if len(filtered) % batch_size == 0:
+                        gc.collect()  # Forçar garbage collector
+                        
                 except Exception as e:
                     self.logger.warning(f"Erro ao processar sequência {rec.id}: {e}")
                     continue
-                    
+            
+            # Salvar resultado
             SeqIO.write(filtered, output_file, "genbank")
             self.logger.info(f"Total de sequências filtradas: {len(filtered)}")
-            self.logger.info(f"Arquivo filtrado salvo em: {output_file}")
+            
+            # Limpar referências grandes
+            del seen_seqs
+            del filtered
+            gc.collect()
+            
             return filtered
             
         except Exception as e:
-            self.logger.error(f"Erro na filtragem de sequências: {e}")
-            # Criar arquivo vazio para não quebrar o pipeline
+            self.logger.error(f"Erro na filtragem: {e}")
             with open(output_file, "w") as f:
                 f.write("")
+            return []
 
     def remove_utrs(self, input_file, output_file):
         """
@@ -277,11 +275,12 @@ class workflowAquisitionDatasetNCBI:
                     continue
                     
                 # Para similaridade, usar amostragem ou métodos mais eficientes
-                if not self.is_similar_to_existing(rec, refined):
-                    refined.append(rec)
-                    seq_hashes.add(seq_hash)
+                # if not self.is_similar_to_existing(rec, refined):
+                refined.append(rec)
+                seq_hashes.add(seq_hash)
                     
             SeqIO.write(refined, output_file, "genbank")
+            self.logger.info(f"Dataset refinado com {len(refined)} sequências")
         except Exception as e:
             self.logger.error(f"Erro ao Refinar dataset: {e}")
 
@@ -385,7 +384,8 @@ class workflowAquisitionDatasetNCBI:
         except Exception as e:
             self.logger.error(f"Erro inesperado no alinhamento: {e}")
 
-    def run_workflow(self, outgroup_query_or_file="", query=None ,csv_path = None, download_method = "query"):
+    def run_workflow(self, outgroup_query_or_file="", query=None ,csv_path = None, 
+                     download_method = "query", expected_accessions_file=None):
         """
         Executa o workflow completo:
           1. Baixar sequências.
@@ -402,6 +402,8 @@ class workflowAquisitionDatasetNCBI:
             Query para baixar as sequências do GenBank.
         outgroup_query_or_file: str
             Pode ser uma query para o outgroup ou um arquivo já existente.
+        expected_accessions_file : str, optional
+            Arquivo com lista de accession numbers esperados do estudo original
         """
         self.logger.info("Iniciando o workflow completo...")
         raw_file = os.path.join(self.work_dir, "raw_sequences.gb")
@@ -417,12 +419,30 @@ class workflowAquisitionDatasetNCBI:
         elif download_method == "csv":
             self.download_from_csv(csv_path, raw_file)
         
+        # if expected_accessions_file:
+        raw_stats = self.verify_downloaded_accessions(
+            raw_file, 
+            expected_file=expected_accessions_file,
+            stage="raw"
+        )
+        
+        if len(raw_stats['missing']) > 0:
+            missing_pct = (len(raw_stats['missing']) / 
+                        (len(raw_stats['missing']) + len(raw_stats['accessions']))) * 100
+            self.logger.warning(f"Dataset incompleto: {missing_pct:.1f}% dos accessions esperados faltando")
+        
         # Passo 2: Filtrar sequências
         filtered = self.filter_sequences(raw_file, filtered_file)
         if len(filtered) == 0:
             filtered_file = raw_file
             
-        
+        if expected_accessions_file and len(filtered) > 0:
+            self.verify_downloaded_accessions(
+                filtered_file, 
+                expected_file=expected_accessions_file,
+                stage="filtered"
+            )
+            
         # Passo 3: Remover UTRs (se parâmetros definidos)
         if self.utr5_end is not None and self.utr3_start is not None:
             self.remove_utrs(filtered_file, no_utrs_file)
@@ -445,7 +465,7 @@ class workflowAquisitionDatasetNCBI:
         self.add_outgroup(refined_file, outgroup_file, dataset_outgroup_file)
         
         # Passo 6: Alinhar sequências
-        self.align_sequences(dataset_outgroup_file, alignment_file)
+        # self.align_sequences(dataset_outgroup_file, alignment_file)
         
         self.logger.info("Workflow concluído com sucesso.")
 
@@ -463,6 +483,7 @@ class workflowAquisitionDatasetNCBI:
             records = list(SeqIO.parse(input_file, "genbank"))
             SeqIO.write(records, output_file, "fasta")
             self.logger.info(f"Arquivo FASTA gerado em: {output_file}")
+            
         except Exception as e:
             self.logger.error(f"Erro ao gerar FASTA: {e}")
 
@@ -497,6 +518,95 @@ class workflowAquisitionDatasetNCBI:
                 slice_number += 1
         except Exception as e:
             self.logger.error(f"Erro ao dividir o arquivo: {e}")
+            
+    def verify_downloaded_accessions(self, genbank_file, expected_file=None, stage="raw"):
+        """
+        Verifica os accession numbers baixados e gera relatório.
+        
+        Parameters
+        ----------
+        genbank_file : str
+            Arquivo GenBank baixado
+        expected_file : str, optional
+            Arquivo com lista de accessions esperados (um por linha)
+        stage : str
+            Estágio do workflow (raw, filtered, refined)
+        
+        Returns
+        -------
+        dict
+            Dicionário com estatísticas da verificação
+        """
+        self.logger.info(f"Verificando accessions em: {genbank_file} (estágio: {stage})")
+        
+        stats = {
+            'total': 0,
+            'accessions': [],
+            'missing': [],
+            'unexpected': [],
+            'file_exists': os.path.exists(genbank_file),
+            'file_size': os.path.getsize(genbank_file) if os.path.exists(genbank_file) else 0
+        }
+        
+        try:
+            if not stats['file_exists'] or stats['file_size'] == 0:
+                self.logger.warning(f"Arquivo vazio ou não existe: {genbank_file}")
+                return stats
+            
+            records = list(SeqIO.parse(genbank_file, "genbank"))
+            stats['total'] = len(records)
+            stats['accessions'] = [rec.id for rec in records]
+            
+            self.logger.info(f"Accessions encontrados: {stats['total']}")
+            
+            # Se tiver um arquivo de referência com os accessions esperados
+            if expected_file and os.path.exists(expected_file):
+                with open(expected_file, 'r') as f:
+                    expected = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+                
+                stats['missing'] = sorted(set(expected) - set(stats['accessions']))
+                stats['unexpected'] = sorted(set(stats['accessions']) - set(expected))
+                
+                if stats['missing']:
+                    self.logger.warning(f"Accessions esperados NÃO encontrados ({len(stats['missing'])}):")
+                    for acc in stats['missing'][:10]:  # Mostra só os 10 primeiros
+                        self.logger.warning(f"  - {acc}")
+                    if len(stats['missing']) > 10:
+                        self.logger.warning(f"  ... e mais {len(stats['missing'])-10}")
+                
+                if stats['unexpected']:
+                    self.logger.info(f"Accessions adicionais encontrados ({len(stats['unexpected'])}):")
+                    for acc in stats['unexpected'][:10]:
+                        self.logger.info(f"  + {acc}")
+            
+            # Salva relatório detalhado
+            report_file = os.path.join(self.work_dir, f"accession_report_{stage}.txt")
+            with open(report_file, 'w') as f:
+                f.write(f"=== Relatório de Accessions - Estágio: {stage} ===\n")
+                f.write(f"Arquivo: {genbank_file}\n")
+                f.write(f"Total de sequências: {stats['total']}\n")
+                f.write(f"Data da verificação: {pd.Timestamp.now()}\n\n")
+                
+                f.write("=== Accessions Encontrados ===\n")
+                for acc in sorted(stats['accessions']):
+                    f.write(f"{acc}\n")
+                
+                if stats['missing']:
+                    f.write("\n=== Accessions Esperados NÃO Encontrados ===\n")
+                    for acc in stats['missing']:
+                        f.write(f"{acc}\n")
+                
+                if stats['unexpected']:
+                    f.write("\n=== Accessions Adicionais Encontrados ===\n")
+                    for acc in stats['unexpected']:
+                        f.write(f"{acc}\n")
+            
+            self.logger.info(f"Relatório salvo em: {report_file}")
+            return stats
+            
+        except Exception as e:
+            self.logger.error(f"Erro na verificação: {e}")
+            return stats
     
 if __name__ == "__main__":
     # path = "workflow_dataAcquisition_SupplementaryTable_filtered_1"
@@ -556,27 +666,64 @@ if __name__ == "__main__":
     # output_fasta = f"{path}/dataset_final.fasta"
     # covid_workflow.generate_fasta(input_genbank, output_fasta)
     
+    # # EXPERIMENTO - TUBERCULOSE ----------------------------------------------------------------------------
+    # path = "workflow_dataAcquisition_tuberculosis"
+    # tb_workflow = workflowAquisitionDatasetNCBI(
+    #     email="email@dominio.com",
+    #     work_dir=path,
+    #     # initial_min_length=40000,   # Genoma bacteriano ~4.4Mb
+    #     # refined_min_length=42000,   # Filtro para genomas mais completos
+    #     utr5_end=None,               # Geralmente não se remove UTRs em bactérias
+    #     utr3_start=None,
+    #     similarity_threshold=0.98,    # Mais tolerante devido à diversidade
+    #     retmax=100                  # Menos sequências completas disponíveis
+    # )
+    
+    # tb_workflow.run_workflow(
+    #     query='"Mycobacterium tuberculosis"[Organism] AND complete genome',
+    #     outgroup_query_or_file='"Mycobacterium bovis"[Organism]', 
+    #     download_method="query"
+    # )
+    
+    # input_genbank = f"{path}/dataset_with_outgroup.gb"
+    # output_fasta = f"{path}/dataset_final.fasta"
+    # tb_workflow.generate_fasta(input_genbank, output_fasta)
+    
     # EXPERIMENTO - TUBERCULOSE ----------------------------------------------------------------------------
-    path = "workflow_dataAcquisition_tuberculosis"
-    tb_workflow = workflowAquisitionDatasetNCBI(
-        email="email@dominio.com",
+    path = "workflow_dataAcquisition_li_et_al_2007_replication-RetMax100"
+    workflow = workflowAquisitionDatasetNCBI(
+        email="seu_email@dominio.com",  # Substitua pelo seu email
         work_dir=path,
-        # initial_min_length=40000,   # Genoma bacteriano ~4.4Mb
-        # refined_min_length=42000,   # Filtro para genomas mais completos
-        utr5_end=None,               # Geralmente não se remove UTRs em bactérias
-        utr3_start=None,
-        similarity_threshold=0.98,    # Mais tolerante devido à diversidade
-        retmax=100                  # Menos sequências completas disponíveis
+        initial_min_length=180000,      # Genoma do VARV tem ~186kb, filtro inicial
+        refined_min_length=183000,      # Para garantir genomas praticamente completos
+        utr5_end=None,                   # Vírus não têm UTRs como eucariotos
+        utr3_start=None,                  # Manter genoma completo
+        similarity_threshold=0.999,      # Vírus têm alta similaridade (>99.6% entre isolados)
+        retmax=100                        # Para garantir que pegue todos os disponíveis
     )
     
-    tb_workflow.run_workflow(
-        query='"Mycobacterium tuberculosis"[Organism] AND complete genome',
-        outgroup_query_or_file='"Mycobacterium bovis"[Organism]', 
+    # Query para as 47 amostras do estudo (ou o máximo disponível atualmente)
+    variola_query = '''
+        ("Variola virus"[Organism] OR "Variola virus"[All Fields]) 
+        AND complete genome 
+        AND 1000:200000[SLEN]
+    '''
+
+    # Query para os outgroups 
+    outgroup_query = '''
+        ("Taterapox virus"[Organism] OR "Taterapox virus"[All Fields] OR 
+        "Camelpox virus"[Organism] OR "Camelpox virus"[All Fields])
+        AND complete genome
+    '''
+    
+    workflow.run_workflow(
+        query=variola_query,
+        outgroup_query_or_file=outgroup_query,  
         download_method="query"
     )
     
     input_genbank = f"{path}/dataset_with_outgroup.gb"
     output_fasta = f"{path}/dataset_final.fasta"
-    tb_workflow.generate_fasta(input_genbank, output_fasta)
+    workflow.generate_fasta(input_genbank, output_fasta)
     
     

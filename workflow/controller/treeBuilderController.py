@@ -63,9 +63,16 @@ class TreeBuilderController:
         ------
         None
         """
+        date = datetime.datetime.now()
+        logfile_path = os.path.join(self.output_path,'outputs',f"log_setup_{date.year}_{date.month}_{date.day}.log")
+        logging.basicConfig(level=logging.INFO, 
+                    filename=logfile_path,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
+        
+        
         for k, v in kwargs.items():
             setattr(self, k, v)
-                        
+
         self.msg = Messages(logPath=os.path.join(self.output_path,'outputs'))
         self.start = time.time()
         
@@ -84,7 +91,10 @@ class TreeBuilderController:
         self.count_trees = 0
         self.count_nodes = list()
         self.list_times = list()
-        self.aligner = AlignmentSeqs({'num_threads': self.num_threads})
+        self.aligner = AlignmentSeqs({'num_threads': self.num_threads, 
+                                      'output_path': self.output_path, 
+                                      'logfile_path': logfile_path }
+                                     )
         
         # Definir métodos a serem ignorados
         self.ignore_methods = self._parse_ignore_methods()
@@ -92,11 +102,7 @@ class TreeBuilderController:
         # clean_tmp(self.output_path)
         clean_NoPipe(self.input_path)
 
-        date = datetime.datetime.now()
-
-        logging.basicConfig(level=logging.INFO, 
-                    filename=os.path.join(self.output_path,'outputs',f"log_setup_{date.year}_{date.month}_{date.day}.log"),
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+        
 
     def _parse_ignore_methods(self):
         """
@@ -674,9 +680,12 @@ class TreeBuilderController:
         
         try:
             if os.path.exists(output_path_align):
+                logging.info(f"STEP: Reusing Aligning...")
+                
                 logging.info(f"Arquivo de alinhamento já existe: {output_path_align}. Reutilizando.")
                 alng = AlignIO.read(output_path_align, "fasta")
             else:
+                logging.info(f"STEP: Aligning seqs...")
                 if align_method == "clustalo":
                     logging.debug(f"Alinhando sequências com Clustalo para {fasta_path}.")
                     alng = self.aligner.align_sequences_clustalo(
