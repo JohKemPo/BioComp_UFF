@@ -203,7 +203,7 @@ def find_exact_subsets(data, result_fpmax, rows, count_trees) -> None:
                 print(f'     - Subárvore ASCII: \n')
                 subtree_metadata = dict_to_tree(metadata)
                 decode_subtree = Phylo.BaseTree.Tree(subtree_metadata)
-                Phylo.draw_ascii(decode_subtree)
+                # Phylo.draw_ascii(decode_subtree)
             break
     print('- -'*33)
 

@@ -187,7 +187,7 @@ class Messages:
         None
         """
         print(f'\nSUBTREE:\n{name}\n')
-        Phylo.draw_ascii(subtree)
+        # Phylo.draw_ascii(subtree)
         print('\n')
 
     def print_subtree_clade_info(self, clade: Phylo.BaseTree.Clade, decode: str, hash_dict: dict) -> None:

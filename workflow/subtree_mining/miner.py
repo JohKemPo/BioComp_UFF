@@ -223,7 +223,7 @@ class SubtreeMiner:
                                 print(f'     - Subárvore ASCII: \n')
                                 subtree_metadata = dict_to_tree(metadatas[i])
                                 decode_subtree = Phylo.BaseTree.Tree(subtree_metadata)
-                                Phylo.draw_ascii(decode_subtree)
+                                #Phylo.draw_ascii(decode_subtree)
             
         print('- -'*33)
         return data
