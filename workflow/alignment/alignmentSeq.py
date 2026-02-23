@@ -1,4 +1,4 @@
-from Bio import AlignIO, Phylo
+from Bio import AlignIO, SeqIO
 from Bio.Align.Applications import ClustalwCommandline, MafftCommandline, ClustalOmegaCommandline
 import html
 import os, re
@@ -36,13 +36,57 @@ class AlignmentSeqs():
                     format='%(asctime)s - %(levelname)s - %(message)s')
         
         
-        self.num_threads = config.get('num_threads', 1)
+        self.num_threads = config.get('num_threads', psutil.cpu_count(logical=True))
         self.max_memory_gb = config.get('max_memory_gb', 4)  # Limite de memória em GB
-        self.max_sequences = config.get('max_sequences', 500)  # Número máximo de sequências para alinhamento completo
+        self.max_sequences = config.get('max_sequences', 100)  # Número máximo de sequências para alinhamento completo
         logging.info(f" Alinhamento configurado para usar até {self.num_threads} thread(s).")
         logging.info(f" Limite de memória: {self.max_memory_gb} GB")
         logging.info(f" Número máximo de sequências: {self.max_sequences}")
+        
+        tmp_dir = os.path.join(config.get('output_path'),'tmp','tmpFilesAlignment')
+        os.makedirs(tmp_dir, exist_ok=True)
+        self.temp_base_dir = tmp_dir if os.path.exists('/dev/shm') else tempfile.gettempdir()
     
+    
+    def _get_sequence_stats_stream(self, fasta_path):
+        """Usa geradores para extrair estatísticas sem carregar o arquivo na RAM."""
+        count = 0
+        total_length = 0
+        for record in SeqIO.parse(fasta_path, "fasta"):
+            count += 1
+            total_length += len(record.seq)
+            
+        avg_length = total_length / count if count > 0 else 0
+        est_memory_gb = (count ** 2 * avg_length * 4) / (1024**3)
+        return count, avg_length, est_memory_gb
+    
+    
+    def _subsample_sequences_stream(self, fasta_path, output_path, max_sequences):
+        """
+        Subamostragem usando duas passagens contínuas.
+        Impede carregamento na memória de datasets grandes.
+        """
+        total_sequences = sum(1 for _ in SeqIO.parse(fasta_path, "fasta"))
+        
+        if total_sequences <= max_sequences:
+            shutil.copy2(fasta_path, output_path)
+            return output_path, total_sequences
+
+        # F1: Define quais índices manter (Reservoir/Random Sampling)
+        indices_to_keep = set(random.sample(range(total_sequences), max_sequences))
+        
+        # F2: Escreve apenas os índices selecionados sob demanda
+        with open(output_path, "w") as out_f:
+            records_to_write = (
+                rec for i, rec in enumerate(SeqIO.parse(fasta_path, "fasta")) 
+                if i in indices_to_keep
+            )
+            SeqIO.write(records_to_write, out_f, "fasta")
+            
+        logging.info(f"Subamostragem concluída: {total_sequences} -> {max_sequences} sequências")
+        return output_path, max_sequences
+
+        
     def _check_memory_available(self, required_gb=2):
         """
         Verifica se há memória disponível suficiente.
@@ -177,82 +221,40 @@ class AlignmentSeqs():
         Return:
             Bio.Align.MultipleSeqAlignment: Objeto de alinhamento resultante
         """
-        # Verificar memória disponível
-        if not self._check_memory_available(required_gb=self.max_memory_gb):
-            logging.warning("A  VISO: Memória baixa detectada. Usando configurações conservadoras.")
-            force_subsample = True
+        logging.info("STEP: Aligning with CLUSTALO")
         
-        # Contar sequências
-        num_sequences = self._count_sequences(fasta_path)
-        logging.info(f" Número de sequências no arquivo: {num_sequences}")
-        
-        # Estimar requisitos de memória
-        count, avg_len, est_memory = self._get_sequence_stats(fasta_path)
-        logging.info(f" Comprimento médio das sequências: {avg_len:.0f} pb")
-        logging.info(f" Memória estimada necessária: {est_memory:.2f} GB")
-        
-        # Criar arquivo temporário para subamostragem se necessário
+        num_seqs, _, est_memory = self._get_sequence_stats_stream(fasta_path)
         temp_dir = None
         input_file = fasta_path
-        
+
         try:
-            if force_subsample or num_sequences > self.max_sequences or est_memory > self.max_memory_gb:
-                temp_dir = tempfile.mkdtemp()
-                subsampled_path = os.path.join(temp_dir, "subsampled.fasta")
-                input_file, actual_sequences = self._subsample_sequences(
-                    fasta_path, 
-                    subsampled_path, 
-                    self.max_sequences
-                )
-                logging.info(f" Usando subamostragem com {actual_sequences} sequências")
             
-            # Configurar parâmetros otimizados para memória
+            if force_subsample or num_seqs > self.max_sequences or est_memory > self.max_memory_gb:
+                temp_dir = tempfile.mkdtemp(dir=self.temp_base_dir)
+                subsampled_path = os.path.join(temp_dir, "subsampled.fasta")
+                input_file, _ = self._subsample_sequences_stream(fasta_path, subsampled_path, self.max_sequences)
+
             clustalo_cmd = [
                 "clustalo",
                 "-i", input_file,
                 "-o", output_path_align,
                 "--outfmt", "fasta",
-                "--auto",
                 "--threads", str(self.num_threads),
-                "--force",
-                "--max-guidetree-iterations", "2",  # Reduzir iterações para economizar memória
-                "--max-hmm-iterations", "2"
+                "--force"
             ]
-            
-            # Executar ClustalO
-            logging.info("  Executando Clustal Omega...")
-            logging.info(f" Comando: {' '.join(clustalo_cmd)}")
-            
-            # Usar subprocess para melhor controle
-            result = self._run_clustalo_with_timeout(clustalo_cmd)
+
+            # Datasets muito grandes requerem menos iterações no HMM para não estourar tempo/RAM
+            if num_seqs > 5000:
+                clustalo_cmd.extend(["--max-guidetree-iterations", "1", "--max-hmm-iterations", "1"])
+
+            result = subprocess.run(clustalo_cmd, capture_output=True, text=True)
             
             if result.returncode != 0:
-                if result.returncode == 137:  # Killed (OOM)
-                    error_msg = (
-                        f"ClustalO foi morto por falta de memória (código 137).\n"
-                        f"Tente reduzir ainda mais o número de sequências ou aumentar a memória disponível.\n"
-                        f"Saída de erro: {result.stderr}"
-                    )
-                    raise RuntimeError(error_msg)
-                else:
-                    raise RuntimeError(f"Erro no Clustal Omega (código {result.returncode}): {result.stderr}")
-            
-            if result.stderr:
-                logging.warning(f"  Status/Avisos do Clustal Omega:\n{result.stderr}")
-            
-            # Ler o alinhamento
-            alignment = AlignIO.read(output_path_align, "fasta")
-            
-            
-            
-            return alignment
-            
-        except Exception as e:
-            logging.error(f"    Erro durante o alinhamento: {e}")
-            raise
-            
+                raise RuntimeError(f"Falha no ClustalO: {result.stderr}")
+                
+            return AlignIO.read(output_path_align, "fasta")
+
         finally:
-            # Limpar diretório temporário
             if temp_dir and os.path.exists(temp_dir):
                 shutil.rmtree(temp_dir)
     
@@ -301,42 +303,44 @@ class AlignmentSeqs():
         Executa o comando MAFFT para alinhar as sequências presentes no arquivo FASTA fornecido.
         Retorna o alinhamento como uma string.
 
+        Parametrização dinâmica baseada em heurísticas de tamanho do dataset.
+        
         Return
         ------
         str
             Alinhamento gerado pelo MAFFT como uma string no formato padrão de saída.
         """
-        # Verificar número de sequências
-        num_sequences = self._count_sequences(fasta_path)
+        num_seqs, avg_len, _ = self._get_sequence_stats_stream(fasta_path)
         
-        # Configurar parâmetros MAFFT baseado no tamanho do dataset
-        if num_sequences > 500:
-            logging.warning(f"  Dataset grande ({num_sequences} sequências). Usando modo rápido do MAFFT.")
-            # Usar estratégia FFT-NS-2 para datasets grandes
-            mafft_cline = MafftCommandline(
-                input=fasta_path, 
-                thread=self.num_threads,
-                auto=True,
-                maxiterate=2
-            )
+        # Estratégia de Alinhamento Dinâmica
+        if num_seqs < 100 and avg_len < 1000:
+            # Alta precisão para datasets pequenos/médios
+            strategy = ["--localpair", "--maxiterate", "1000"]
+            logging.info("Estratégia MAFFT: L-INS-i (Alta Precisão)")
+            logging.info("STEP: MAFFT Strategy: L-INS-i")
+        elif num_seqs < 10000:
+            # Balanceado
+            strategy = ["--auto"]
+            logging.info("Estratégia MAFFT: FFT-NS-1/2 (Auto)")
+            logging.info("STEP: MAFFT Strategy: FFT-NS-1/2")
         else:
-            mafft_cline = MafftCommandline(
-                input=fasta_path, 
-                thread=self.num_threads, 
-                auto=True
-            )
+            # Escalonamento massivo usando construção de árvores particionadas
+            strategy = ["--parttree", "--retree", "1", "--partsize", "1000"]
+            logging.info("Estratégia MAFFT: PartTree (Escalonamento para Datasets Massivos)")
+            logging.info("STEP: MAFFT Strategy: PartTree")
+            
+
+        cmd = ["mafft", "--thread", str(self.num_threads)] + strategy + [fasta_path]
         
-        stdout, stderr = mafft_cline()
+        logging.info(f"Executando comando: {' '.join(cmd)}")
         
-        if stderr:
-            logging.error("     Erro durante a execução do MAFFT:")
-            logging.error(f'    {stderr}')   
-        
-        with open(output_path_align, "w") as f:
-            f.write(stdout)
-        
-        alignment = AlignIO.read(output_path_align, "fasta")
-        
-        return alignment
+        # Redirecionamento direto de stdout para evitar overhead de strings no Python
+        with open(output_path_align, "w") as out_f:
+            result = subprocess.run(cmd, stdout=out_f, stderr=subprocess.PIPE, text=True)
+
+        if result.returncode != 0:
+            raise RuntimeError(f"Falha no MAFFT: {result.stderr}")
+            
+        return AlignIO.read(output_path_align, "fasta")
     
    
