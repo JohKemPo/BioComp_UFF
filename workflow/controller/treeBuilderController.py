@@ -2,7 +2,7 @@ import os
 import time
 import sys
 from pathlib import Path
-
+from Bio import SeqIO
 from tqdm import tqdm
 from Bio import Phylo
 import matplotlib.pyplot as plt
@@ -63,6 +63,9 @@ class TreeBuilderController:
         ------
         None
         """
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+            
         date = datetime.datetime.now()
         logfile_path = os.path.join(self.output_path,'outputs',f"log_setup_{date.year}_{date.month}_{date.day}.log")
         logging.basicConfig(level=logging.INFO, 
@@ -70,8 +73,6 @@ class TreeBuilderController:
                     format='%(asctime)s - %(levelname)s - %(message)s')
         
         
-        for k, v in kwargs.items():
-            setattr(self, k, v)
 
         self.msg = Messages(logPath=os.path.join(self.output_path,'outputs'))
         self.start = time.time()
@@ -91,10 +92,14 @@ class TreeBuilderController:
         self.count_trees = 0
         self.count_nodes = list()
         self.list_times = list()
-        self.aligner = AlignmentSeqs({'num_threads': self.num_threads, 
-                                      'output_path': self.output_path, 
-                                      'logfile_path': logfile_path }
-                                     )
+        self.aligner = AlignmentSeqs({
+            'num_threads': self.num_threads, 
+            # 'num_threads': 16, 
+            # 'max_memory_gb':,
+            # 'max_sequences':,
+            'output_path': self.output_path, 
+            'logfile_path': logfile_path 
+            })
         
         # Definir métodos a serem ignorados
         self.ignore_methods = self._parse_ignore_methods()
@@ -687,6 +692,9 @@ class TreeBuilderController:
             else:
                 logging.info(f"STEP: Aligning seqs...")
                 if align_method == "clustalo":
+                    align_method = self._isExecutableByClustalO(fasta_path=fasta_path)
+                
+                if align_method == "clustalo":
                     logging.debug(f"Alinhando sequências com Clustalo para {fasta_path}.")
                     alng = self.aligner.align_sequences_clustalo(
                         fasta_path=fasta_path,
@@ -766,6 +774,10 @@ class TreeBuilderController:
                 logging.info(f"Arquivo de alinhamento já existe: {output_path_align}. Reutilizando.")
                 alng = AlignIO.read(output_path_align, "fasta")
             else:
+                logging.info(f"STEP: Aligning seqs...")
+                if align_method == "clustalo":
+                    align_method = self._isExecutableByClustalO(fasta_path=fasta_path)
+                
                 if align_method == "clustalo":
                     logging.debug(f"Alinhando sequências com Clustalo para {fasta_path}.")
                     alng = self.aligner.align_sequences_clustalo(
@@ -853,6 +865,36 @@ class TreeBuilderController:
         self.count_nodes.append(tree.count_terminals())
         return tree
     
+    def _isExecutableByClustalO(self,fasta_path): 
+        """_summary_
+
+        Args:
+            fasta_path (_type_): _description_
+        """
+        try:
+            safe_limit_bp = 20000 
+            is_safe_for_clustalo = True
+            
+            #ClustalO escala mal (OOM) para sequências muito longas.
+            for record in SeqIO.parse(fasta_path, "fasta"):
+                if len(record.seq) > safe_limit_bp:
+                    is_safe_for_clustalo = False
+                    offending_length = len(record.seq)
+                    break 
+            
+            if not is_safe_for_clustalo:
+                logging.warning(
+                    f"      ALERTA: Sequência gigante detectada ({offending_length} pb). \n"
+                    f"      O limite seguro para o ClustalO é {safe_limit_bp} pb. \n"
+                    f"      Para evitar o OOM Killer, alterando a rota dinamicamente: align_method -> 'mafft'.\n"
+                )
+                return "mafft"
+            return "clustalo"
+                
+        except Exception as e:
+            logging.error(f"Erro ao verificar o arquivo FASTA para triagem: {e}")
+            raise
+    
     def _get_alignment(self, fasta_path, output_path_align, align_method, output_path_align_html):
         """Método auxiliar para obter alinhamento."""
         try:
@@ -860,6 +902,10 @@ class TreeBuilderController:
                 logging.info(f"Arquivo de alinhamento já existe: {output_path_align}. Reutilizando.")
                 return AlignIO.read(output_path_align, "fasta")
             else:
+                logging.info(f"STEP: Reusing the sequence alignment file...")
+                if align_method == "clustalo":
+                    align_method = self._isExecutableByClustalO(fasta_path=fasta_path)
+                
                 if align_method == "clustalo":
                     return self.aligner.align_sequences_clustalo(
                         fasta_path=fasta_path,
