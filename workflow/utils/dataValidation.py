@@ -8,13 +8,12 @@ def validate_sequences(file_path):
     # Define os caracteres válidos para uma sequência de proteína.
     valid_characters = set('ACDEFGHIKLMNPQRSTVWY')
     try:
-        with open(file_path, 'r') as file:
-            for line in file:
-                if line.startswith('>'):
-                    continue  # Pula a linha de cabeçalho
-                sequence = line.strip()
-                if not set(sequence).issubset(valid_characters):
-                    return False
+        for record in SeqIO.parse(file_path, 'fasta'):
+            sequence = str(record.seq).upper()
+            if not sequence:  
+                return False
+            if not set(sequence).issubset(valid_characters):
+                return False
     except FileNotFoundError:
         print(f"O arquivo '{file_path}' não foi encontrado.")
         return False

@@ -1,6 +1,6 @@
 from Bio import Phylo
 
-import os, sys
+import os, sys, logging, datetime
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, '../..'))
@@ -43,8 +43,13 @@ class SubtreeBuilder:
         for key, value in kwargs.items():
             setattr(self, key, value)
             
+        date = datetime.datetime.now()
+        logging.basicConfig(level=logging.INFO, 
+                    filename=os.path.join(self.output_path,'outputs',f"log_setup_{date.year}_{date.month}_{date.day}.log"),
+                    format='%(asctime)s - %(levelname)s - %(message)s')
+            
         self.messagesManager = Messages(logPath=self.output_path)
-        
+        self.downloaded_sequences_cache = set()
         self.count_subtrees = 0
         
     def _add_internal_labels(self, tree):
@@ -88,7 +93,15 @@ class SubtreeBuilder:
         raw_data_sequences = os.path.join(self.output_path, 'outputs', 'raw_data_sequences.gb')
         
         tree_seqs = tree.get_terminals()
-        download_sequences(tree,tree_seqs ,raw_data_sequences)
+        new_seqs = [s for s in tree_seqs if s.name not in self.downloaded_sequences_cache]
+        
+        if new_seqs:
+            logging.info(f"     Baixando {len(new_seqs)} novas sequências para {name_tree}...")
+            download_sequences(tree, new_seqs, raw_data_sequences)
+            for s in new_seqs:
+                self.downloaded_sequences_cache.add(s.name)
+        else:
+            logging.info(f"     Todas as sequências de {name_tree} já foram baixadas previamente.")
 
         if self.resume_infos:
             print('======================================================')        
@@ -117,7 +130,12 @@ class SubtreeBuilder:
                     self.messagesManager.print_subtree_info(subtree=subtree, name=name_subtree)
 
                 filepath_out = os.path.join(self.output_path, 'Subtrees', f'{name_tree}_{clade.name}.{self.output_format}')
-                Phylo.write(subtree, filepath_out, self.output_format)
+                if os.path.exists(filepath_out):
+                    logging.info(f"     Subárvore {name_subtree} já existe. Pulando escrita, mas coletando dados...")
+                else:
+                    logging.info(f"     Gerando nova subárvore: {name_subtree}")
+                    Phylo.write(subtree, filepath_out, self.output_format)
+                    self.count_subtrees += 1
                             
                 for subtree_clade in subtree.find_clades():
                     name_terminal = subtree_clade.name
@@ -143,7 +161,7 @@ class SubtreeBuilder:
 
         if self.resume_infos:
             self.messagesManager.print_tree_clade_info(name=name_tree, dict_terminals=dict_tree_terminals_hash)
-        
+        logging.info(f"     Processamento de {name_tree} concluído.")
         return result_dict
 
 

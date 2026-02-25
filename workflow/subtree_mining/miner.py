@@ -1,5 +1,5 @@
 from typing import List, Dict, Any
-import os, sys
+import os, sys, logging, datetime
 import pandas as pd
 import numpy as np
 
@@ -51,6 +51,11 @@ class SubtreeMiner:
         """
         for key, value in kwargs.items():
             setattr(self, key, value)
+            
+        date = datetime.datetime.now()
+        logging.basicConfig(level=logging.INFO, 
+                    filename=os.path.join(self.output_path,'outputs',f"log_setup_{date.year}_{date.month}_{date.day}.log"),
+                    format='%(asctime)s - %(levelname)s - %(message)s')
         
         self.matriz_subtree = list()
 
@@ -62,7 +67,7 @@ class SubtreeMiner:
         if self.mode == "OFST":# Only of the same tree
             grouped_data = self.group_data_by_tree_base(data)
             for base_name, group in grouped_data.items():
-                print(f'Analisando grupo de árvores com base "{base_name}"')
+                logging.info(f'Analisando grupo de árvores com base "{base_name}"')
                 result = self.process_group(group,base_name)
                 processed_group.append(result)
                 parse_tree(trees=result, path=os.path.join(self.output_path,'outputs'),mode=base_name)
@@ -135,7 +140,7 @@ class SubtreeMiner:
         data_aux = data
 
         if self.support_fpmax == "auto":
-            print(f"Iniciando FPMAX no modo: Variável (0.1 a 0.9)")
+            logging.info(f"Iniciando FPMAX no modo: Variável (0.1 a 0.9)")
             for support in np.arange(0.1, 1.1, 0.1):
                 result_fpmax = fpmax(df, min_support=support, use_colnames=True)
                 print(f'Resultado FPMAX com suporte {support}:\n{result_fpmax}\n')
@@ -150,7 +155,7 @@ class SubtreeMiner:
 
             all_results_fpmax.to_csv(os.path.join(self.output_path, 'outputs', f'all_results_fpmax.csv'))
         else:
-            print(f"Iniciando FPMAX no modo: Fixo em {self.support_fpmax}")
+            logging.info(f"Iniciando FPMAX no modo: Fixo em {self.support_fpmax}")
             result_fpmax = fpmax(df, min_support=self.support_fpmax, use_colnames=True)
             print(f'Resultado FPMAX com suporte {self.support_fpmax}:\n{result_fpmax}\n')
 
@@ -187,7 +192,7 @@ class SubtreeMiner:
         print('- -'*33)
         print(f'                 Subárvores frequentes:                 \n')
         data_dict = result_fpmax.to_dict(orient='records')
-        print(f'Número de Árvores que contém Subárvores frequentes no dataset: {len(data_dict)} árvores\n')
+        logging.info(f'Número de Árvores que contém Subárvores frequentes no dataset: {len(data_dict)} árvores\n')
 
         for key in data_dict:
             itemset_list = list(key['itemsets'])
@@ -200,7 +205,7 @@ class SubtreeMiner:
 
                 subtree_names, terminals_lists, metadatas = extract_subtree_info(data, hash_code)
                 if not subtree_names: 
-                    print(f'\n\nERROR [{hash_code}][{data[0].keys()}]\n\n')
+                    logging.error(f'\n\nERROR [{hash_code}][{data[0].keys()}]\n\n')
                     break
 
                 for tree_dict in data:
