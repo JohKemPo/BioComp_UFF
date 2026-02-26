@@ -423,7 +423,7 @@ def calculate_tree_hash(data: Tree, is_terminal: bool = False, gbk_file: str = N
         metadata = None
 
     return {
-        'newick': newick,
+        'newick': newick.split('.')[0],
         'terminal_hash': int(hash_object.hexdigest()[:4], 16),
         'metadata': metadata
     }
