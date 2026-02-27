@@ -16,3 +16,4 @@ uvicorn
 uvicorn[standard]
 tqdm
 python-multipart
+ijson
