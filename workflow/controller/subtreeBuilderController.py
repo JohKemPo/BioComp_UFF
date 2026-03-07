@@ -86,6 +86,7 @@ class SubtreeBuilderController:
         self.matrix_subtree = []
         self.subtree_kwargs = kwargs
         self.count_subtrees = 0
+        self.downloaded_sequences_cache = set()
         logging.info(f"{self.count_trees} arquivo(s) encontrado(s) em {self.input_path}.")
 
     def __call__(self) -> List[Dict[str, Any]]:
@@ -178,7 +179,7 @@ class SubtreeBuilderController:
         logging.info(f"Iniciando a construção da subárvore para: {name}")
         self.count_subtrees = 0
         try:
-            builder = SubtreeBuilder(**self.subtree_kwargs)
+            builder = SubtreeBuilder(self.downloaded_sequences_cache,**self.subtree_kwargs)
             rawdata = builder.subtree_constructor(path, name)
             self.count_subtrees += builder.count_subtrees
             logging.info(f"Subárvore para {name} construída com sucesso. Total de subárvores construídas: {self.count_subtrees}")

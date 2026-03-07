@@ -1,5 +1,5 @@
 from Bio import Phylo
-
+from typing import Set
 import os, sys, logging, datetime
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -24,7 +24,7 @@ class SubtreeBuilder:
         Contador para acompanhar o número de subárvores construídas.
     """
     
-    def __init__(self, **kwargs):
+    def __init__(self, downloaded_sequences_cache: Set = set(),**kwargs):
         """
         Inicializa a instância da classe SubtreeBuilder.
         ----------
@@ -49,7 +49,7 @@ class SubtreeBuilder:
                     format='%(asctime)s - %(levelname)s - %(message)s')
             
         self.messagesManager = Messages(logPath=self.output_path)
-        self.downloaded_sequences_cache = set()
+        self.downloaded_sequences_cache = downloaded_sequences_cache
         self.count_subtrees = 0
         
     def _add_internal_labels(self, tree):

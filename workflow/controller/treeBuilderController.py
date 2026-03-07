@@ -320,9 +320,9 @@ class TreeBuilderController:
         # clean_tmp(self.output_path)
         logging.info("Diretórios temporários limpos.")
 
-        self.msg.resume_tree(start=self.start, sum_time=self.list_times, num_trees=self.count_trees, 
-                             output_format=self.output_format, n_nodes=self.count_nodes, 
-                             method=getattr(self, 'construct_tree_method', 'unknown'))
+        # self.msg.resume_tree(start=self.start, sum_time=self.list_times, num_trees=self.count_trees, 
+        #                      output_format=self.output_format, n_nodes=self.count_nodes, 
+        #                      method=getattr(self, 'construct_tree_method', 'unknown'))
         logging.info("Processo de construção de árvores finalizado.")
 
     def _prepare_output_paths(self, file_stem):

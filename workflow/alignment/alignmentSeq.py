@@ -38,7 +38,7 @@ class AlignmentSeqs():
         
         self.num_threads = config.get('num_threads', psutil.cpu_count(logical=True))
         self.max_memory_gb = config.get('max_memory_gb', 4)  # Limite de memória em GB
-        self.max_sequences = config.get('max_sequences', 100)  # Número máximo de sequências para alinhamento completo
+        self.max_sequences = config.get('max_sequences', 500)  # Número máximo de sequências para alinhamento completo
         logging.info(f" Alinhamento configurado para usar até {self.num_threads} thread(s).")
         logging.info(f" Limite de memória: {self.max_memory_gb} GB")
         logging.info(f" Número máximo de sequências: {self.max_sequences}")
