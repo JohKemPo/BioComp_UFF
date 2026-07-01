@@ -13,7 +13,7 @@ from typing import Dict, List, Any, Optional, Tuple
 
 Matrix = List[List[Any]]
 
-import hashlib
+import hashlib, os, time
 
 
 def tree_to_dict(clade: Clade) -> Dict:
@@ -428,7 +428,7 @@ def calculate_tree_hash(data: Tree, is_terminal: bool = False, gbk_file: str = N
         'metadata': metadata
     }
     
-def download_sequences(self, queries, output_file):
+def download_sequences(self, queries, output_file, log, batch_size: int = 10):
     """
     Passo 1: Baixa sequências do GenBank usando o Biopython.
     
@@ -441,18 +441,60 @@ def download_sequences(self, queries, output_file):
         Caminho para salvar as sequências baixadas (formato GenBank).
     """
     try:
-        for query in queries:
-            if not query.name:
-                continue  # Pula terminais sem nome
-            Entrez.email = "email@email.com"
-            handle = Entrez.esearch(db="nucleotide", term=query.name, retmax=1000)
-            record = Entrez.read(handle)
-            handle.close()
+        Entrez.email = "email@email.com"
+        Entrez.max_tries = 3
+        Entrez.sleep_between_tries = 2
+        ncbi_api_key = os.getenv("NCBI_API_KEY")
+        if ncbi_api_key:
+            Entrez.api_key = ncbi_api_key
+        with open(output_file, "w") as f:
+                f.write('')
+                
+                
+        id_list = [q.name for q in queries if q.name]
+        total_ids = len(id_list)
+        log.info(f"     Número de queiries detectadas {total_ids}. Inidicando processamento em lotes...")
+
+        for i in range(0, total_ids, batch_size):
+            batch_ids = id_list[i:i+batch_size]
+            lote_num = i//batch_size + 1
+            total_lotes = (total_ids - 1)//batch_size + 1
+            log.info(f"     Baixando lote {lote_num}/{total_lotes} ({len(batch_ids)} sequências)")
             
-            id_list = record["IdList"]
-            handle = Entrez.efetch(db="nucleotide", id=id_list, rettype="gb", retmode="text")
-            with open(output_file, "+a") as f:
-                f.write(handle.read())
-            handle.close()
+            for tentativa in range(3):
+                log.info(f"     Executando queries: {'| '.join(batch_ids)}...")
+                try:                   
+                    handle = Entrez.efetch(
+                        db="nucleotide", 
+                        id=batch_ids,
+                        rettype="gb",
+                        retmode="text"
+                    )
+
+                    data = handle.read()
+                    handle.close()
+                    
+                    if data:
+                        log.info(f"         Resultados salvos com sucesso!")
+                        with open(output_file, "a") as f:
+                            f.write(data)
+                        break
+                    else:
+                        log.error(f"        Dados vazios!")
+                        raise Exception("Dados vazios")
+                except Exception as e:
+                    log.warning(f"      Tentativa {tentativa+1}/3 falhou: {e}")
+                    if tentativa < 2:  
+                        time.sleep(5 * (tentativa + 1))  
+                    else:
+                        log.error(f"        Falha definitiva no lote {lote_num}")
+                    
+
+            if lote_num < total_lotes:
+                time.sleep(3)
+                
     except Exception as e:
+        log.info(f"     {e}")
         return {"error": str(e)}
+    
+    

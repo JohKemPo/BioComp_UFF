@@ -96,12 +96,12 @@ class SubtreeBuilder:
         new_seqs = [s for s in tree_seqs if s.name not in self.downloaded_sequences_cache]
         
         if new_seqs:
-            logging.info(f"     Baixando {len(new_seqs)} novas sequências para {name_tree}...")
-            download_sequences(tree, new_seqs, raw_data_sequences)
+            logging.info(f"  Baixando {len(new_seqs)} novas sequências para {name_tree}...")
+            download_sequences(tree, new_seqs, raw_data_sequences,log=logging)
             for s in new_seqs:
                 self.downloaded_sequences_cache.add(s.name)
         else:
-            logging.info(f"     Todas as sequências de {name_tree} já foram baixadas previamente.")
+            logging.info(f"  Todas as sequências de {name_tree} já foram baixadas previamente.")
 
         if self.resume_infos:
             print('======================================================')        
@@ -117,6 +117,7 @@ class SubtreeBuilder:
 
             subtree = Phylo.BaseTree.Tree(clade)
             name_subtree = f'{name_tree}_{clade.name}'
+            logging.info(f"Processando subárvore {name_subtree}")
 
             if clade.is_terminal():
                 if not clade.name or clade.name == 'None':
@@ -131,15 +132,16 @@ class SubtreeBuilder:
 
                 filepath_out = os.path.join(self.output_path, 'Subtrees', f'{name_tree}_{clade.name}.{self.output_format}')
                 if os.path.exists(filepath_out):
-                    logging.info(f"     Subárvore {name_subtree} já existe. Pulando escrita, mas coletando dados...")
+                    logging.info(f"Subárvore {name_subtree} já existe. Pulando escrita, mas coletando dados...")
                 else:
-                    logging.info(f"     Gerando nova subárvore: {name_subtree}")
+                    logging.info(f"Gerando nova subárvore: {name_subtree}")
                     Phylo.write(subtree, filepath_out, self.output_format)
                     self.count_subtrees += 1
                             
                 for subtree_clade in subtree.find_clades():
                     name_terminal = subtree_clade.name
                     if subtree_clade.is_terminal():
+                        logging.info(f"         Processando: {name_terminal}")
                         hash_result = calculate_tree_hash(name_terminal, subtree_clade.is_terminal(), gbk_file=raw_data_sequences)
                         hash_list.append(hash_result)
                         subtree_list_termials.append(hash_result['terminal_hash'])

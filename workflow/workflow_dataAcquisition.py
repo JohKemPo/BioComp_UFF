@@ -7,6 +7,7 @@ import pandas as pd
 from Bio.Align import PairwiseAligner
 import hashlib
 import gc
+import time
 
 class workflowAquisitionDatasetNCBI:
     def __init__(self, email, work_dir="workflow_dataAcquisition",
@@ -70,32 +71,35 @@ class workflowAquisitionDatasetNCBI:
         
         self.custom_filters = []
 
-    def download_sequences(self, query, output_file):
+    def download_sequences(self, query, output_file, batch_size=5):
         """
-        Baixa sequências do GenBank usando o Biopython.
+        Baixa sequências do GenBank usando o Biopython com download em lotes.
         
         Parameters
         ----------
         query : str
-            String de consulta para o GenBank. Se vazia, cria arquivo vazio.
+            String de consulta para o GenBank.
         output_file : str
-            Caminho para salvar as sequências baixadas (formato GenBank).
-            
-        Raises
-        ------
-        ValueError
-            Se os parâmetros forem inválidos.
-        IOError
-            Se não for possível escrever o arquivo de saída.
+            Caminho para salvar as sequências baixadas.
+        batch_size : int
+            Número de sequências por lote (default: 5 para evitar timeout)
         """
         self.logger.info(f"Baixando sequências com query: {query}")
-        print(f"Baixando sequências com query: {query}")
+        print(f"\n📥 Baixando sequências...")
+        
+        Entrez.sleep_between_tries = 30
+        Entrez.max_tries = 5
+        Entrez.socket_timeout = 120
+        
         try:
             if not query or query.strip() == "":
                 self.logger.warning("Query vazia, criando arquivo vazio")
                 with open(output_file, "w") as f:
                     f.write("")
                 return
+            
+            self.logger.info("Buscando IDs no NCBI...")
+            print("   Buscando IDs...")
             
             handle = Entrez.esearch(db="nucleotide", term=query, retmax=self.retmax)
             record = Entrez.read(handle)
@@ -108,15 +112,80 @@ class workflowAquisitionDatasetNCBI:
                 return
             
             id_list = record["IdList"]
-            self.logger.info(f"Número de IDs encontrados: {len(id_list)}")
-            handle = Entrez.efetch(db="nucleotide", id=id_list, rettype="gb", retmode="text")
-            with open(output_file, "w") as f:
-                f.write(handle.read())
-            handle.close()
-            self.logger.info(f"Sequências salvas em: {output_file}")
+            total_ids = len(id_list)
+            self.logger.info(f"Número de IDs encontrados: {total_ids}")
+            print(f"   Encontrados {total_ids} IDs")
+            
+            self.logger.info(f"Iniciando download em lotes de {batch_size} sequências...")
+            print(f"   Baixando em lotes de {batch_size} sequências...")
+            
+            if os.path.exists(output_file):
+                os.remove(output_file)
+            
+            sucessos = 0
+            falhas = 0
+            
+            for i in range(0, total_ids, batch_size):
+                batch_ids = id_list[i:i+batch_size]
+                lote_num = i//batch_size + 1
+                total_lotes = (total_ids - 1)//batch_size + 1
+                
+                self.logger.info(f"Baixando lote {lote_num}/{total_lotes} ({len(batch_ids)} sequências)")
+                print(f"    Lote {lote_num}/{total_lotes}... ", end="", flush=True)
+                
+                # Tentar download com retry
+                for tentativa in range(3):  
+                    try:
+                        handle = Entrez.efetch(
+                            db="nucleotide", 
+                            id=batch_ids, 
+                            rettype="gb", 
+                            retmode="text"
+                        )
+                        
+                        data = handle.read()
+                        handle.close()
+                        
+                        if data:
+                            with open(output_file, "a") as out_f:
+                                out_f.write(data)
+                            
+                            tamanho_kb = len(data)/1024
+                            self.logger.info(f"  Lote {lote_num} baixado ({tamanho_kb:.1f} KB)")
+                            print(f" {len(batch_ids)} seqs ({tamanho_kb:.0f} KB)")
+                            sucessos += len(batch_ids)
+                            break  
+                        else:
+                            raise Exception("Dados vazios")
+                            
+                    except Exception as e:
+                        self.logger.warning(f"Tentativa {tentativa+1}/3 falhou: {e}")
+                        if tentativa < 2:  
+                            import time
+                            time.sleep(5 * (tentativa + 1))  
+                        else:
+                            self.logger.error(f"Falha definitiva no lote {lote_num}")
+                            print(f" falha após 3 tentativas")
+                            falhas += len(batch_ids)
+                
+                if lote_num < total_lotes:
+                    import time
+                    time.sleep(3)
+            
+            self.logger.info(f"Download concluído: {sucessos} sucessos, {falhas} falhas")
+            print(f"\n   Resultado final: {sucessos} sequências baixadas, {falhas} falhas")
+            
+            if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
+                count = sum(1 for _ in SeqIO.parse(output_file, "genbank"))
+                self.logger.info(f"Arquivo final contém {count} sequências")
+                print(f"   Arquivo salvo com {count} sequências")
+            else:
+                self.logger.error("Arquivo de download está vazio!")
+                print(f"   ERRO: Arquivo vazio!")
+                
         except Exception as e:
-            self.logger.error(f"Erro no download: {e}")
-            # Criar arquivo vazio para não quebrar o pipeline
+            self.logger.error(f"Erro fatal no download: {e}")
+            print(f"\n Erro fatal: {e}")
             with open(output_file, "w") as f:
                 f.write("")
 
@@ -244,6 +313,39 @@ class workflowAquisitionDatasetNCBI:
         except Exception as e:
             self.logger.error(f"Erro ao remover UTRs: {e}")
 
+    
+    def trim_poxvirus_terminals(self, input_file, output_file, trim_5prime_bp=13000, trim_3prime_bp=13000):
+        """
+        Remove as Inverted Terminal Repeats (ITRs) das extremidades.
+        Baseado em Li et al. (2007), que utilizou um core conservado de ~160kb.
+        """
+        trimmed_records = []
+        records = list(SeqIO.parse(input_file, "genbank"))
+        
+        for record in records:
+            seq_length = len(record.seq)
+            
+            # Validação de segurança: só corta se o genoma for realmente completo
+            # (Garante que sobrará um core viável de pelo menos 100kb)
+            if seq_length > (trim_5prime_bp + trim_3prime_bp + 100000):
+                start_idx = trim_5prime_bp
+                end_idx = seq_length - trim_3prime_bp
+                
+                # O fatiamento (slicing) do Biopython cuida do DNA e das anotações
+                core_record = record[start_idx:end_idx]
+                
+                # Atualiza os metadados para não haver confusão na árvore filogenética
+                core_record.id = f"{record.id}_core"
+                core_record.description = f"{record.description} | Trimmed: {trim_5prime_bp}bp (5') and {trim_3prime_bp}bp (3')"
+                
+                trimmed_records.append(core_record)
+                logging.info(f"Trimmed {record.id}: Original {seq_length}bp -> Core {len(core_record.seq)}bp")
+            else:
+                logging.warning(f"Atenção: Sequência {record.id} muito curta ({seq_length}bp) para trimming. Mantida original.")
+                trimmed_records.append(record)
+        SeqIO.write(records, output_file, "genbank")
+        return trimmed_records
+    
     def refine_dataset(self, input_file, output_file):
         """
         Passo 4: Refina o conjunto de dados:
@@ -409,13 +511,14 @@ class workflowAquisitionDatasetNCBI:
         raw_file = os.path.join(self.work_dir, "raw_sequences.gb")
         filtered_file = os.path.join(self.work_dir, "filtered_sequences.gb")
         no_utrs_file = os.path.join(self.work_dir, "no_utrs_sequences.gb")
+        trim_itr_file = os.path.join(self.work_dir, "no_itrs_sequences.gb")
         refined_file = os.path.join(self.work_dir, "refined_dataset.gb")
         dataset_outgroup_file = os.path.join(self.work_dir, "dataset_with_outgroup.gb")
         alignment_file = os.path.join(self.work_dir, "final_alignment.fasta")
         
         # Passo 1: Baixar sequências 
         if download_method == "query":
-            self.download_sequences(query, raw_file)
+            self.download_sequences(query, raw_file, batch_size=5)
         elif download_method == "csv":
             self.download_from_csv(csv_path, raw_file)
         
@@ -436,19 +539,22 @@ class workflowAquisitionDatasetNCBI:
         if len(filtered) == 0:
             filtered_file = raw_file
             
-        if expected_accessions_file and len(filtered) > 0:
-            self.verify_downloaded_accessions(
-                filtered_file, 
-                expected_file=expected_accessions_file,
-                stage="filtered"
-            )
-            
+        
+        logging.info("Iniciando remoção das ITRs (13kb de cada extremidade)...")
+        self.trim_poxvirus_terminals(filtered_file, trim_itr_file, trim_5prime_bp=13000, trim_3prime_bp=13000)
+
+        self.verify_downloaded_accessions(
+            trim_itr_file, 
+            expected_file=expected_accessions_file,
+            stage="Trim"
+        )
+        
         # Passo 3: Remover UTRs (se parâmetros definidos)
         if self.utr5_end is not None and self.utr3_start is not None:
-            self.remove_utrs(filtered_file, no_utrs_file)
+            self.remove_utrs(trim_itr_file, no_utrs_file)
         else:
             self.logger.info("Parâmetros UTR não definidos, pulando remoção")
-            no_utrs_file = filtered_file  # Usa o mesmo arquivo
+            no_utrs_file = trim_itr_file  # Usa o mesmo arquivo
         
         # Passo 4: Refinar o dataset
         self.refine_dataset(no_utrs_file, refined_file)
@@ -644,27 +750,27 @@ if __name__ == "__main__":
     # workflow.slice_file(input_fasta, output_prefix="dataset_slice", slice_size=50)
     
     # EXPERIMENTO - CORONAVIRUS ----------------------------------------------------------------------------
-    # path = "workflow_dataAcquisition_coronavirus"
-    # covid_workflow = workflowAquisitionDatasetNCBI(
-    #     email="email@dominio.com",
-    #     work_dir=path,
-    #     initial_min_length=29000,    # Genomas completos
-    #     refined_min_length=29500,    # Filtro mais rigoroso
-    #     utr5_end=None,              # Manter UTRs para estudos de regulação
-    #     utr3_start=None,
-    #     similarity_threshold=0.999,  # Alta similaridade devido à conservação
-    #     retmax=100                 # Muitas sequências disponíveis
-    # )
+    path = "workflow_dataAcquisition_coronavirus"
+    covid_workflow = workflowAquisitionDatasetNCBI(
+        email="email@dominio.com",
+        work_dir=path,
+        initial_min_length=29000,    # Genomas completos
+        refined_min_length=29500,    # Filtro mais rigoroso
+        utr5_end=None,              # Manter UTRs para estudos de regulação
+        utr3_start=None,
+        similarity_threshold=0.999,  # Alta similaridade devido à conservação
+        retmax=400                 # Muitas sequências disponíveis
+    )
     
-    # covid_workflow.run_workflow(
-    #     query='("Severe acute respiratory syndrome coronavirus 2"[Organism] AND complete genome) AND 2023[PDAT]',
-    #     outgroup_query_or_file='"SARS coronavirus"[Organism]',
-    #     download_method="query"
-    # )
+    covid_workflow.run_workflow(
+        query='("Severe acute respiratory syndrome coronavirus 2"[Organism] AND complete genome)',
+        outgroup_query_or_file='"SARS coronavirus"[Organism]',
+        download_method="query"
+    )
     
-    # input_genbank = f"{path}/dataset_with_outgroup.gb"
-    # output_fasta = f"{path}/dataset_final.fasta"
-    # covid_workflow.generate_fasta(input_genbank, output_fasta)
+    input_genbank = f"{path}/dataset_with_outgroup.gb"
+    output_fasta = f"{path}/dataset_final.fasta"
+    covid_workflow.generate_fasta(input_genbank, output_fasta)
     
     # # EXPERIMENTO - TUBERCULOSE ----------------------------------------------------------------------------
     # path = "workflow_dataAcquisition_tuberculosis"
@@ -689,41 +795,90 @@ if __name__ == "__main__":
     # output_fasta = f"{path}/dataset_final.fasta"
     # tb_workflow.generate_fasta(input_genbank, output_fasta)
     
-    # EXPERIMENTO - TUBERCULOSE ----------------------------------------------------------------------------
-    path = "workflow_dataAcquisition_li_et_al_2007_replication-RetMax100"
-    workflow = workflowAquisitionDatasetNCBI(
-        email="seu_email@dominio.com",  # Substitua pelo seu email
-        work_dir=path,
-        initial_min_length=180000,      # Genoma do VARV tem ~186kb, filtro inicial
-        refined_min_length=183000,      # Para garantir genomas praticamente completos
-        utr5_end=None,                   # Vírus não têm UTRs como eucariotos
-        utr3_start=None,                  # Manter genoma completo
-        similarity_threshold=0.999,      # Vírus têm alta similaridade (>99.6% entre isolados)
-        retmax=100                        # Para garantir que pegue todos os disponíveis
-    )
+    # EXPERIMENTO - VARIOLA ----------------------------------------------------------------------------
+#     path = "replication-RetMax200-ITRs"
+#     workflow = workflowAquisitionDatasetNCBI(
+#         email="seu_email@dominio.com",  # Substitua pelo seu email
+#         work_dir=path,
+#         initial_min_length=180000,      # Genoma do VARV tem ~186kb, filtro inicial
+#         refined_min_length=183000,      # Para garantir genomas praticamente completos
+#         utr5_end=None,                   # Vírus não têm UTRs como eucariotos
+#         utr3_start=None,                  # Manter genoma completo
+#         similarity_threshold=0.999,      # Vírus têm alta similaridade (>99.6% entre isolados)
+#         retmax=200                        # Para garantir que pegue todos os disponíveis
+#     )
     
-    # Query para as 47 amostras do estudo (ou o máximo disponível atualmente)
-    variola_query = '''
-        ("Variola virus"[Organism] OR "Variola virus"[All Fields]) 
-        AND complete genome 
-        AND 1000:200000[SLEN]
-    '''
+#     variola_query = '''
+#         DQ437580,
+# DQ437581,
+# DQ437582,
+# DQ437583,
+# DQ437584,
+# DQ437585,
+# DQ437586,
+# DQ437587,
+# DQ437588,
+# DQ437589,
+# DQ437590,
+# DQ437591,
+# DQ437592,
+# DQ437593,
+# DQ437594,
+# DQ441416,
+# DQ441417,
+# DQ441418,
+# DQ441419,
+# DQ441420,
+# DQ441421,
+# DQ441422,
+# DQ441423,
+# DQ441424,
+# DQ441425,
+# DQ441426,
+# DQ441427,
+# DQ441428,
+# DQ441429,
+# DQ441430,
+# DQ441431,
+# DQ441432,
+# DQ441433,
+# DQ441434,
+# DQ441435,
+# DQ441436,
+# DQ441437,
+# DQ441438,
+# DQ441439,
+# DQ441440,
+# DQ441441,
+# DQ441442,
+# DQ441443,
+# DQ441444,
+# DQ441445,
+# DQ441446,
+# DQ441447,
+# DQ441448,
+#     '''
 
-    # Query para os outgroups 
-    outgroup_query = '''
-        ("Taterapox virus"[Organism] OR "Taterapox virus"[All Fields] OR 
-        "Camelpox virus"[Organism] OR "Camelpox virus"[All Fields])
-        AND complete genome
-    '''
+#     outgroup_query = '''
+#         ("Taterapox virus"[Organism] 
+#         OR ("Taterapox virus"[Organism] 
+#         OR "Taterapox virus"[All Fields]) 
+#         OR "Camelpox virus"[Organism] 
+#         OR ("Camelpox virus"[Organism] 
+#         OR "Camelpox virus"[All Fields])) 
+#         AND (complete[All Fields] 
+#         AND genome[All Fields]) 
+#         AND "1900"[PDAT] : "2007"[PDAT]
+#     '''
     
-    workflow.run_workflow(
-        query=variola_query,
-        outgroup_query_or_file=outgroup_query,  
-        download_method="query"
-    )
+#     workflow.run_workflow(
+#         query=variola_query,
+#         outgroup_query_or_file=outgroup_query,  
+#         download_method="query"
+#     )
     
-    input_genbank = f"{path}/dataset_with_outgroup.gb"
-    output_fasta = f"{path}/dataset_final.fasta"
-    workflow.generate_fasta(input_genbank, output_fasta)
+#     input_genbank = f"{path}/dataset_with_outgroup.gb"
+#     output_fasta = f"{path}/dataset_final.fasta"
+#     workflow.generate_fasta(input_genbank, output_fasta)
     
     
