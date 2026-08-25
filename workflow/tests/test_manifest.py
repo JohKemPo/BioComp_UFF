@@ -20,6 +20,7 @@ import shutil
 import tempfile
 import unittest
 
+from workflow.utils.external_tools import CANDIDATOS
 from workflow.utils.manifest import (ExecutionManifest, MANIFEST_FILENAME,
                                      file_digest, tool_versions)
 
@@ -58,8 +59,14 @@ class TestVersoesDeFerramenta(unittest.TestCase):
 
     def test_devolve_uma_entrada_por_ferramenta(self):
         versoes = tool_versions()
-        for esperada in ("mafft", "iqtree2", "raxml-ng", "FastTree", "mrbayes"):
+        for esperada in ("mafft", "iqtree", "raxml-ng", "fasttree", "mrbayes"):
             self.assertIn(esperada, versoes)
+
+    def test_chaves_sao_as_de_external_tools(self):
+        # Duas listas de nomes de ferramenta divergindo é o defeito D5 em outro
+        # assunto: o manifesto registraria uma ferramenta que o pipeline não
+        # sabe invocar, ou deixaria de registrar uma que ele invoca.
+        self.assertEqual(set(tool_versions()), set(CANDIDATOS))
 
     def test_ferramenta_ausente_e_none(self):
         versoes = tool_versions()

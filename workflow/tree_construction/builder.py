@@ -52,6 +52,8 @@ def reproducibility_settings(config: dict) -> dict:
             for chave, padrao in REPRODUCIBILITY_DEFAULTS.items()}
 
 
+from workflow.utils.external_tools import require_tool
+
 class TreeBuilder:
     """
     Classe responsável pela construção de árvores filogenéticas a partir de alinhamentos de sequências.
@@ -191,7 +193,7 @@ class TreeBuilder:
             # fixado pelo mesmo motivo de D17 no RAxML: número de threads
             # decidido pela máquina torna a execução incomparável entre elas.
             cmd = [
-                'iqtree2', '-s', align_path,
+                require_tool('iqtree'), '-s', align_path,
                 '-m', 'GTR+G', '-bb', '1000',
                 '-seed', str(self.random_seed),
                 '-pre', prefix,
@@ -240,7 +242,7 @@ class TreeBuilder:
             align_path = os.path.join(tmp_dir, f'{base_name}.fasta')
             AlignIO.write(alignment, align_path, 'fasta')
             
-            cmd = ['FastTree', '-nt', '-gtr', align_path]
+            cmd = [require_tool('fasttree'), '-nt', '-gtr', align_path]
             
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
             
@@ -284,7 +286,7 @@ class TreeBuilder:
             # Um worker só, com número de threads declarado, torna a execução
             # comparável entre máquinas. Custo medido: ~10% de tempo.
             cmd = [
-                'raxml-ng', '--msa', align_path,
+                require_tool('raxml-ng'), '--msa', align_path,
                 '--model', 'GTR+G',
                 '--threads', str(self.raxml_threads), '--workers', '1',
                 '--seed', str(self.random_seed), '--tree', 'rand{10}',
@@ -387,7 +389,7 @@ class TreeBuilder:
                 f.write(mrbayes_script)
             
             result = subprocess.run(
-                ['mb'],
+                [require_tool('mrbayes')],
                 stdin=open(script_path, 'r'),
                 capture_output=True,
                 timeout=3600,
@@ -401,7 +403,7 @@ class TreeBuilder:
                 logging.error(f"MrBayes exit code: {result.returncode}")
                 logging.error(f"MrBayes stdout: {stdout_text[:1000]}")  
                 logging.error(f"MrBayes stderr: {stderr_text[:1000]}")
-                raise subprocess.CalledProcessError(result.returncode, ['mb'], stdout_text, stderr_text)
+                raise subprocess.CalledProcessError(result.returncode, [require_tool('mrbayes')], stdout_text, stderr_text)
             
             tree_files = [
                 'alignment.nexus.con.tre',

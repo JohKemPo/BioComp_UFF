@@ -31,6 +31,8 @@ import sys
 import uuid
 from typing import Dict, List, Optional
 
+from workflow.utils.external_tools import resolve_tool
+
 __all__ = [
     "ExecutionManifest",
     "tool_versions",
@@ -44,20 +46,19 @@ MANIFEST_FILENAME = "manifest.json"
 #: A saída de cada uma é filtrada por uma regex, porque quase nenhuma respeita
 #: `--version` da mesma forma — o FastTree, por exemplo, imprime a versão numa
 #: mensagem de uso e sai com código diferente de zero.
+#: `chave em external_tools.CANDIDATOS -> (argumentos de versão, regex)`.
+#: O binário não é fixado aqui: quem o encontra é `resolve_tool`, porque o nome
+#: muda com a versão do pacote — `iqtree` 3.x não instala `iqtree2`.
 _TOOLS = {
-    "mafft": (["mafft", "--version"], r"v[\d.]+"),
-    "clustalo": (["clustalo", "--version"], r"[\d.]+"),
-    "muscle": (["muscle", "-version"], r"v?[\d.]+"),
-    "FastTree": (["FastTree"], r"Version\s+([\d.]+)"),
-    "iqtree2": (["iqtree2", "--version"], r"version\s+([\d.]+)"),
-    "raxml-ng": (["raxml-ng", "--version"], r"v\.\s*([\d.]+)"),
-    # O binário do MrBayes chama-se `mb` na maioria das distribuições — não
-    # `mrbayes`. Procurar pelo nome errado fazia o manifesto gravar
-    # `"mrbayes": null` numa máquina onde ele estava instalado, e foi por isso
-    # que ele saiu do conjunto de validação (D20).
-    # `mb -h` imprime só o uso, sem versão; a versão sai no banner de abertura,
-    # que aparece quando o binário roda com stdin fechado (`stdin=DEVNULL`).
-    "mrbayes": (["mb"], r"MrBayes\s+v?([\d.]+)"),
+    "mafft": (["--version"], r"v[\d.]+"),
+    "clustalo": (["--version"], r"[\d.]+"),
+    "muscle": (["-version"], r"v?[\d.]+"),
+    "fasttree": ([], r"Version\s+([\d.]+)"),
+    "iqtree": (["--version"], r"version\s+([\d.]+)"),
+    "raxml-ng": (["--version"], r"v\.\s*([\d.]+)"),
+    # `mb -h` imprime só o uso, sem versão; ela sai no banner de abertura, que
+    # aparece quando o binário roda com stdin fechado (D20).
+    "mrbayes": ([], r"MrBayes\s+v?([\d.]+)"),
 }
 
 
@@ -92,12 +93,13 @@ def tool_versions() -> Dict[str, Optional[str]]:
         ferramenta que não existe é um fato, e o manifesto tem de dizê-lo.
     """
     versoes: Dict[str, Optional[str]] = {}
-    for nome, (cmd, padrao) in _TOOLS.items():
-        saida = _executar(cmd)
-        if not saida:
+    for nome, (args, padrao) in _TOOLS.items():
+        caminho = resolve_tool(nome)
+        if caminho is None:
             versoes[nome] = None
             continue
-        achado = re.search(padrao, saida)
+        saida = _executar([caminho, *args])
+        achado = re.search(padrao, saida) if saida else None
         versoes[nome] = (achado.group(achado.lastindex or 0) if achado else None)
     return versoes
 
