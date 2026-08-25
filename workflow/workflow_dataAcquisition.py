@@ -9,10 +9,13 @@ import hashlib
 import gc
 import time
 
+from workflow.utils.taxonomy import audit_genbank, entrez_term
+
 class workflowAquisitionDatasetNCBI:
     def __init__(self, email, work_dir="workflow_dataAcquisition",
                  initial_min_length=700, refined_min_length=700,
-                 utr5_end=None, utr3_start=None, similarity_threshold=0.99, retmax=1000):
+                 utr5_end=None, utr3_start=None, similarity_threshold=0.99, retmax=1000,
+                 taxon_filter=None, strict_taxonomy=False):
         """
         Inicializa os parâmetros do workflow.
         
@@ -68,6 +71,16 @@ class workflowAquisitionDatasetNCBI:
         self.utr3_start = utr3_start
         self.similarity_threshold = similarity_threshold
         self.retmax = retmax
+
+        # M2.2 / D6 — o clado é declarado pelo experimento, nunca presumido pelo
+        # código. `None` significa "sem filtro", e isso vira um fato registrado,
+        # não uma omissão. Ver workflow/utils/taxonomy.py.
+        self.taxon_filter = taxon_filter
+        self.strict_taxonomy = strict_taxonomy
+        self.taxonomy_audit = None
+        self.logger.info(
+            f"filtro taxonômico: {taxon_filter.taxid + ' (' + taxon_filter.name + ')' if taxon_filter else 'NENHUM'}"
+            f"{' — modo estrito' if strict_taxonomy else ''}")
         
         self.custom_filters = []
 
@@ -101,7 +114,11 @@ class workflowAquisitionDatasetNCBI:
             self.logger.info("Buscando IDs no NCBI...")
             print("   Buscando IDs...")
             
-            handle = Entrez.esearch(db="nucleotide", term=query, retmax=self.retmax)
+            # Primeira defesa (M2.2): restringir a busca ao clado declarado.
+            termo = entrez_term(query, self.taxon_filter)
+            if termo != query:
+                self.logger.info(f"Termo com filtro taxonômico: {termo}")
+            handle = Entrez.esearch(db="nucleotide", term=termo, retmax=self.retmax)
             record = Entrez.read(handle)
             handle.close()
             
@@ -486,6 +503,58 @@ class workflowAquisitionDatasetNCBI:
         except Exception as e:
             self.logger.error(f"Erro inesperado no alinhamento: {e}")
 
+    def verify_taxonomy(self, gb_file):
+        """
+        Confere a linhagem dos registros baixados contra o clado declarado.
+
+        Roda **depois** do download, e é offline: a linhagem vem de
+        `annotations['taxonomy']`, que o próprio registro carrega.
+
+        Sem `taxon_filter` declarado, não confere nada — e diz isso no log, para
+        que a ausência de filtro seja uma decisão visível e não um esquecimento.
+
+        Parameters
+        ----------
+        gb_file : str
+            Arquivo GenBank recém-baixado.
+
+        Return
+        ------
+        TaxonomyAudit or None
+            `None` quando não há filtro declarado.
+
+        Raises
+        ------
+        ValueError
+            Em `strict_taxonomy`, se algum registro estiver fora do clado.
+        """
+        if self.taxon_filter is None:
+            self.logger.warning(
+                "Sem filtro taxonômico declarado: nenhuma verificação de clado foi feita. "
+                "Foi assim que crocodilepox entrou nos conjuntos de Variola (D6).")
+            return None
+
+        if not os.path.exists(gb_file):
+            self.logger.warning(f"{gb_file} não existe; verificação taxonômica pulada.")
+            return None
+
+        auditoria = audit_genbank(gb_file, self.taxon_filter)
+        alvo = self.taxon_filter.name
+
+        self.logger.info(
+            f"Verificação taxonômica ({alvo}): {len(auditoria.within)} dentro, "
+            f"{len(auditoria.outside)} fora, {len(auditoria.unknown)} sem linhagem.")
+
+        for acesso, info in sorted(auditoria.outside.items()):
+            self.logger.error(f"  FORA de {alvo}: {acesso} — {info['organism']}")
+        for acesso in auditoria.unknown:
+            self.logger.warning(f"  sem anotação de taxonomia: {acesso}")
+
+        if self.strict_taxonomy:
+            auditoria.raise_if_contaminated()
+
+        return auditoria
+
     def run_workflow(self, outgroup_query_or_file="", query=None ,csv_path = None, 
                      download_method = "query", expected_accessions_file=None):
         """
@@ -522,6 +591,12 @@ class workflowAquisitionDatasetNCBI:
         elif download_method == "csv":
             self.download_from_csv(csv_path, raw_file)
         
+        # Segunda defesa (M2.2 / D6): conferir a linhagem do que foi BAIXADO.
+        # O filtro da consulta não cobre `download_method="csv"` nem um arquivo
+        # fornecido à mão — uma verificação que só olha a consulta confia no que
+        # deveria conferir.
+        self.taxonomy_audit = self.verify_taxonomy(raw_file)
+
         # if expected_accessions_file:
         raw_stats = self.verify_downloaded_accessions(
             raw_file, 
