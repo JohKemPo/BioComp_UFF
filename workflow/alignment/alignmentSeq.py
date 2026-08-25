@@ -258,6 +258,93 @@ class AlignmentSeqs():
             if temp_dir and os.path.exists(temp_dir):
                 shutil.rmtree(temp_dir)
     
+    def align_sequences_muscle(self,
+                               fasta_path: str,
+                               output_path_align: str,
+                               output_path_html: str):
+        """
+        Alinha sequências utilizando o MUSCLE.
+
+        Suporta as **duas gerações de linha de comando**, porque elas são
+        incompatíveis e as duas circulam:
+
+        ==========  ==========================================
+        Versão      Invocação
+        ==========  ==========================================
+        3.8.x       ``muscle -in entrada -out saida``
+        5.x         ``muscle -align entrada -output saida``
+        ==========  ==========================================
+
+        A versão instalada é detectada uma vez e registrada no log — não se
+        adivinha por tentativa e erro, porque um erro de sintaxe e uma falha de
+        alinhamento produzem o mesmo código de saída, e confundi-los esconderia
+        a segunda.
+
+        Parameters
+        ----------
+        fasta_path : str
+            FASTA de entrada.
+        output_path_align : str
+            Caminho do alinhamento de saída, em FASTA.
+        output_path_html : str
+            Mantido por simetria com os outros alinhadores; o MUSCLE não emite HTML.
+
+        Return
+        ------
+        Bio.Align.MultipleSeqAlignment
+        """
+        logging.info("STEP: Aligning with MUSCLE")
+
+        num_seqs, avg_len, _ = self._get_sequence_stats_stream(fasta_path)
+        versao = self._muscle_major_version()
+
+        if versao >= 5:
+            cmd = ["muscle", "-align", fasta_path, "-output", output_path_align]
+        else:
+            cmd = ["muscle", "-in", fasta_path, "-out", output_path_align]
+            # O refinamento iterativo do MUSCLE 3.8 domina o custo em conjuntos
+            # grandes. `-maxiters 2` é a recomendação do próprio manual acima de
+            # algumas centenas de sequências; acima disso o padrão (16) não
+            # termina em tempo útil.
+            if num_seqs > 500:
+                cmd.extend(["-maxiters", "2"])
+                logging.info("MUSCLE 3.8: -maxiters 2 (conjunto grande)")
+
+        logging.info(f"Executando comando: {' '.join(cmd)}")
+        result = subprocess.run(cmd, capture_output=True, text=True)
+
+        if result.returncode != 0:
+            raise RuntimeError(f"Falha no MUSCLE: {result.stderr[-2000:]}")
+
+        return AlignIO.read(output_path_align, "fasta")
+
+    def _muscle_major_version(self) -> int:
+        """
+        Versão maior do MUSCLE instalado, para escolher a sintaxe.
+
+        Devolve 3 quando não consegue determinar: a sintaxe antiga é a que está
+        instalada nesta base, e errar para o lado conhecido é melhor que errar
+        para o lado suposto.
+        """
+        if getattr(self, "_muscle_version_cache", None) is not None:
+            return self._muscle_version_cache
+
+        maior = 3
+        for args in (["-version"], ["--version"]):
+            try:
+                r = subprocess.run(["muscle", *args], capture_output=True, text=True,
+                                   stdin=subprocess.DEVNULL, timeout=10, check=False)
+            except (OSError, subprocess.TimeoutExpired):
+                continue
+            achado = re.search(r"(\d+)\.\d+", (r.stdout or "") + (r.stderr or ""))
+            if achado:
+                maior = int(achado.group(1))
+                break
+
+        logging.info(f"MUSCLE detectado: versão maior {maior}")
+        self._muscle_version_cache = maior
+        return maior
+
     def align_sequences_clustalw(self,
                                  fasta_path: str,
                                  path_dnd: str,

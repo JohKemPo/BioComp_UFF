@@ -22,6 +22,8 @@ from workflow.utils.messages import Messages
 from workflow.utils.metrics import process_rf_distance, plot_heatmap_distances
 from workflow.alignment.alignmentSeq import AlignmentSeqs
 
+from workflow.alignment.aligners import ALIGNERS, AlignerPolicy, resolve_aligner
+
 class TreeBuilderController:
     """
     Controlador responsável pela construção e manipulação de árvores filogenéticas.
@@ -691,29 +693,10 @@ class TreeBuilderController:
                 alng = AlignIO.read(output_path_align, "fasta")
             else:
                 logging.info(f"STEP: Aligning seqs...")
-                if align_method == "clustalo":
-                    align_method = self._isExecutableByClustalO(fasta_path=fasta_path)
-                
-                if align_method == "clustalo":
-                    logging.debug(f"Alinhando sequências com Clustalo para {fasta_path}.")
-                    alng = self.aligner.align_sequences_clustalo(
-                        fasta_path=fasta_path,
-                        output_path_align=output_path_align,
-                        output_path_html=output_path_align_html
-                    )
-
-                elif align_method == "mafft":
-                    logging.debug(f"Alinhando sequências com MAFFT para {fasta_path}.")
-                    alng = self.aligner.align_sequences_mafft(
-                        fasta_path=fasta_path,
-                        output_path_align=output_path_align,
-                        output_path_html=output_path_align_html
-                    )
-                    
-                    logging.debug("Arquivo de alinhamento gerado e lido com sucesso (MAFFT).")
-                else:
-                    logging.error(f"Método de alinhamento desconhecido: {align_method}")
-                    raise ValueError("Método de alinhamento não suportado.")
+                align_method, _ = self._resolver_alinhador(align_method, fasta_path)
+                logging.debug(f"Alinhando sequências com {align_method} para {fasta_path}.")
+                alng = self._alinhar(align_method, fasta_path,
+                                     output_path_align, output_path_align_html)
         except Exception as e:
             logging.error(f"Erro no alinhamento das sequências para {fasta_path}: {e}", exc_info=True)
             raise
@@ -775,29 +758,10 @@ class TreeBuilderController:
                 alng = AlignIO.read(output_path_align, "fasta")
             else:
                 logging.info(f"STEP: Aligning seqs...")
-                if align_method == "clustalo":
-                    align_method = self._isExecutableByClustalO(fasta_path=fasta_path)
-                
-                if align_method == "clustalo":
-                    logging.debug(f"Alinhando sequências com Clustalo para {fasta_path}.")
-                    alng = self.aligner.align_sequences_clustalo(
-                        fasta_path=fasta_path,
-                        output_path_align=output_path_align,
-                        output_path_html=output_path_align_html
-                    )
-
-                elif align_method == "mafft":
-                    logging.debug(f"Alinhando sequências com MAFFT para {fasta_path}.")
-                    alng = self.aligner.align_sequences_mafft(
-                        fasta_path=fasta_path,
-                        output_path_align=output_path_align,
-                        output_path_html=output_path_align_html
-                    )
-                    
-                    logging.debug("Arquivo de alinhamento gerado e lido com sucesso (MAFFT).")
-                else:
-                    logging.error(f"Método de alinhamento desconhecido: {align_method}")
-                    raise ValueError("Método de alinhamento não suportado.")
+                align_method, _ = self._resolver_alinhador(align_method, fasta_path)
+                logging.debug(f"Alinhando sequências com {align_method} para {fasta_path}.")
+                alng = self._alinhar(align_method, fasta_path,
+                                     output_path_align, output_path_align_html)
         except Exception as e:
             logging.error(f"Erro no alinhamento das sequências para {fasta_path}: {e}", exc_info=True)
             raise
@@ -865,36 +829,65 @@ class TreeBuilderController:
         self.count_nodes.append(tree.count_terminals())
         return tree
     
-    def _isExecutableByClustalO(self,fasta_path): 
-        """_summary_
+    def _dimensoes_do_conjunto(self, fasta_path):
+        """Número de sequências e comprimento da MAIOR delas, em pares de base.
 
-        Args:
-            fasta_path (_type_): _description_
+        É o comprimento máximo, e não a média: uma sequência só é o bastante
+        para estourar a memória do alinhador."""
+        n = 0
+        maior = 0
+        for record in SeqIO.parse(fasta_path, "fasta"):
+            n += 1
+            maior = max(maior, len(record.seq))
+        return n, maior
+
+    def _resolver_alinhador(self, align_method, fasta_path):
         """
-        try:
-            safe_limit_bp = 20000 
-            is_safe_for_clustalo = True
-            
-            #ClustalO escala mal (OOM) para sequências muito longas.
-            for record in SeqIO.parse(fasta_path, "fasta"):
-                if len(record.seq) > safe_limit_bp:
-                    is_safe_for_clustalo = False
-                    offending_length = len(record.seq)
-                    break 
-            
-            if not is_safe_for_clustalo:
-                logging.warning(
-                    f"      ALERTA: Sequência gigante detectada ({offending_length} pb). \n"
-                    f"      O limite seguro para o ClustalO é {safe_limit_bp} pb. \n"
-                    f"      Para evitar o OOM Killer, alterando a rota dinamicamente: align_method -> 'mafft'.\n"
-                )
-                return "mafft"
-            return "clustalo"
-                
-        except Exception as e:
-            logging.error(f"Erro ao verificar o arquivo FASTA para triagem: {e}")
-            raise
-    
+        Decide qual alinhador vai rodar, e **devolve o nome do que rodou**.
+
+        Substitui `_isExecutableByClustalO`, que trocava Clustal Omega por MAFFT
+        e devolvia a troca sem que o chamador nomeasse o arquivo pelo alinhador
+        efetivo. É [D1](../../../docs/science/02-defeitos-que-alteram-resultado.md#d1):
+        nos experimentos de Variola, metade dos "pipelines" são cópias byte a
+        byte de MAFFT com nome de `clustalo`, e o fator alinhador não existe.
+
+        O padrão agora é **falhar** com o motivo. A substituição só acontece se
+        o experimento a autorizar (`aligner_on_unavailable="fallback"`), e nesse
+        caso quem chama **tem de usar o nome devolvido** para nomear a saída.
+
+        Return
+        ------
+        tuple
+            ``(alinhador efetivo, motivo da substituição ou None)``.
+        """
+        n_seqs, maior_bp = self._dimensoes_do_conjunto(fasta_path)
+        politica = AlignerPolicy(
+            on_unavailable=getattr(self, "aligner_on_unavailable", "fail"))
+        efetivo, motivo = resolve_aligner(align_method, n_seqs, maior_bp, politica)
+
+        if motivo:
+            logging.warning(f"      SUBSTITUIÇÃO DE ALINHADOR: {motivo}")
+            logging.warning(f"      A saída será nomeada como '{efetivo}', não '{align_method}'.")
+        return efetivo, motivo
+
+    def _alinhar(self, align_method, fasta_path, output_path_align, output_path_align_html):
+        """Executa o alinhador pedido. Um método desconhecido é erro, não aviso."""
+        if align_method == "clustalo":
+            return self.aligner.align_sequences_clustalo(
+                fasta_path=fasta_path, output_path_align=output_path_align,
+                output_path_html=output_path_align_html)
+        if align_method == "mafft":
+            return self.aligner.align_sequences_mafft(
+                fasta_path=fasta_path, output_path_align=output_path_align,
+                output_path_html=output_path_align_html)
+        if align_method == "muscle":
+            return self.aligner.align_sequences_muscle(
+                fasta_path=fasta_path, output_path_align=output_path_align,
+                output_path_html=output_path_align_html)
+        raise ValueError(
+            f"Método de alinhamento não suportado: '{align_method}'. "
+            f"Disponíveis: {sorted(ALIGNERS)}")
+
     def _get_alignment(self, fasta_path, output_path_align, align_method, output_path_align_html):
         """Método auxiliar para obter alinhamento."""
         try:
@@ -903,21 +896,9 @@ class TreeBuilderController:
                 return AlignIO.read(output_path_align, "fasta")
             else:
                 logging.info(f"STEP: Reusing the sequence alignment file...")
-                if align_method == "clustalo":
-                    align_method = self._isExecutableByClustalO(fasta_path=fasta_path)
-                
-                if align_method == "clustalo":
-                    return self.aligner.align_sequences_clustalo(
-                        fasta_path=fasta_path,
-                        output_path_align=output_path_align,
-                        output_path_html=output_path_align_html
-                    )
-                elif align_method == "mafft":
-                    return self.aligner.align_sequences_mafft(
-                        fasta_path=fasta_path,
-                        output_path_align=output_path_align,
-                        output_path_html=output_path_align_html
-                    )
+                align_method, _ = self._resolver_alinhador(align_method, fasta_path)
+                return self._alinhar(align_method, fasta_path,
+                                     output_path_align, output_path_align_html)
         except Exception as e:
             logging.error(f"Erro ao obter alinhamento: {e}")
             raise
