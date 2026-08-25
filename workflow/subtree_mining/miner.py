@@ -141,32 +141,89 @@ class SubtreeMiner:
 
         if self.support_fpmax == "auto":
             logging.info(f"Iniciando FPMAX no modo: Variável (0.1 a 0.9)")
-            for support in np.arange(0.1, 1.1, 0.1):
-                result_fpmax = fpmax(df, min_support=support, use_colnames=True)
-                print(f'Resultado FPMAX com suporte {support}:\n{result_fpmax}\n')
-                result_fpmax['support'] = support
+            for threshold in np.arange(0.1, 1.1, 0.1):
+                threshold = round(float(threshold), 2)
+                result_fpmax = fpmax(df, min_support=threshold, use_colnames=True)
+                print(f'Resultado FPMAX com limiar {threshold}:\n{result_fpmax}\n')
+                # D4 — o suporte devolvido pelo mlxtend é a fração de árvores que
+                # contém o itemset. O limiar da varredura é outro número e vai em
+                # coluna própria: sobrescrever um com o outro fazia o mesmo padrão
+                # aparecer como frágil e como robusto nas duas tabelas da UI.
+                result_fpmax['min_support_threshold'] = threshold
 
                 if self.mode == "OFST":
                     data_aux = self.find_exact_subsets(data_aux, result_fpmax, self.max_rows, base_name)
                 else:
                     data_aux = self.find_exact_subsets(data_aux, result_fpmax, self.max_rows)
-                
+
                 all_results_fpmax = pd.concat([all_results_fpmax, result_fpmax], ignore_index=True)
 
+            all_results_fpmax = self.consolidate_fpmax_results(all_results_fpmax, self.max_rows)
             all_results_fpmax.to_csv(os.path.join(self.output_path, 'outputs', f'all_results_fpmax.csv'))
         else:
             logging.info(f"Iniciando FPMAX no modo: Fixo em {self.support_fpmax}")
             result_fpmax = fpmax(df, min_support=self.support_fpmax, use_colnames=True)
-            print(f'Resultado FPMAX com suporte {self.support_fpmax}:\n{result_fpmax}\n')
+            print(f'Resultado FPMAX com limiar {self.support_fpmax}:\n{result_fpmax}\n')
+            result_fpmax['min_support_threshold'] = float(self.support_fpmax)
 
             if self.mode == "OFST" and base_name:
                 data_aux = self.find_exact_subsets(data_aux, result_fpmax, self.max_rows, base_name)
             else:
                 data_aux = self.find_exact_subsets(data_aux, result_fpmax, self.max_rows)
-            
+
+            result_fpmax = self.consolidate_fpmax_results(result_fpmax, self.max_rows)
             result_fpmax.to_csv(os.path.join(self.output_path, 'outputs', f'resul_of_fpmax_{self.support_fpmax}.csv'))
-        
+
         return data_aux
+
+    @staticmethod
+    def consolidate_fpmax_results(results: pd.DataFrame, rows: int) -> pd.DataFrame:
+        """Uma linha por itemset, com o suporte real e a faixa de limiares (D4).
+
+        A varredura por limiar devolve o mesmo itemset em vários limiares. Antes,
+        cada repetição virava uma linha do CSV com um "suporte" diferente — em
+        VARV-49, 7 de 7 itemsets distintos apareciam com mais de um valor, e 2
+        deles nas **duas** tabelas da Deep Analysis ao mesmo tempo. O suporte
+        real é propriedade do itemset e não do limiar: é o mesmo em toda
+        repetição, então deduplicar não perde informação.
+
+        Colunas:
+          `support`                 fração de árvores que contêm o itemset (mlxtend)
+          `min_support_threshold`   menor limiar da varredura que o devolveu
+          `max_support_threshold`   maior limiar da varredura que o devolveu
+          `n_trees`                 número de árvores que o contêm
+        """
+        if results.empty:
+            return pd.DataFrame(columns=['itemsets', 'support', 'min_support_threshold',
+                                         'max_support_threshold', 'n_trees'])
+
+        # `sort=False`: a chave é um frozenset, cuja ordenação natural é a de
+        # subconjunto (parcial) e não serve para ordenar linhas. A ordem final é
+        # imposta logo abaixo, explicitamente.
+        consolidado = (results
+                       .groupby('itemsets', as_index=False, sort=False)
+                       .agg(support=('support', 'max'),
+                            support_minimo_visto=('support', 'min'),
+                            min_support_threshold=('min_support_threshold', 'min'),
+                            max_support_threshold=('min_support_threshold', 'max')))
+
+        divergentes = consolidado[
+            (consolidado['support'] - consolidado['support_minimo_visto']).abs() > 1e-9]
+        if not divergentes.empty:
+            # Não deveria acontecer: o suporte não depende do limiar. Se acontecer,
+            # é sintoma de matriz alterada entre limiares — vale ruído no log.
+            logging.warning("FPMAX: suporte divergente para o mesmo itemset em "
+                            f"limiares diferentes: {divergentes['itemsets'].tolist()}")
+        consolidado = consolidado.drop(columns=['support_minimo_visto'])
+
+        consolidado['n_trees'] = (consolidado['support'] * rows).round().astype(int)
+        consolidado['tamanho'] = consolidado['itemsets'].map(len)
+        consolidado = (consolidado
+                       .sort_values(by=['support', 'tamanho', 'min_support_threshold'],
+                                    ascending=[False, False, True], kind='stable')
+                       .drop(columns=['tamanho'])
+                       .reset_index(drop=True))
+        return consolidado
 
     def find_exact_subsets(self, data: List[Dict], result_fpmax: pd.DataFrame, rows: int, base_name: str = None) -> List[Dict]:
         """
@@ -196,6 +253,8 @@ class SubtreeMiner:
 
         for key in data_dict:
             itemset_list = list(key['itemsets'])
+            # Suporte real do itemset (fração de árvores que o contêm), não o
+            # limiar da varredura — ver D4 e `consolidate_fpmax_results`.
             support = key['support']
             for hash_code in itemset_list:        
                 tree_name = extract_name_tree(data, hash_code)
