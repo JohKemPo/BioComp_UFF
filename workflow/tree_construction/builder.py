@@ -15,6 +15,43 @@ from io import StringIO
 
 
 #TODO: Melhorias de parametros dos novos metodos ( esta é somente a versão estavel )
+#: Padrões de reprodutibilidade. Ficam aqui, e não espalhados pelas chamadas das
+#: ferramentas, para que o manifesto de execução possa declarar exatamente o
+#: mesmo valor que o pipeline vai usar — uma única fonte da verdade.
+#:
+#: Não confundir com `num_threads` do `tree_config`, que governa apenas o
+#: **alinhamento** (`mafft --thread`, `clustalo --threads`). Inferência e
+#: alinhamento têm perfis de paralelismo diferentes, e os projetos existentes
+#: usam valores bem distintos ali — de 1 em VARV a 16 em ZIKV-480.
+REPRODUCIBILITY_DEFAULTS = {
+    'random_seed': 12345,
+    'raxml_threads': 4,
+    'iqtree_threads': 4,
+}
+
+
+def reproducibility_settings(config: dict) -> dict:
+    """
+    Resolve semente e paralelização a partir da configuração do projeto.
+
+    D11 — sem semente fixa, reexecutar não reproduz a árvore. D17 — mesmo com a
+    semente fixa, deixar a paralelização a cargo da ferramenta muda a topologia
+    entre máquinas (medido: RF = 8 no mesmo alinhamento, mesma semente).
+
+    Parameters
+    ----------
+    config : dict
+        `tree_config` do projeto; chaves ausentes caem no padrão.
+
+    Return
+    ------
+    dict
+        ``random_seed``, ``raxml_threads`` e ``iqtree_threads`` já como inteiros.
+    """
+    return {chave: int(config.get(chave, padrao))
+            for chave, padrao in REPRODUCIBILITY_DEFAULTS.items()}
+
+
 class TreeBuilder:
     """
     Classe responsável pela construção de árvores filogenéticas a partir de alinhamentos de sequências.
@@ -47,6 +84,11 @@ class TreeBuilder:
         """
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+        # Reprodutibilidade (D11, D17): semente e paralelização são parâmetros
+        # do experimento, não detalhe de implementação.
+        for chave, valor in reproducibility_settings(kwargs).items():
+            setattr(self, chave, valor)
 
         self.count_noudes = 0
     
@@ -144,13 +186,19 @@ class TreeBuilder:
             
             prefix = os.path.join(tmp_dir, base_name)
             
+            # D11 — sem `-seed`, o IQ-TREE gera a própria semente (nos logs de
+            # VARV aparece `97376`) e reexecutar não reproduz a árvore. `-nt` é
+            # fixado pelo mesmo motivo de D17 no RAxML: número de threads
+            # decidido pela máquina torna a execução incomparável entre elas.
             cmd = [
-                'iqtree2', '-s', align_path, 
-                '-m', 'GTR+G', '-bb', '1000', 
+                'iqtree2', '-s', align_path,
+                '-m', 'GTR+G', '-bb', '1000',
+                '-seed', str(self.random_seed),
                 '-pre', prefix,
-                '-nt', 'AUTO'
+                '-nt', str(self.iqtree_threads)
             ]
-            
+
+            logging.info(f"IQ-TREE: {' '.join(cmd)}")
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
             
             possible_tree_files = [
@@ -227,13 +275,23 @@ class TreeBuilder:
             
             prefix = os.path.join(tmp_dir, base_name)
             
+            # D17 — `--threads auto` escolhe o esquema de paralelização a partir
+            # do número de núcleos da máquina, e o esquema **muda a topologia**:
+            # medido RF = 8 entre duas execuções com a MESMA semente, variando só
+            # a paralelização (verossimilhanças −591486,234 e −591486,233, dois
+            # ótimos quase equivalentes). Além disso, `auto` já escolheu
+            # `5 workers x 3 threads` e derrubou o processo com SIGSEGV.
+            # Um worker só, com número de threads declarado, torna a execução
+            # comparável entre máquinas. Custo medido: ~10% de tempo.
             cmd = [
-                'raxml-ng', '--msa', align_path, 
-                '--model', 'GTR+G', '--threads', 'auto', 
-                '--seed', '12345', '--tree', 'rand{10}',
+                'raxml-ng', '--msa', align_path,
+                '--model', 'GTR+G',
+                '--threads', str(self.raxml_threads), '--workers', '1',
+                '--seed', str(self.random_seed), '--tree', 'rand{10}',
                 '--prefix', prefix
             ]
-            
+
+            logging.info(f"RAxML-NG: {' '.join(cmd)}")
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
             
             tree_file = prefix + '.raxml.bestTree'

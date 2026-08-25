@@ -1,0 +1,314 @@
+"""
+Manifesto de execução — o que é preciso para reexecutar e obter o mesmo resultado.
+
+Uma figura só é reproduzível se for possível dizer, sem ambiguidade, **qual
+código**, **qual entrada** e **qual ambiente** a produziram. Hoje nada disso é
+registrado: os `config_backup.json` guardam parâmetros, mas não a versão das
+ferramentas, não o commit, não as sementes efetivas e não o hash das entradas.
+É o defeito D11, e é o que torna inatingível o item "cada figura reproduzível
+por script + commit + hash" do checklist de submissão.
+
+Este módulo coleta esses fatos e os grava em `out/outputs/manifest.json`.
+
+**Regra de privacidade.** O manifesto vai para o repositório e pode ir para o
+material suplementar de um artigo. Ele **não** registra nome de usuário,
+*hostname* nem caminho absoluto — foi assim que D15 vazou `/home/<usuário>` de
+um terceiro pela API. Todo caminho é relativo à raiz do projeto.
+"""
+
+from __future__ import annotations
+
+import datetime
+import functools
+import hashlib
+import json
+import logging
+import os
+import platform
+import re
+import subprocess
+import sys
+import uuid
+from typing import Dict, List, Optional
+
+__all__ = [
+    "ExecutionManifest",
+    "tool_versions",
+    "file_digest",
+    "MANIFEST_FILENAME",
+]
+
+MANIFEST_FILENAME = "manifest.json"
+
+#: Ferramentas externas cuja versão muda o resultado, e como perguntá-la.
+#: A saída de cada uma é filtrada por uma regex, porque quase nenhuma respeita
+#: `--version` da mesma forma — o FastTree, por exemplo, imprime a versão numa
+#: mensagem de uso e sai com código diferente de zero.
+_TOOLS = {
+    "mafft": (["mafft", "--version"], r"v[\d.]+"),
+    "clustalo": (["clustalo", "--version"], r"[\d.]+"),
+    "muscle": (["muscle", "-version"], r"v?[\d.]+"),
+    "FastTree": (["FastTree"], r"Version\s+([\d.]+)"),
+    "iqtree2": (["iqtree2", "--version"], r"version\s+([\d.]+)"),
+    "raxml-ng": (["raxml-ng", "--version"], r"v\.\s*([\d.]+)"),
+    # O binário do MrBayes chama-se `mb` na maioria das distribuições — não
+    # `mrbayes`. Procurar pelo nome errado fazia o manifesto gravar
+    # `"mrbayes": null` numa máquina onde ele estava instalado, e foi por isso
+    # que ele saiu do conjunto de validação (D20).
+    # `mb -h` imprime só o uso, sem versão; a versão sai no banner de abertura,
+    # que aparece quando o binário roda com stdin fechado (`stdin=DEVNULL`).
+    "mrbayes": (["mb"], r"MrBayes\s+v?([\d.]+)"),
+}
+
+
+def _executar(cmd: List[str], timeout: int = 10) -> str:
+    """
+    Roda um comando e devolve stdout+stderr, ou '' se a ferramenta não existe.
+
+    `stdin=DEVNULL` não é detalhe: o FastTree invocado sem argumentos **lê a
+    entrada padrão** e fica bloqueado até o timeout. Sem isso, coletar as
+    versões custaria dezenas de segundos no início de toda execução do
+    pipeline — medido: 20 s por chamada.
+    """
+    try:
+        resultado = subprocess.run(cmd, capture_output=True, text=True,
+                                   stdin=subprocess.DEVNULL,
+                                   timeout=timeout, check=False)
+        return (resultado.stdout or "") + (resultado.stderr or "")
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+        return ""
+
+
+@functools.lru_cache(maxsize=1)
+def tool_versions() -> Dict[str, Optional[str]]:
+    """
+    Versão de cada ferramenta externa do pipeline.
+
+    Return
+    ------
+    dict
+        ``nome -> versão`` ou ``nome -> None`` quando a ferramenta não está no
+        PATH. **Ausente é `None`, nunca string vazia nem "desconhecida"**: uma
+        ferramenta que não existe é um fato, e o manifesto tem de dizê-lo.
+    """
+    versoes: Dict[str, Optional[str]] = {}
+    for nome, (cmd, padrao) in _TOOLS.items():
+        saida = _executar(cmd)
+        if not saida:
+            versoes[nome] = None
+            continue
+        achado = re.search(padrao, saida)
+        versoes[nome] = (achado.group(achado.lastindex or 0) if achado else None)
+    return versoes
+
+
+def file_digest(path: str, chunk: int = 1024 * 1024) -> Optional[str]:
+    """
+    SHA-256 de um arquivo, lido em blocos.
+
+    Os `metadata.json` chegam a 3,2 GB: ler tudo em memória para hashear seria
+    trocar um problema por outro.
+
+    Return
+    ------
+    str or None
+        Digest hexadecimal, ou ``None`` se o arquivo não existe.
+    """
+    if not os.path.isfile(path):
+        return None
+    digestor = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for bloco in iter(lambda: handle.read(chunk), b""):
+            digestor.update(bloco)
+    return digestor.hexdigest()
+
+
+def _git(repo: str, *args: str) -> Optional[str]:
+    saida = _executar(["git", "-C", repo, *args]).strip()
+    return saida or None
+
+
+def _git_state(repo: str) -> Dict[str, Optional[object]]:
+    """Commit, ramo e se havia mudança não commitada no momento da execução."""
+    if not os.path.isdir(repo):
+        return {"commit": None, "branch": None, "dirty": None}
+    sujo = _git(repo, "status", "--porcelain")
+    return {
+        "commit": _git(repo, "rev-parse", "HEAD"),
+        "branch": _git(repo, "rev-parse", "--abbrev-ref", "HEAD"),
+        "dirty": bool(sujo) if sujo is not None else None,
+    }
+
+
+def _environment() -> Dict[str, object]:
+    """
+    Ambiente de execução, **sem identificar a máquina nem o usuário**.
+
+    Registra o que muda resultado ou desempenho — sistema, arquitetura, número
+    de núcleos, memória, versão do Python — e omite `hostname`, usuário e
+    caminhos absolutos, que são dado de terceiro num artefato publicado (D15).
+    """
+    try:
+        memoria_gb = round(os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") / 1e9, 1)
+    except (ValueError, OSError, AttributeError):
+        memoria_gb = None
+
+    return {
+        "system": platform.system(),
+        "release": platform.release(),
+        "machine": platform.machine(),
+        "processor": platform.processor() or None,
+        "cpu_count_logical": os.cpu_count(),
+        "memory_gb": memoria_gb,
+        "python": sys.version.split()[0],
+    }
+
+
+class ExecutionManifest:
+    """
+    Manifesto de uma execução do workflow.
+
+    Uso::
+
+        manifesto = ExecutionManifest(project_root, params)
+        manifesto.register_input(caminho_do_fasta)
+        manifesto.write()                       # parcial, já no início
+        ...                                     # o pipeline roda
+        manifesto.register_outputs(diretorio_de_saida)
+        manifesto.finish()                      # grava a versão final
+
+    Gravar cedo é deliberado: se a execução morrer no meio — e
+    [D17](../../../docs/science/02-defeitos-que-alteram-resultado.md#d17) mostra
+    que morre —, o manifesto parcial diz em que ambiente ela morreu.
+
+    Parameters
+    ----------
+    project_root : str
+        Raiz do projeto (`out/` fica dentro dela). Todo caminho gravado é
+        relativo a ela.
+    params : dict
+        Configuração do workflow, como recebida por `workflow.py`.
+    repos : dict of str -> str, optional
+        ``nome -> caminho`` dos repositórios cujo commit deve ser registrado.
+    """
+
+    def __init__(self, project_root: str, params: Dict,
+                 repos: Optional[Dict[str, str]] = None) -> None:
+        self.project_root = os.path.abspath(project_root)
+        self.params = params
+        self.repos = repos or {}
+        self._inputs: Dict[str, Optional[str]] = {}
+        self._outputs: Dict[str, Optional[str]] = {}
+        self._tools_effective: Dict[str, Dict] = {}
+        self._reproducibility: Dict[str, int] = {}
+
+        self.run_id = uuid.uuid4().hex
+        self.started_at = datetime.datetime.now(datetime.timezone.utc)
+        self.finished_at: Optional[datetime.datetime] = None
+
+    # ------------------------------------------------------------------ #
+    # Coleta
+    # ------------------------------------------------------------------ #
+
+    def _relativo(self, path: str) -> str:
+        """Caminho relativo à raiz do projeto; nunca absoluto (D15)."""
+        try:
+            return os.path.relpath(os.path.abspath(path), self.project_root)
+        except ValueError:
+            return os.path.basename(path)
+
+    def register_input(self, path: str, suffixes=(".fasta", ".fa", ".fna", ".csv", ".gb")) -> None:
+        """
+        Registra uma entrada e seu SHA-256.
+
+        Aceita arquivo **ou diretório**: o `input_path` do `tree_config` é um
+        diretório de FASTA, e registrar só o caminho dele não diria nada sobre o
+        conteúdo — que é o que precisa ser idêntico para a execução ser a mesma.
+        """
+        if os.path.isdir(path):
+            for raiz, subdirs, arquivos in os.walk(path):
+                subdirs[:] = sorted(subdirs)
+                for arquivo in sorted(arquivos):
+                    if arquivo.endswith(suffixes):
+                        caminho = os.path.join(raiz, arquivo)
+                        self._inputs[self._relativo(caminho)] = file_digest(caminho)
+        else:
+            self._inputs[self._relativo(path)] = file_digest(path)
+
+    def register_outputs(self, directory: str, suffixes=(".nexus", ".nwk", ".aln", ".csv")) -> None:
+        """
+        Registra o SHA-256 de toda saída relevante encontrada em `directory`.
+
+        `metadata.json` e `raw_data_sequences.gb` ficam de fora por padrão: têm
+        gigabytes e seu conteúdo é derivado das árvores e do GenBank, que já
+        estão cobertos.
+        """
+        for raiz, subdirs, arquivos in os.walk(directory):
+            # Poda `tmp/` na travessia, comparando o caminho RELATIVO ao
+            # diretório varrido: testar `"/tmp" in caminho_absoluto` casaria com
+            # qualquer projeto guardado sob um diretório chamado `tmp` — o que
+            # inclui todo diretório temporário de teste.
+            subdirs[:] = [d for d in sorted(subdirs) if d != "tmp"]
+            for arquivo in sorted(arquivos):
+                if arquivo.endswith(suffixes):
+                    caminho = os.path.join(raiz, arquivo)
+                    self._outputs[self._relativo(caminho)] = file_digest(caminho)
+
+    def register_reproducibility(self, settings: Dict[str, int]) -> None:
+        """
+        Registra semente e paralelização efetivas da execução.
+
+        Deve receber o resultado de `builder.reproducibility_settings`, e não
+        valores recalculados: se o manifesto declarar um número e o pipeline
+        usar outro, ele deixa de ser manifesto e passa a ser ficção.
+        """
+        self._reproducibility = dict(settings)
+
+    def register_tool_run(self, tool: str, command: List[str], **extra) -> None:
+        """
+        Registra a linha de comando efetiva de uma ferramenta de inferência.
+
+        É o que responde "com que semente e com que paralelização esta árvore
+        foi feita" — e, depois de D17, sabe-se que a paralelização **muda a
+        topologia** mesmo com a semente fixa.
+        """
+        self._tools_effective[tool] = {"command": list(command), **extra}
+
+    # ------------------------------------------------------------------ #
+    # Serialização
+    # ------------------------------------------------------------------ #
+
+    def to_dict(self) -> Dict:
+        return {
+            "manifest_version": 1,
+            "run_id": self.run_id,
+            "started_at_utc": self.started_at.isoformat(),
+            "finished_at_utc": self.finished_at.isoformat() if self.finished_at else None,
+            "git": {nome: _git_state(caminho) for nome, caminho in self.repos.items()},
+            "environment": _environment(),
+            "tools_available": dict(tool_versions()),
+            "tools_invoked": self._tools_effective,
+            "reproducibility": dict(self._reproducibility),
+            "params": self.params,
+            "inputs_sha256": self._inputs,
+            "outputs_sha256": self._outputs,
+        }
+
+    def path(self) -> str:
+        return os.path.join(self.project_root, "out", "outputs", MANIFEST_FILENAME)
+
+    def write(self) -> str:
+        """Grava o manifesto no estado atual. Idempotente."""
+        destino = self.path()
+        os.makedirs(os.path.dirname(destino), exist_ok=True)
+        with open(destino, "w", encoding="utf-8") as handle:
+            json.dump(self.to_dict(), handle, indent=2, ensure_ascii=False, sort_keys=True)
+        return destino
+
+    def finish(self) -> str:
+        """Fecha o manifesto com o horário de término e grava."""
+        self.finished_at = datetime.datetime.now(datetime.timezone.utc)
+        destino = self.write()
+        logging.info(f"Manifesto de execução gravado em {self._relativo(destino)} "
+                     f"(run_id {self.run_id})")
+        return destino
