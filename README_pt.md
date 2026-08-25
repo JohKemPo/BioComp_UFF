@@ -323,6 +323,40 @@ ou
 python workflow.py --path "templates/config.json"
 ```
 
+## 3. Análise de Estabilidade entre Pipelines
+
+O pacote `workflow/stability/` analisa um conjunto de árvores construídas a partir dos mesmos dados por pipelines *diferentes* e mede quanto da topologia sobrevive à troca de método. Ele complementa `workflow/subtree_mining/`: em vez de minerar subárvores dentro de uma árvore, trata cada pipeline como uma transação e cada clado como um item, de modo que o suporte de um clado é a fração de combinações alinhador × método de inferência que o recuperam.
+
+Oferece:
+
+* **Identidade canônica de clado** — identidade invariante à ordem, de 128 bits, que substitui o hash ordenado de 16 bits, com auditoria que quantifica o quanto o esquema legado fragmenta ou colide clados.
+* **Reconciliação de rótulos** — IQ-TREE e RAxML-NG truncam o dígito de versão de acessos RefSeq ao gravar árvores; os rótulos afetados são reconciliados e reportados por pipeline.
+* **Mineração exata de padrões** — com M pipelines, o reticulado de padrões fechados é enumerado exatamente em O(2^M·|C|), então os padrões maximais são exatos, não heurísticos. Sem dependência de `mlxtend`.
+* **Decomposição de fatores** — distância Robinson-Foulds média entre pares de pipelines que diferem apenas no alinhador versus apenas no método de inferência.
+
+Executar o estudo de caso de Orthopoxvirus sobre os três projetos de Variola:
+
+```bash
+python -m workflow.stability.case_study
+```
+
+Ou um único projeto:
+
+```bash
+python -m workflow.stability.case_study \
+    --project projects/Variola_Yu_li_2007_200seq \
+    --fasta   data/workflow_dataAcquisition_li_et_al_2007_replication-RetMax200/dataset_final.fasta \
+    --label   VARV-121
+```
+
+Tabelas (`clade_support.csv`, `maximal_patterns.csv`, `rf_matrix.csv`, `summary.json`) e figuras são gravadas em `projects/<projeto>/out/outputs/stability/`. O estudo de caso, seus achados e o rascunho do manuscrito estão em [`docs/case_study_variola/`](docs/case_study_variola/).
+
+Testes:
+
+```bash
+python -m unittest workflow.tests.test_stability
+```
+
 ## Documentação
 
 Toda a documentação do projeto pode ser acessada executando o comando, se o diretório `html` não foi gerado após executar `setupWorkflow.py`:

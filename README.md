@@ -327,6 +327,40 @@ or
 python workflow.py --path "templates/config.json"
 ```
 
+## 3. Cross-Pipeline Stability Analysis
+
+The `workflow/stability/` package analyses a set of trees that were built from the same data by *different* pipelines, and measures how much of the topology survives the change of method. It complements `workflow/subtree_mining/`: instead of mining subtrees within a tree, it treats each pipeline as a transaction and each clade as an item, so the support of a clade is the fraction of aligner × inference-method combinations that recover it.
+
+It provides:
+
+* **Canonical clade identity** — an order-invariant, 128-bit identity that replaces the ordered 16-bit hash, plus an audit that quantifies how much the legacy scheme fragments or collides clades.
+* **Label reconciliation** — IQ-TREE and RAxML-NG truncate the version digit of RefSeq accessions when writing trees; affected labels are reconciled and reported per pipeline.
+* **Exact pattern mining** — with M pipelines the closed-pattern lattice is enumerated exactly in O(2^M·|C|), so maximal patterns are exact rather than heuristic. No `mlxtend` dependency.
+* **Factor decomposition** — mean Robinson–Foulds distance across pipeline pairs that differ only in the aligner versus only in the inference method.
+
+Run the bundled Orthopoxvirus case study over all three Variola projects:
+
+```bash
+python -m workflow.stability.case_study
+```
+
+Or a single project:
+
+```bash
+python -m workflow.stability.case_study \
+    --project projects/Variola_Yu_li_2007_200seq \
+    --fasta   data/workflow_dataAcquisition_li_et_al_2007_replication-RetMax200/dataset_final.fasta \
+    --label   VARV-121
+```
+
+Tables (`clade_support.csv`, `maximal_patterns.csv`, `rf_matrix.csv`, `summary.json`) and figures are written to `projects/<project>/out/outputs/stability/`. The case study, its findings and the accompanying manuscript draft are in [`docs/case_study_variola/`](docs/case_study_variola/).
+
+Tests:
+
+```bash
+python -m unittest workflow.tests.test_stability
+```
+
 ## Documentation
 
 All project documentation can be accessed by running the command, if the `html` directory has not been generated after running `setupWorkflow.py`:
