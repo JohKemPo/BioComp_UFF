@@ -15,6 +15,12 @@ Matrix = List[List[Any]]
 
 import hashlib, os, time
 
+# D5 — a identidade de clado usada em produção é a canônica, definida uma única
+# vez em `workflow.stability.clade_identity`. As funções `legacy_*` deste módulo
+# ficam só para auditoria e para reler artefatos antigos.
+from workflow.stability.clade_identity import (canonical_item_id,
+                                               strip_accession_version)
+
 
 def tree_to_dict(clade: Clade) -> Dict:
     """
@@ -274,10 +280,17 @@ def decode_int_to_list(encoded_int: int, original_list: List) -> Optional[list]:
 
 def encode_list_to_int(lst: List) -> int:
     """
-    Codifica uma lista de valores em um único inteiro usando hash MD5.
+    Identidade **legada** de clado: MD5 de 16 bits sobre a lista em ordem de travessia.
 
-    A função gera uma string da lista, calcula seu hash MD5, e retorna
-    os primeiros 4 caracteres como um número inteiro.
+    .. deprecated::
+        Mantida para auditoria e para reler `metadata.json` gerado antes de M1.2.
+        A identidade de produção é `encode_clade_to_int` — ver D5.
+
+    Dois defeitos somados: o hash é calculado sobre a *representação textual* da
+    lista, o que o torna dependente da ordem de travessia (o mesmo clado recebe
+    identificadores diferentes em árvores que ordenam filhos de modo distinto, e
+    o suporte é **subestimado**); e o espaço de 16 bits faz clados distintos
+    colidirem, o que **fabrica** suporte.
 
     Parameters
     ----------
@@ -287,11 +300,33 @@ def encode_list_to_int(lst: List) -> int:
     Return
     ------
     int
-        Valor inteiro resultante da codificação da lista.
+        Valor inteiro de 16 bits, dependente da ordem.
     """
     lst_str = str(lst)
     hash_object = hashlib.md5(lst_str.encode())
     return int(hash_object.hexdigest()[:4], 16)
+
+
+def encode_clade_to_int(terminal_names: List[str]) -> int:
+    """
+    Identidade canônica de um clado, a partir dos nomes de seus terminais (D5).
+
+    Invariante à ordem de travessia e com 60 bits de espaço. Os nomes são
+    normalizados por `strip_accession_version`, de modo que o mesmo clado tenha a
+    mesma identidade numa árvore de IQ-TREE (rótulo truncado em 10 caracteres) e
+    numa de FastTree (rótulo íntegro) — ver D13.
+
+    Parameters
+    ----------
+    terminal_names : list of str
+        Nomes dos terminais do clado, em qualquer ordem.
+
+    Return
+    ------
+    int
+        Identificador canônico do clado.
+    """
+    return canonical_item_id(strip_accession_version(name) for name in terminal_names)
 
 def decode_tree_hash(encoded_data: Dict) -> Optional[str]:
     """
@@ -312,8 +347,7 @@ def decode_tree_hash(encoded_data: Dict) -> Optional[str]:
     """
     newick = encoded_data['newick']
     original_hash = encoded_data['terminal_hash']
-    hash_object = hashlib.md5(newick.encode())
-    if int(hash_object.hexdigest()[:4], 16) == original_hash:
+    if canonical_item_id([strip_accession_version(newick)]) == original_hash:
         return newick
     else:
         return None
@@ -410,21 +444,23 @@ def calculate_tree_hash(data: Tree, is_terminal: bool = False, gbk_file: str = N
     if is_terminal:
         if not isinstance(data, str):
             raise ValueError("Para terminais, 'data' deve ser uma string com o nome do terminal.")
-        newick = data
-        hash_object = hashlib.md5(newick.encode())
+        # O hash é do rótulo NORMALIZADO, que é também o que se grava em 'newick'.
+        # Antes hashava-se o rótulo bruto e gravava-se o truncado: `decode_tree_hash`
+        # nunca validava, e `NC_008030.` e `NC_008030.1` viravam dois terminais
+        # distintos (D5 + D13).
+        newick = strip_accession_version(data)
 
         if gbk_file is None:
             raise ValueError("Arquivo GenBank local (gbk_file) deve ser fornecido para terminais.")
-        
+
         metadata = fetch_local_record(data, gbk_file)
     else:
         newick = data.format("newick")
-        hash_object = hashlib.md5(newick.encode())
         metadata = None
 
     return {
-        'newick': newick.split('.')[0],
-        'terminal_hash': int(hash_object.hexdigest()[:4], 16),
+        'newick': newick,
+        'terminal_hash': canonical_item_id([newick]),
         'metadata': metadata
     }
     

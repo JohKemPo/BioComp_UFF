@@ -8,6 +8,7 @@ sys.path.append(os.path.join(current_dir, '../..'))
 from workflow.utils.messages import Messages
 from workflow.utils.treeUtils import (tree_to_dict, 
                                       calculate_tree_hash,
+                                      encode_clade_to_int,
                                       encode_list_to_int, 
                                       download_sequences)
 
@@ -138,6 +139,8 @@ class SubtreeBuilder:
                     Phylo.write(subtree, filepath_out, self.output_format)
                     self.count_subtrees += 1
                             
+                subtree_terminal_names = list()
+
                 for subtree_clade in subtree.find_clades():
                     name_terminal = subtree_clade.name
                     if subtree_clade.is_terminal():
@@ -145,19 +148,26 @@ class SubtreeBuilder:
                         hash_result = calculate_tree_hash(name_terminal, subtree_clade.is_terminal(), gbk_file=raw_data_sequences)
                         hash_list.append(hash_result)
                         subtree_list_termials.append(hash_result['terminal_hash'])
+                        subtree_terminal_names.append(hash_result['newick'])
 
                         # if self.resume_infos:
                         #     self.messagesManager.print_subtree_clade_info(clade=subtree_clade, decode=self._decode_tree_hash(hash_result), hash_dict=hash_result)
 
+                # D5 — a identidade do clado sai dos NOMES dos terminais, não da
+                # lista de hashes na ordem de travessia. `..._legacy` fica só para
+                # auditar artefatos antigos e nunca é usada como item de mineração.
+                clade_id = encode_clade_to_int(subtree_terminal_names)
+
                 dict_aux[name_subtree] = {
                     'Terminals': subtree_list_termials,
-                    'List_terminals_hash': encode_list_to_int(subtree_list_termials),
+                    'List_terminals_hash': clade_id,
+                    'List_terminals_hash_legacy': encode_list_to_int(subtree_list_termials),
                     'data_terminals': hash_list,
                     'metadata': tree_to_dict(clade)
                 }
 
                 if self.resume_infos:
-                    self.messagesManager.print_list_clade(list_clades=subtree_list_termials, hash_value=encode_list_to_int(subtree_list_termials))
+                    self.messagesManager.print_list_clade(list_clades=subtree_list_termials, hash_value=clade_id)
 
         result_dict[name_tree] = dict_aux 
 
