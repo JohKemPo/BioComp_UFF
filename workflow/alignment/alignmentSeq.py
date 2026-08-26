@@ -11,7 +11,7 @@ import shutil
 from pathlib import Path
 import psutil  
 
-from workflow.utils import tool_runs
+from workflow.utils import run_logging, tool_runs
 
 class AlignmentSeqs():
     """
@@ -32,10 +32,11 @@ class AlignmentSeqs():
         None
         """
         
-        date = datetime.datetime.now()
-        logging.basicConfig(level=logging.INFO, 
-                    filename=config.get('logfile_path', 1),
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+        # D22 — o padrão era o inteiro `1`, que o logging trata como descritor de
+        # arquivo: sem `logfile_path` na configuração, o log ia para o stdout.
+        caminho_log = config.get('logfile_path')
+        if caminho_log:
+            run_logging.garantir(os.path.dirname(caminho_log) or '.')
         
         
         self.num_threads = config.get('num_threads', psutil.cpu_count(logical=True))

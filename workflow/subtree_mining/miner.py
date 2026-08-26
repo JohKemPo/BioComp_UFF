@@ -1,3 +1,4 @@
+from workflow.utils import run_logging
 from typing import List, Dict, Any
 import os, sys, logging, datetime
 import pandas as pd
@@ -52,10 +53,9 @@ class SubtreeMiner:
         for key, value in kwargs.items():
             setattr(self, key, value)
             
-        date = datetime.datetime.now()
-        logging.basicConfig(level=logging.INFO, 
-                    filename=os.path.join(self.output_path,'outputs',f"log_setup_{date.year}_{date.month}_{date.day}.log"),
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+        # D22 — o log é aberto uma vez por execução, com o `run_id` no nome.
+        # `garantir` não troca o que o workflow já configurou.
+        run_logging.garantir(os.path.join(self.output_path, 'outputs'))
         
         self.matriz_subtree = list()
 

@@ -1,3 +1,4 @@
+from workflow.utils import run_logging
 import time
 import resource
 from Bio import Phylo
@@ -18,11 +19,9 @@ class Messages:
         """
         super().__init__()
         self.logPath = logPath
-        date = datetime.datetime.now()
-
-        logging.basicConfig(level=logging.INFO, 
-                    filename=f"{logPath}/log_setup_{date.year}_{date.month}_{date.day}.log",
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+        # D22 — ver workflow/utils/run_logging.py. Sete módulos mantinham cópias
+        # destas três linhas, e qual delas vencia dependia da ordem de importação.
+        run_logging.garantir(logPath)
 
     def init_message(self) -> str:
         """

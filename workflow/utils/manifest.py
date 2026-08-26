@@ -204,6 +204,7 @@ class ExecutionManifest:
         self._outputs: Dict[str, Optional[str]] = {}
         self._tools_effective: Dict[str, Dict] = {}
         self._reproducibility: Dict[str, int] = {}
+        self._log_file: Optional[str] = None
 
         self.run_id = uuid.uuid4().hex
         self.started_at = datetime.datetime.now(datetime.timezone.utc)
@@ -309,6 +310,17 @@ class ExecutionManifest:
                     caminho = os.path.join(raiz, arquivo)
                     self._outputs[self._relativo(caminho)] = file_digest(caminho)
 
+    def register_log(self, path: str) -> None:
+        """
+        Registra o arquivo de log desta execução.
+
+        É o que faz manifesto e log apontarem um para o outro: a pergunta "que
+        log produziu esta árvore" passa a ter resposta exata, em vez de "o mais
+        recente por data de modificação" — que escolhia entre execuções
+        diferentes sem dizer qual (D22).
+        """
+        self._log_file = self._relativo(path) if path else None
+
     def register_reproducibility(self, settings: Dict[str, int]) -> None:
         """
         Registra semente e paralelização efetivas da execução.
@@ -375,6 +387,7 @@ class ExecutionManifest:
             "environment": _environment(),
             "tools_available": dict(tool_versions()),
             "tools_invoked": self._tools_effective,
+            "log_file": self._log_file,
             "reproducibility": dict(self._reproducibility),
             "params": self._sanitizar_params(self.params),
             "inputs_sha256": self._inputs,

@@ -1,3 +1,4 @@
+from workflow.utils import run_logging
 import os, sys, time, json, logging, datetime
 from tqdm import tqdm
 import pandas as pd
@@ -59,10 +60,9 @@ class SubtreeBuilderController:
         for key, value in kwargs.items():
             setattr(self, key, value)
         
-        date = datetime.datetime.now()
-        logging.basicConfig(level=logging.INFO, 
-                    filename=os.path.join(self.output_path,'outputs',f"log_setup_{date.year}_{date.month}_{date.day}.log"),
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+        # D22 — o log é aberto uma vez por execução, com o `run_id` no nome.
+        # `garantir` não troca o que o workflow já configurou.
+        run_logging.garantir(os.path.join(self.output_path, 'outputs'))
             
         self.start = time.time()
         self.msg = Messages(logPath=os.path.join(self.output_path,'outputs'))

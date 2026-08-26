@@ -3,6 +3,7 @@ import json, sys, os, argparse
 from workflow.controller.treeBuilderController import TreeBuilderController
 from workflow.controller.subtreeBuilderController import SubtreeBuilderController
 from workflow.utils.manifest import ExecutionManifest
+from workflow.utils import run_logging
 from workflow.tree_construction.builder import reproducibility_settings
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -83,6 +84,13 @@ manifest = ExecutionManifest(
         'PhyloTreeMiner': os.path.dirname(BASE_PATH),
     },
 )
+# D22 — o log desta execução carrega o `run_id` no nome. Antes ele se chamava
+# `log_setup_{ano}_{mês}_{dia}.log` e era aberto em append, de modo que duas
+# execuções no mesmo dia caíam no mesmo arquivo e ninguém conseguia separá-las
+# depois. Configurado ANTES dos controladores, que é quem escrevia primeiro.
+manifest.register_log(
+    run_logging.configurar(os.path.join(params['output_log'], 'outputs'), manifest.run_id))
+
 entrada = params.get('tree_config', {}).get('input_path')
 if entrada and os.path.exists(entrada):
     manifest.register_input(entrada)

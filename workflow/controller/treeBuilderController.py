@@ -1,3 +1,4 @@
+from workflow.utils import run_logging
 import os
 import time
 import sys
@@ -68,11 +69,9 @@ class TreeBuilderController:
         for k, v in kwargs.items():
             setattr(self, k, v)
             
-        date = datetime.datetime.now()
-        logfile_path = os.path.join(self.output_path,'outputs',f"log_setup_{date.year}_{date.month}_{date.day}.log")
-        logging.basicConfig(level=logging.INFO, 
-                    filename=logfile_path,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+        # D22 — o log é aberto uma vez por execução, com o `run_id` no nome.
+        # `garantir` não troca o que o workflow já configurou.
+        logfile_path = run_logging.garantir(os.path.join(self.output_path, 'outputs'))
         
         
 
