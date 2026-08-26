@@ -32,6 +32,7 @@ import uuid
 from typing import Dict, List, Optional
 
 from workflow.utils.external_tools import resolve_tool
+from workflow.utils import tool_runs
 
 __all__ = [
     "ExecutionManifest",
@@ -219,6 +220,58 @@ class ExecutionManifest:
         except ValueError:
             return os.path.basename(path)
 
+    def _fora_da_raiz(self, path: str) -> str:
+        """
+        Como `_relativo`, mas reduz a **nome do arquivo** o que estiver fora do
+        projeto.
+
+        `os.path.relpath` de um caminho fora da raiz devolve `../../..` até
+        alcançá-lo, e o resto do caminho absoluto vai junto: o binário do
+        RAxML-NG mora em `<home do usuário>/miniconda3/envs/...`, de modo que
+        relativizá-lo grava o nome do usuário no manifesto. É exatamente
+        [D15](../../../docs/science/02-defeitos-que-alteram-resultado.md#d15),
+        que já vazou `/home/<usuário>` de um terceiro pela API.
+
+        Dentro do projeto, caminho relativo — é informação do experimento.
+        Fora, só o nome — a versão de cada ferramenta já está em
+        `tools_available`, e *onde* ela estava instalada não é reproduzível
+        noutra máquina de qualquer forma.
+        """
+        relativo = self._relativo(path)
+        return os.path.basename(path) if relativo.startswith(os.pardir) else relativo
+
+    def _sanitizar_comando(self, comando: List[str]) -> List[str]:
+        """
+        Linha de comando sem caminho absoluto, preservando o que ela informa.
+
+        Um token é tratado como caminho quando tem separador de diretório: os
+        parâmetros que decidem o resultado (`--threads`, `--seed`, `GTR+G`)
+        nunca têm, e passam intactos.
+        """
+        return [self._fora_da_raiz(token) if os.sep in token else token
+                for token in comando]
+
+    def _sanitizar_params(self, valor):
+        """
+        Configuração sem caminho absoluto, em qualquer profundidade.
+
+        O módulo promete, desde a primeira linha, que "todo caminho é relativo à
+        raiz do projeto" — e `params` era gravado cru, com `input_path` e
+        `output_path` absolutos. O manifesto declarava não vazar D15 e vazava,
+        e a conferência não pegava porque só varre as chaves de
+        `inputs_sha256`/`outputs_sha256`.
+
+        Um valor é tratado como caminho quando é absoluto: um parâmetro comum
+        (`"advanced"`, `"GTR+G"`, `"nexus"`) nunca é.
+        """
+        if isinstance(valor, dict):
+            return {k: self._sanitizar_params(v) for k, v in valor.items()}
+        if isinstance(valor, list):
+            return [self._sanitizar_params(v) for v in valor]
+        if isinstance(valor, str) and os.path.isabs(valor):
+            return self._fora_da_raiz(valor)
+        return valor
+
     def register_input(self, path: str, suffixes=(".fasta", ".fa", ".fna", ".csv", ".gb")) -> None:
         """
         Registra uma entrada e seu SHA-256.
@@ -266,23 +319,55 @@ class ExecutionManifest:
         """
         self._reproducibility = dict(settings)
 
-    def register_tool_run(self, tool: str, command: List[str], **extra) -> None:
+    def register_tool_run(self, tool: str, command: List[str],
+                          saida: Optional[str] = None, **extra) -> None:
         """
-        Registra a linha de comando efetiva de uma ferramenta de inferência.
+        Registra a linha de comando efetiva de uma chamada de ferramenta.
 
         É o que responde "com que semente e com que paralelização esta árvore
         foi feita" — e, depois de D17, sabe-se que a paralelização **muda a
         topologia** mesmo com a semente fixa.
+
+        Chamar mais de uma vez para a mesma ferramenta **acumula**: um
+        delineamento com dois alinhadores invoca o RAxML-NG duas vezes, e
+        guardar só a última chamada seria declarar como único o comando que
+        produziu metade das árvores.
+
+        Os caminhos são higienizados por `_sanitizar_comando` antes de entrar:
+        o manifesto vai para o repositório e pode ir para material suplementar.
         """
-        self._tools_effective[tool] = {"command": list(command), **extra}
+        entrada = self._tools_effective.setdefault(tool, {"runs": []})
+        entrada.update({k: v for k, v in extra.items() if v is not None})
+        chamada: Dict = {"command": self._sanitizar_comando(command)}
+        if saida is not None:
+            chamada["saida"] = self._fora_da_raiz(saida)
+        entrada["runs"].append(chamada)
+
+    def drain_tool_runs(self) -> None:
+        """
+        Recolhe em `tool_runs` o que o pipeline registrou durante a execução.
+
+        Chamado no encerramento, inclusive quando a execução falhou: saber qual
+        comando estava rodando é metade do diagnóstico.
+        """
+        for ferramenta, dados in tool_runs.execucoes().items():
+            chamadas = dados.pop("runs", [])
+            for chamada in chamadas:
+                self.register_tool_run(ferramenta, chamada["command"],
+                                       saida=chamada.get("saida"), **dados)
 
     # ------------------------------------------------------------------ #
     # Serialização
     # ------------------------------------------------------------------ #
 
     def to_dict(self) -> Dict:
+        # Versão 2: `tools_invoked` deixou de ser `ferramenta -> {command, ...}`
+        # e passou a ser `ferramenta -> {parâmetros, "runs": [...]}`. A forma
+        # antiga guardava uma chamada por ferramenta e perdia as demais — e,
+        # como o campo nunca chegou a ser populado (DEC-045), nenhum artefato
+        # em disco tem a forma antiga.
         return {
-            "manifest_version": 1,
+            "manifest_version": 2,
             "run_id": self.run_id,
             "started_at_utc": self.started_at.isoformat(),
             "finished_at_utc": self.finished_at.isoformat() if self.finished_at else None,
@@ -291,7 +376,7 @@ class ExecutionManifest:
             "tools_available": dict(tool_versions()),
             "tools_invoked": self._tools_effective,
             "reproducibility": dict(self._reproducibility),
-            "params": self.params,
+            "params": self._sanitizar_params(self.params),
             "inputs_sha256": self._inputs,
             "outputs_sha256": self._outputs,
         }

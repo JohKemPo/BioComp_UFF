@@ -11,6 +11,8 @@ import shutil
 from pathlib import Path
 import psutil  
 
+from workflow.utils import tool_runs
+
 class AlignmentSeqs():
     """
     Classe responsável por alinhar sequências de DNA ou proteínas utilizando ferramentas de alinhamento como ClustalW e MAFFT.
@@ -247,6 +249,8 @@ class AlignmentSeqs():
             if num_seqs > 5000:
                 clustalo_cmd.extend(["--max-guidetree-iterations", "1", "--max-hmm-iterations", "1"])
 
+            tool_runs.registrar('clustalo', clustalo_cmd, saida=output_path_align,
+                                threads=self.num_threads, n_sequencias=num_seqs)
             result = subprocess.run(clustalo_cmd, capture_output=True, text=True)
             
             if result.returncode != 0:
@@ -311,6 +315,11 @@ class AlignmentSeqs():
                 logging.info("MUSCLE 3.8: -maxiters 2 (conjunto grande)")
 
         logging.info(f"Executando comando: {' '.join(cmd)}")
+        # A versão maior escolhe a sintaxe (`-align/-output` × `-in/-out`) e não
+        # se lê da linha de comando: vai explícita. É a diferença que fez a
+        # medição de custo do MUSCLE 3.8 não valer para o 5.3 (DEC-044).
+        tool_runs.registrar('muscle', cmd, saida=output_path_align,
+                            versao_maior=versao, n_sequencias=num_seqs)
         result = subprocess.run(cmd, capture_output=True, text=True)
 
         if result.returncode != 0:
@@ -421,6 +430,12 @@ class AlignmentSeqs():
         
         logging.info(f"Executando comando: {' '.join(cmd)}")
         
+        # A estratégia (`--auto` × `--parttree`) é escolhida pelo tamanho do
+        # conjunto e muda o alinhamento — logo, muda a árvore. Até aqui ela só
+        # existia no log da execução, que não acompanha o artefato.
+        tool_runs.registrar('mafft', cmd, saida=output_path_align,
+                            threads=self.num_threads,
+                            estrategia=' '.join(strategy))
         # Redirecionamento direto de stdout para evitar overhead de strings no Python
         with open(output_path_align, "w") as out_f:
             result = subprocess.run(cmd, stdout=out_f, stderr=subprocess.PIPE, text=True)

@@ -53,6 +53,7 @@ def reproducibility_settings(config: dict) -> dict:
 
 
 from workflow.utils.external_tools import require_tool
+from workflow.utils import tool_runs
 
 class TreeBuilder:
     """
@@ -201,6 +202,9 @@ class TreeBuilder:
             ]
 
             logging.info(f"IQ-TREE: {' '.join(cmd)}")
+            tool_runs.registrar('iqtree', cmd, saida=output_path_tree,
+                                seed=self.random_seed, threads=self.iqtree_threads,
+                                model='GTR+G', bootstrap='UFBoot 1000')
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
             
             possible_tree_files = [
@@ -243,7 +247,13 @@ class TreeBuilder:
             AlignIO.write(alignment, align_path, 'fasta')
             
             cmd = [require_tool('fasttree'), '-nt', '-gtr', align_path]
-            
+
+            # Sem semente e sem paralelização declarável: o FastTree não aceita
+            # nem uma nem outra nesta chamada. Registrar assim mesmo é o que
+            # diferencia "não se aplica" de "ninguém registrou" — a regra 5 do
+            # projeto, aplicada ao manifesto.
+            tool_runs.registrar('fasttree', cmd, saida=output_path_tree,
+                                model='GTR (-nt -gtr)')
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
             
             tree = Phylo.read(StringIO(result.stdout), 'newick')
@@ -294,6 +304,12 @@ class TreeBuilder:
             ]
 
             logging.info(f"RAxML-NG: {' '.join(cmd)}")
+            # `workers=1` é fixo por D17 e vai ao manifesto junto com `threads`:
+            # medido que o esquema de paralelização muda a topologia com a
+            # mesma semente, então ele é metadado do resultado, não da máquina.
+            tool_runs.registrar('raxml-ng', cmd, saida=output_path_tree,
+                                seed=self.random_seed, threads=self.raxml_threads,
+                                workers=1, model='GTR+G')
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
             
             tree_file = prefix + '.raxml.bestTree'
@@ -388,8 +404,22 @@ class TreeBuilder:
             with open(script_path, 'w') as f:
                 f.write(mrbayes_script)
             
+            # A linha de comando do MrBayes é só o binário: o que decide o
+            # resultado está no script lido pela entrada padrão. Registrar
+            # apenas `[mb]` seria um registro tecnicamente verdadeiro e inútil,
+            # então os parâmetros do script vão junto — é o que M7.4 vai cobrar.
+            # Não há semente: o MrBayes gera a sua, e por isso esta árvore
+            # **não é reprodutível** (D11). O manifesto declara isso em vez de
+            # omitir.
+            cmd_mb = [require_tool('mrbayes')]
+            tool_runs.registrar('mrbayes', cmd_mb, saida=output_path_tree,
+                                model='nst=6 rates=gamma',
+                                ngen=generations, burnin=250, samplefreq=100,
+                                seed=None,
+                                script=os.path.basename(script_path),
+                                nota='sem semente fixa — execução não reproduzível (D11)')
             result = subprocess.run(
-                [require_tool('mrbayes')],
+                cmd_mb,
                 stdin=open(script_path, 'r'),
                 capture_output=True,
                 timeout=3600,
@@ -403,7 +433,7 @@ class TreeBuilder:
                 logging.error(f"MrBayes exit code: {result.returncode}")
                 logging.error(f"MrBayes stdout: {stdout_text[:1000]}")  
                 logging.error(f"MrBayes stderr: {stderr_text[:1000]}")
-                raise subprocess.CalledProcessError(result.returncode, [require_tool('mrbayes')], stdout_text, stderr_text)
+                raise subprocess.CalledProcessError(result.returncode, cmd_mb, stdout_text, stderr_text)
             
             tree_files = [
                 'alignment.nexus.con.tre',

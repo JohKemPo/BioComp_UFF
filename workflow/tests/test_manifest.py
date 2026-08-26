@@ -20,6 +20,7 @@ import shutil
 import tempfile
 import unittest
 
+from workflow.utils import tool_runs
 from workflow.utils.external_tools import CANDIDATOS
 from workflow.utils.manifest import (ExecutionManifest, MANIFEST_FILENAME,
                                      file_digest, tool_versions)
@@ -85,9 +86,13 @@ class TestManifesto(unittest.TestCase):
         with open(self.entrada, "w") as handle:
             handle.write(">a\nACGT\n>b\nACGA\n")
         self.params = {"project_name": "teste", "tree_config": {"input_path": self.entrada}}
+        # O coletor é de processo (ver `tool_runs`): sem isto, um teste enxerga
+        # o que outro registrou.
+        tool_runs.limpar()
 
     def tearDown(self):
         shutil.rmtree(self.raiz, ignore_errors=True)
+        tool_runs.limpar()
 
     def _manifesto(self):
         return ExecutionManifest(self.raiz, self.params)
@@ -178,7 +183,77 @@ class TestManifesto(unittest.TestCase):
         invocadas = manifesto.to_dict()["tools_invoked"]
         self.assertEqual(invocadas["raxml-ng"]["seed"], 12345)
         self.assertEqual(invocadas["raxml-ng"]["workers"], 1)
-        self.assertIn("--workers", invocadas["raxml-ng"]["command"])
+        self.assertIn("--workers", invocadas["raxml-ng"]["runs"][0]["command"])
+
+    def test_duas_chamadas_da_mesma_ferramenta_nao_se_sobrescrevem(self):
+        """Um delineamento com dois alinhadores invoca o RAxML-NG duas vezes.
+        Guardar só a última seria declarar como único o comando que produziu
+        metade das árvores."""
+        manifesto = self._manifesto()
+        for braco in ("mafft", "clustalo"):
+            manifesto.register_tool_run(
+                "raxml-ng", ["raxml-ng", "--msa", f"{braco}.phylip"],
+                saida=os.path.join(self.raiz, "out", "Trees", f"t_{braco}.nexus"),
+                seed=12345, threads=4, workers=1)
+        execucoes = manifesto.to_dict()["tools_invoked"]["raxml-ng"]
+        self.assertEqual(len(execucoes["runs"]), 2)
+        self.assertEqual(
+            [r["saida"] for r in execucoes["runs"]],
+            [os.path.join("out", "Trees", "t_mafft.nexus"),
+             os.path.join("out", "Trees", "t_clustalo.nexus")])
+
+    def test_comando_nao_vaza_caminho_absoluto_nem_usuario(self):
+        """O binário resolvido mora no ambiente conda do usuário: gravar a
+        linha de comando crua reintroduz D15, que já vazou `/home/<usuário>`."""
+        manifesto = self._manifesto()
+        manifesto.register_tool_run(
+            "raxml-ng",
+            ["/home/fulano/miniconda3/envs/Phylotreeminer/bin/raxml-ng",
+             "--msa", os.path.join(self.raiz, "out", "tmp", "x.phylip"),
+             "--threads", "4", "--model", "GTR+G"],
+            seed=12345)
+        comando = manifesto.to_dict()["tools_invoked"]["raxml-ng"]["runs"][0]["command"]
+        self.assertNotIn("fulano", " ".join(comando))
+        self.assertFalse([t for t in comando if os.path.isabs(t)], comando)
+        # O que a linha informa continua legível: o binário pelo nome, o
+        # caminho de dentro do projeto relativo, e os parâmetros intactos.
+        self.assertEqual(comando[0], "raxml-ng")
+        self.assertIn(os.path.join("out", "tmp", "x.phylip"), comando)
+        self.assertIn("GTR+G", comando)
+
+    def test_params_nao_vaza_caminho_absoluto(self):
+        """O módulo promete, na primeira linha, que todo caminho é relativo —
+        e `params` era gravado cru, com `input_path` e `output_path` absolutos.
+        A conferência não pegava: ela só varre as chaves de SHA-256."""
+        params = {
+            "project_name": "teste",
+            "tree_config": {
+                "mode": "advanced",
+                "input_path": "/home/fulano/dados/Zika",
+                "output_path": os.path.join(self.raiz, "out"),
+                "ignore_mode": ["mrbayes"],
+            },
+        }
+        gravado = ExecutionManifest(self.raiz, params).to_dict()["params"]
+        self.assertNotIn("fulano", json.dumps(gravado))
+        self.assertEqual(gravado["tree_config"]["output_path"], "out")
+        self.assertEqual(gravado["tree_config"]["input_path"], "Zika")
+        # O que não é caminho passa intacto — inclusive dentro de lista.
+        self.assertEqual(gravado["tree_config"]["mode"], "advanced")
+        self.assertEqual(gravado["tree_config"]["ignore_mode"], ["mrbayes"])
+
+    def test_drena_o_que_o_pipeline_registrou(self):
+        """`tools_invoked` só vale se o pipeline alimentar o coletor: era
+        exatamente isso que faltava (DEC-045)."""
+        tool_runs.registrar("iqtree", ["iqtree3", "-s", "x.phylip", "-nt", "4"],
+                            saida=os.path.join(self.raiz, "out", "Trees", "t.nexus"),
+                            seed=12345, threads=4)
+        manifesto = self._manifesto()
+        manifesto.drain_tool_runs()
+        invocadas = manifesto.to_dict()["tools_invoked"]
+        self.assertEqual(invocadas["iqtree"]["seed"], 12345)
+        self.assertEqual(invocadas["iqtree"]["runs"][0]["saida"],
+                         os.path.join("out", "Trees", "t.nexus"))
 
     def test_reproducibilidade_vem_da_mesma_fonte_do_builder(self):
         """O manifesto não pode declarar uma semente e o pipeline usar outra:
@@ -243,7 +318,7 @@ class TestManifesto(unittest.TestCase):
         with open(manifesto.path(), encoding="utf-8") as handle:
             texto = handle.read()
         json.loads(texto)   # não levanta
-        self.assertIn('"manifest_version": 1', texto)
+        self.assertIn('"manifest_version": 2', texto)
 
 
 if __name__ == "__main__":

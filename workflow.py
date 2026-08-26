@@ -104,5 +104,11 @@ try:
 finally:
     # Também no caminho de erro: o manifesto de uma execução que falhou é o que
     # permite diagnosticar a falha depois, e D17 mostrou que elas acontecem.
+    #
+    # `drain_tool_runs` recolhe o que alinhadores e inferidores registraram
+    # durante a execução. Vem antes de `finish` e dentro do `finally` pelo mesmo
+    # motivo: numa execução interrompida, saber qual comando estava rodando é
+    # metade do diagnóstico.
+    manifest.drain_tool_runs()
     manifest.register_outputs(os.path.join(params['output_log']))
     manifest.finish()
