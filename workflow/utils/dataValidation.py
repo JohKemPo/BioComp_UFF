@@ -1,4 +1,5 @@
 from Bio import SeqIO
+import logging
 import os
 
 # Função que verifica se todas as sequências são proteínas válidas no formato FASTA
@@ -52,19 +53,62 @@ def duplicate_seq(file_path):
 
     return (False,"")
 
-def remove_pipe(name, path, outputpath):
+def deduplicar_por_sequencia(name, path, outputpath):
+    """
+    Grava um FASTA com uma entrada por **sequência distinta**, e devolve o que
+    foi descartado.
+
+    Esta função chamava-se `remove_pipe` e não removia pipe nenhum: o nome dizia
+    uma coisa e o corpo fazia outra — deduplicação por conteúdo, guardando a
+    primeira ocorrência. O chamador a invocava sob a mensagem "iniciando remoção
+    de pipes", e **nada registrava quais registros saíam**.
+
+    Isso não é detalhe de nomenclatura. Nos conjuntos de *Variola* a aquisição
+    baixa, para o mesmo genoma, o registro do GenBank **e** a cópia curada do
+    RefSeq (`NC_008291` = `DQ437594`, `NC_003391` = `AF438165`), de modo que o
+    projeto chamado VARV-49 recebe **52 registros** e produz árvores com **49
+    folhas** — sem que a diferença apareça em log, em `summary.json` ou em
+    *Methods*. `n` é um número publicado. Ver
+    [D23](../../../docs/science/02-defeitos-que-alteram-resultado.md#d23).
+
+    Pior: como se guarda a **primeira** ocorrência e a ordem do arquivo difere
+    entre conjuntos, o acesso que representa o grupo externo **muda de
+    experimento para experimento** — `DQ437594` em VARV-52, `NC_008291` em
+    VARV-121.
+
+    A composição não é alterada aqui: a decisão do usuário em 2026-08-26 foi
+    **declarar agora e corrigir na aquisição depois**. O que muda é que o
+    descarte deixa de ser silencioso.
+
+    Return
+    ------
+    tuple of (str, list)
+        Caminho do FASTA deduplicado e lista de ``(descartado, mantido)``.
+    """
     sequences = list(SeqIO.parse(path, "fasta"))
-    # Criar um dicionário para armazenar as sequências únicas
     unique_sequences = {}
-    # Iterar pelas sequências do arquivo de entrada
+    descartados = []
     for sequence in sequences:
-        # Verificar se a sequência já existe no dicionário de sequências únicas
-        if str(sequence.seq) not in unique_sequences:
-            # Se a sequência é única, armazená-la no dicionário
-            unique_sequences[str(sequence.seq)] = sequence
-    # Criar uma lista de sequências únicas
-    unique_sequences_list = list(unique_sequences.values())
-    # Salvar as sequências únicas em um arquivo de saída
-    output_file_tmp = os.path.join(outputpath,f'{name}_NoPipe')
-    SeqIO.write(unique_sequences_list, output_file_tmp, "fasta")
-    return output_file_tmp
+        chave = str(sequence.seq)
+        if chave not in unique_sequences:
+            unique_sequences[chave] = sequence
+        else:
+            descartados.append((sequence.id, unique_sequences[chave].id))
+
+    output_file_tmp = os.path.join(outputpath, f'{name}_NoPipe')
+    SeqIO.write(list(unique_sequences.values()), output_file_tmp, "fasta")
+
+    if descartados:
+        logging.warning(
+            f"{len(sequences)} registros → {len(unique_sequences)} sequências distintas. "
+            f"Descartados por sequência idêntica: "
+            + "; ".join(f"{perdido} (idêntico a {mantido})" for perdido, mantido in descartados)
+        )
+    return output_file_tmp, descartados
+
+
+#: Nome antigo, mantido para não quebrar chamador de fora do repositório. Ele
+#: descreve o que a função **não** faz; use `deduplicar_por_sequencia`.
+def remove_pipe(name, path, outputpath):
+    caminho, _ = deduplicar_por_sequencia(name, path, outputpath)
+    return caminho

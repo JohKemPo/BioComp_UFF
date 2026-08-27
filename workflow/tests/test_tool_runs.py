@@ -142,7 +142,11 @@ class TestPipelineRegistra(unittest.TestCase):
         self.assertNotIn("auto", comando)
         self.assertEqual(entrada["runs"][0]["saida"], saida)
 
-    def test_iqtree_registra_semente(self):
+    def test_iqtree_registra_semente_e_uma_thread(self):
+        """D21 — a busca de ML roda em `-nt 1`. Medido: com `-nt N`, três
+        repetições da mesma semente devolvem três topologias, porque a ordem
+        das reduções de ponto flutuante decide entre ótimos empatados e o
+        IQ-TREE não tem equivalente ao `--workers 1` do RAxML-NG."""
         saida = self._saida("t_iqtree")
         with mock.patch("workflow.tree_construction.builder.require_tool",
                         return_value="/opt/env/bin/iqtree3"), \
@@ -151,8 +155,13 @@ class TestPipelineRegistra(unittest.TestCase):
                 _alinhamento(), saida)
 
         entrada = tool_runs.execucoes()["iqtree"]
+        comando = entrada["runs"][0]["command"]
         self.assertEqual(entrada["seed"], 777)
-        self.assertEqual(entrada["threads"], 3)
+        self.assertEqual(entrada["threads"], 1)
+        self.assertEqual(comando[comando.index("-nt") + 1], "1")
+        # O valor configurado não some: ele explica a diferença para quem
+        # comparar com uma execução anterior.
+        self.assertEqual(entrada["threads_configurados"], 3)
 
     def test_fasttree_registra_ainda_sem_semente(self):
         """O FastTree não aceita semente nesta chamada. Registrar assim mesmo é

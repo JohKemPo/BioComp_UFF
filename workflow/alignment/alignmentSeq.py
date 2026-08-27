@@ -390,27 +390,61 @@ class AlignmentSeqs():
 
         return alignment
 
+    #: Estratégias do MAFFT que podem ser **pedidas por nome**, em vez de
+    #: deduzidas do tamanho do conjunto.
+    #:
+    #: É o que sustenta a decisão do usuário de 2026-08-26 sobre o segundo
+    #: alinhador ([D1](../../../docs/science/02-defeitos-que-alteram-resultado.md#d1)):
+    #: o fator alinhador passa a ser **duas estratégias do MAFFT**, e não MAFFT
+    #: contra outra ferramenta. Medido: o MUSCLE 5.3 recusa genoma de poxvírus
+    #: por projeto (`Too long, not appropriate for global alignment`) e o
+    #: Clustal Omega não termina em 1 h. O MAFFT é o único que roda tanto em
+    #: *Variola* quanto em Zika, então é o único em que o fator existe nos dois.
+    ESTRATEGIAS_MAFFT = {
+        # Progressiva, rápida. É o que o `--auto` escolhe em conjuntos deste porte.
+        "retree": (["--retree", "2", "--maxiterate", "0"], "FFT-NS-2 (progressiva)"),
+        # Refinamento iterativo. Mesma ferramenta, mesmo binário, mesma versão:
+        # o que muda é só o algoritmo, que é exatamente o contraste que E4 quer.
+        "iterative": (["--retree", "2", "--maxiterate", "1000"], "FFT-NS-i (iterativa)"),
+        # Máxima acurácia, custo quadrático em comprimento. Inviável em genoma
+        # completo; fica declarada para conjuntos curtos.
+        "linsi": (["--localpair", "--maxiterate", "1000"], "L-INS-i (alta precisão)"),
+    }
+
     def align_sequences_mafft(self,
                               fasta_path: str,
                               output_path_align: str,
-                              output_path_html: str):
+                              output_path_html: str,
+                              estrategia: str = None):
         """
         Alinha sequências utilizando o MAFFT.
 
-        Executa o comando MAFFT para alinhar as sequências presentes no arquivo FASTA fornecido.
-        Retorna o alinhamento como uma string.
+        Parameters
+        ----------
+        estrategia : str or None
+            Chave de `ESTRATEGIAS_MAFFT`. Sendo `None`, a estratégia é deduzida
+            do tamanho do conjunto — o comportamento histórico. **Pedir a
+            estratégia pelo nome é o que torna o fator alinhador um fator**: com
+            a dedução, dois braços do mesmo conjunto recebem sempre a mesma
+            estratégia e produzem alinhamentos idênticos, que foi a forma de
+            [D1](../../../docs/science/02-defeitos-que-alteram-resultado.md#d1).
 
-        Parametrização dinâmica baseada em heurísticas de tamanho do dataset.
-        
         Return
         ------
-        str
-            Alinhamento gerado pelo MAFFT como uma string no formato padrão de saída.
+        MultipleSeqAlignment
         """
         num_seqs, avg_len, _ = self._get_sequence_stats_stream(fasta_path)
-        
+
+        if estrategia is not None:
+            if estrategia not in self.ESTRATEGIAS_MAFFT:
+                raise ValueError(
+                    f"Estratégia MAFFT desconhecida: '{estrategia}'. "
+                    f"Disponíveis: {sorted(self.ESTRATEGIAS_MAFFT)}")
+            strategy, rotulo = self.ESTRATEGIAS_MAFFT[estrategia]
+            logging.info(f"Estratégia MAFFT: {rotulo} (pedida explicitamente)")
+            logging.info(f"STEP: MAFFT Strategy: {rotulo}")
         # Estratégia de Alinhamento Dinâmica
-        if num_seqs < 100 and avg_len < 1000:
+        elif num_seqs < 100 and avg_len < 1000:
             # Alta precisão para datasets pequenos/médios
             strategy = ["--localpair", "--maxiterate", "1000"]
             logging.info("Estratégia MAFFT: L-INS-i (Alta Precisão)")
@@ -425,7 +459,7 @@ class AlignmentSeqs():
             strategy = ["--parttree", "--retree", "1", "--partsize", "1000"]
             logging.info("Estratégia MAFFT: PartTree (Escalonamento para Datasets Massivos)")
             logging.info("STEP: MAFFT Strategy: PartTree")
-            
+
 
         cmd = ["mafft", "--thread", str(self.num_threads)] + strategy + [fasta_path]
         

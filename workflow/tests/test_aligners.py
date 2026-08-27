@@ -29,8 +29,27 @@ from workflow.alignment.aligners import (ALIGNERS, MAQUINA_DEV_BYTES, AlignerPol
 
 class TestBiblioteca(unittest.TestCase):
 
-    def test_os_tres_alinhadores_estao_declarados(self):
-        self.assertEqual(sorted(ALIGNERS), ["clustalo", "mafft", "muscle"])
+    def test_os_alinhadores_estao_declarados(self):
+        self.assertEqual(sorted(ALIGNERS),
+                         ["clustalo", "mafft", "mafft_iterative", "muscle"])
+
+    def test_dois_bracos_podem_compartilhar_o_binario(self):
+        """Decisão do usuário de 2026-08-26 (D1 parte 2): o fator alinhador
+        passa a ser **duas estratégias do MAFFT**, porque é o único que roda
+        tanto em *Variola* quanto em Zika. Mesmo binário, estratégias
+        diferentes — o que muda é o algoritmo."""
+        a, b = ALIGNERS["mafft"], ALIGNERS["mafft_iterative"]
+        self.assertEqual(a.binary, b.binary)
+        self.assertNotEqual(a.estrategia, b.estrategia)
+        self.assertTrue(a.estrategia and b.estrategia)
+
+    def test_toda_estrategia_declarada_existe_no_alinhador(self):
+        """Duas listas de estratégias divergindo seria D5 em outro assunto."""
+        from workflow.alignment.alignmentSeq import AlignmentSeqs
+        for chave, a in ALIGNERS.items():
+            if a.estrategia is not None:
+                self.assertIn(a.estrategia, AlignmentSeqs.ESTRATEGIAS_MAFFT,
+                              f"{chave} pede estratégia inexistente")
 
     def test_cada_limite_traz_o_motivo(self):
         """Limite sem explicação vira superstição — e este projeto já tem um
@@ -199,3 +218,38 @@ class TestPoliticaDeSubstituicao(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestBracosDoFator(unittest.TestCase):
+    """
+    D1 parte 2 — os braços do fator alinhador são declarados, não fixos.
+
+    Eram `['clustalo', 'mafft']` escritos no código, em dois lugares do
+    controlador. Como o Clustal Omega não termina em genoma de poxvírus, o braço
+    `clustalo` acabava sendo MAFFT com outro nome — que é D1.
+    """
+
+    def _controlador(self, aligners=None):
+        from workflow.controller.treeBuilderController import TreeBuilderController
+        c = TreeBuilderController.__new__(TreeBuilderController)
+        c._aligners = aligners
+        return c
+
+    def test_padrao_e_o_par_decidido(self):
+        """Decisão do usuário em 2026-08-26: duas estratégias do MAFFT."""
+        self.assertEqual(self._controlador().aligners, ("mafft", "mafft_iterative"))
+
+    def test_experimento_pode_declarar_outro_par(self):
+        self.assertEqual(self._controlador(["mafft", "clustalo"]).aligners,
+                         ("mafft", "clustalo"))
+
+    def test_alinhador_desconhecido_e_erro(self):
+        """Um braço que não existe produziria árvore com nome de um método que
+        nunca rodou — a forma de D1."""
+        with self.assertRaises(ValueError):
+            self._controlador(["mafft", "naoexiste"]).aligners
+
+    def test_o_padrao_existe_na_biblioteca(self):
+        from workflow.controller.treeBuilderController import TreeBuilderController
+        for chave in TreeBuilderController.ALINHADORES_PADRAO:
+            self.assertIn(chave, ALIGNERS)

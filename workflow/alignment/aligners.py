@@ -205,6 +205,9 @@ class Aligner:
     max_sequence_bp : int or None
         Comprimento por sequência acima do qual o alinhador é considerado
         **inviável** neste projeto. `None` significa "sem limite conhecido".
+    estrategia : str or None
+        Estratégia pedida ao binário. Dois alinhadores podem apontar para o
+        mesmo executável e diferir só nisto.
     max_sequences : int or None
         Número de sequências acima do qual é inviável.
     note : str
@@ -219,6 +222,10 @@ class Aligner:
     max_sequences: Optional[int] = None
     note: str = ""
     resources: Optional["ResourceModel"] = None
+    #: Estratégia pedida ao binário, quando ele aceita mais de uma. É o que
+    #: permite dois braços do fator alinhador compartilharem o mesmo executável
+    #: e ainda assim produzirem alinhamentos diferentes (D1).
+    estrategia: Optional[str] = None
 
     def installed(self) -> bool:
         return shutil.which(self.binary) is not None
@@ -227,7 +234,9 @@ class Aligner:
         """Versão detectada, ou `None` se o binário não está no PATH."""
         if not self.installed():
             return None
-        for args, padrao in _VERSAO[self.key]:
+        # Indexado pelo BINÁRIO, não pela chave: dois alinhadores podem
+        # compartilhar executável e diferir só na estratégia (D1).
+        for args, padrao in _VERSAO[self.binary]:
             try:
                 r = subprocess.run([self.binary, *args], capture_output=True, text=True,
                                    stdin=subprocess.DEVNULL, timeout=10, check=False)
@@ -262,8 +271,9 @@ MAQUINA_DEV_BYTES = 33_424_216_064
 
 ALIGNERS: Dict[str, Aligner] = {
     "mafft": Aligner(
-        key="mafft", label="MAFFT", binary="mafft",
+        key="mafft", label="MAFFT (FFT-NS-2)", binary="mafft",
         max_sequence_bp=None, max_sequences=None,
+        estrategia="retree",
         note=("Escala por estratégia: L-INS-i para conjuntos pequenos, FFT-NS até "
               "10 000 sequências, PartTree acima disso. **Nenhuma falha observada** "
               "neste projeto — alinhou genomas de 250 kb. Isso não é o mesmo que "
@@ -278,13 +288,32 @@ ALIGNERS: Dict[str, Aligner] = {
             ),
         ),
     ),
+    # Segundo braço do fator alinhador, decidido pelo usuário em 2026-08-26
+    # (decisão 1 / D1 parte 2). Mesma ferramenta, mesma versão, mesmo binário:
+    # o que muda é o **algoritmo**, e é esse o contraste que E4 quer medir. As
+    # duas alternativas — MUSCLE e Clustal Omega — foram remedidas com o env
+    # pinado e não servem em genoma de poxvírus: ver as notas de cada uma.
+    "mafft_iterative": Aligner(
+        key="mafft_iterative", label="MAFFT (FFT-NS-i)", binary="mafft",
+        max_sequence_bp=None, max_sequences=None,
+        estrategia="iterative",
+        note=("MAFFT com refinamento iterativo (`--retree 2 --maxiterate 1000`), "
+              "contra o `mafft` progressivo (`--maxiterate 0`). É o fator alinhador "
+              "em conjuntos onde nenhuma outra ferramenta roda — e o único que "
+              "existe tanto em *Variola* quanto em Zika."),
+        resources=ResourceModel(
+            scaling="n*L", fitted=False, bytes_per_unit=None, measurements=(),
+        ),
+    ),
     "clustalo": Aligner(
         key="clustalo", label="Clustal Omega", binary="clustalo",
         max_sequence_bp=20_000, max_sequences=None,
-        note=("Morto pelo OOM killer (código 137) com sequências longas. O limite de "
-              "20 kb é **herdado do código original e nunca foi medido** — sabe-se "
-              "apenas que falhou em Zika479. Continua no lugar por precaução, e é o "
-              "primeiro a ser substituído por modelo de custo quando houver medição."),
+        note=("**O limite é de tempo, não de memória** — medido em 2026-08-26 sobre "
+              "52 sequências de até 228 kb: não terminou em **1 h** e o pico de RSS "
+              "foi de apenas **220 MB**. A afirmação anterior, de que era morto pelo "
+              "OOM killer neste porte, estava errada: o código 137 observado foi em "
+              "Zika479 (478 sequências curtas), que é outro regime. O limite de 20 kb "
+              "por sequência continua herdado do código original."),
         resources=ResourceModel(
             scaling="n*L", fitted=False, bytes_per_unit=None,
             measurements=(

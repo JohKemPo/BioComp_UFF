@@ -190,21 +190,33 @@ class TreeBuilder:
             prefix = os.path.join(tmp_dir, base_name)
             
             # D11 — sem `-seed`, o IQ-TREE gera a própria semente (nos logs de
-            # VARV aparece `97376`) e reexecutar não reproduz a árvore. `-nt` é
-            # fixado pelo mesmo motivo de D17 no RAxML: número de threads
-            # decidido pela máquina torna a execução incomparável entre elas.
+            # VARV aparece `97376`) e reexecutar não reproduz a árvore.
+            #
+            # D21 — e a semente **não basta**. Medido em 2026-08-26: com
+            # `-nt 4`, três repetições da mesma semente, entrada, máquina e
+            # versão devolveram **três topologias** (RF = 2); com `-nt 1`, uma
+            # só. A ordem em que as reduções de ponto flutuante chegam decide
+            # entre ótimos quase empatados, e o IQ-TREE não tem equivalente ao
+            # `--workers 1` do RAxML-NG. Decisão do usuário: comprar
+            # reprodutibilidade com tempo.
+            #
+            # `iqtree_threads` continua governando o BOOTSTRAP, que é
+            # embaraçosamente paralelo e não decide topologia — só a busca de
+            # ML roda em uma thread.
             cmd = [
                 require_tool('iqtree'), '-s', align_path,
                 '-m', 'GTR+G', '-bb', '1000',
                 '-seed', str(self.random_seed),
                 '-pre', prefix,
-                '-nt', str(self.iqtree_threads)
+                '-nt', '1'
             ]
 
             logging.info(f"IQ-TREE: {' '.join(cmd)}")
             tool_runs.registrar('iqtree', cmd, saida=output_path_tree,
-                                seed=self.random_seed, threads=self.iqtree_threads,
-                                model='GTR+G', bootstrap='UFBoot 1000')
+                                seed=self.random_seed, threads=1,
+                                threads_configurados=self.iqtree_threads,
+                                model='GTR+G', bootstrap='UFBoot 1000',
+                                nota='-nt 1 fixo por D21: com -nt N a mesma semente dá topologias diferentes')
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
             
             possible_tree_files = [

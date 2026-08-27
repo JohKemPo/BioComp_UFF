@@ -1,4 +1,4 @@
-from workflow.utils import run_logging
+from workflow.utils import run_logging, tool_runs
 import os
 import time
 import sys
@@ -17,7 +17,8 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, '../..'))
 
 from workflow.tree_construction.builder import TreeBuilder
-from workflow.utils.dataValidation import duplicate_names, duplicate_seq, validate_sequences, remove_pipe
+from workflow.utils.dataValidation import (duplicate_names, duplicate_seq,
+                                           validate_sequences, deduplicar_por_sequencia)
 from workflow.utils.dataCleaning import clean_NoPipe, clean_tmp, copiar_arquivos
 from workflow.utils.messages import Messages
 from workflow.utils.metrics import process_rf_distance, plot_heatmap_distances
@@ -67,8 +68,10 @@ class TreeBuilderController:
         None
         """
         for k, v in kwargs.items():
-            setattr(self, k, v)
-            
+            # `aligners` é propriedade (valida contra a biblioteca), então o
+            # valor do experimento entra pelo campo privado.
+            setattr(self, '_aligners' if k == 'aligners' else k, v)
+
         # D22 — o log é aberto uma vez por execução, com o `run_id` no nome.
         # `garantir` não troca o que o workflow já configurou.
         logfile_path = run_logging.garantir(os.path.join(self.output_path, 'outputs'))
@@ -150,29 +153,32 @@ class TreeBuilderController:
     def _initialize_multi_trees_structure(self):
         """
         Inicializa a estrutura para armazenar múltiplas árvores.
-        
+
+        As chaves vêm de `self.aligners`. Eram `"clustalo"` e `"mafft"` escritas
+        à mão — um **terceiro** lugar que precisava concordar com a lista de
+        alinhadores, depois dos dois laços do controlador. Com um braço novo, a
+        estrutura não tinha a chave e as árvores daquele braço se perdiam: com
+        `('mafft', 'mafft_iterative')` saíram **8 árvores em vez de 14**, e o
+        segundo braço rendeu uma só. Duas listas divergindo é
+        [D5](../../../docs/science/02-defeitos-que-alteram-resultado.md#d5) em
+        outro assunto; três, é o mesmo defeito com mais chances de acontecer.
+
         Return
         ------
         dict
-            Estrutura inicializada para armazenar árvores.
+            Estrutura inicializada para armazenar árvores, uma entrada por
+            alinhador declarado.
         """
         return {
-            "clustalo": {
-                "distance": {"nj": [], "upgma": []}, 
-                "parsimony": {"nj": [], "upgma": []},
-                "iqtree": [],
-                "fasttree": [],
-                "raxml": [],
-                "mrbayes": []
-            },
-            "mafft": {
-                "distance": {"nj": [], "upgma": []}, 
+            alinhador: {
+                "distance": {"nj": [], "upgma": []},
                 "parsimony": {"nj": [], "upgma": []},
                 "iqtree": [],
                 "fasttree": [],
                 "raxml": [],
                 "mrbayes": []
             }
+            for alinhador in self.aligners
         }
 
     def _load_existing_tree(self, tree_path, tree_format):
@@ -370,9 +376,23 @@ class TreeBuilderController:
         if not duplicate_names(fasta_path) and not duplicate_seq(fasta_path)[0] and validate_sequences(fasta_path):
             logging.info(f"Arquivo {file} passou nas validações de sequência.")
         else:
-            logging.warning(f"Arquivo {file} contém duplicatas ou erros, iniciando remoção de pipes.")
-            fasta_path = remove_pipe(file_stem, fasta_path, self.input_path)
-            
+            # D23 — o descarte deixa de ser silencioso. `n` é número de Methods:
+            # o projeto chamado VARV-49 recebe 52 registros e produz 49 folhas,
+            # porque a aquisição baixa RefSeq e GenBank do mesmo genoma. A
+            # composição não muda aqui — a decisão do usuário foi declarar agora
+            # e corrigir a aquisição depois —, mas quem descartou o quê passa a
+            # ficar registrado no log e no manifesto.
+            logging.warning(f"Arquivo {file} contém duplicatas ou erros, deduplicando por sequência.")
+            fasta_path, descartados = deduplicar_por_sequencia(
+                file_stem, fasta_path, self.input_path)
+            if descartados:
+                tool_runs.registrar(
+                    'deduplicacao', ['deduplicar_por_sequencia', file_stem],
+                    saida=fasta_path,
+                    descartados=[{"descartado": d, "mantido": m} for d, m in descartados],
+                    nota=('acessos com sequência idêntica; o mantido é o primeiro do '
+                          'arquivo — ver D23'))
+
         return fasta_path
 
     def _process_single_mode(self, file_stem, fasta_path, output_paths, mode_type):
@@ -440,7 +460,7 @@ class TreeBuilderController:
         trees_built = 0
         
         for method in ['nj', 'upgma']:
-            for alg in ['clustalo', 'mafft']:
+            for alg in self.aligners:
                 self.construct_tree_method = method
                 
                 # Processar árvore de distância
@@ -479,7 +499,7 @@ class TreeBuilderController:
         trees_built = 0
         advanced_methods = ['iqtree', 'fasttree', 'raxml', 'mrbayes']
         
-        for alg in ['clustalo', 'mafft']:
+        for alg in self.aligners:
             for method in ['nj', 'upgma']:
                 self.construct_tree_method = method
                 
@@ -869,16 +889,52 @@ class TreeBuilderController:
             logging.warning(f"      A saída será nomeada como '{efetivo}', não '{align_method}'.")
         return efetivo, motivo
 
+    #: Braços do fator alinhador quando o experimento não os declara.
+    #:
+    #: Era `['clustalo', 'mafft']` **fixo no código**, em dois lugares. Em
+    #: genoma de poxvírus o Clustal Omega não termina (medido: 1 h sem concluir,
+    #: com pico de 220 MB — é limite de tempo, não de memória), então o braço
+    #: `clustalo` acabava sendo MAFFT com outro nome: é a
+    #: [D1](../../../docs/science/02-defeitos-que-alteram-resultado.md#d1).
+    #:
+    #: Decisão do usuário em 2026-08-26: o fator passa a ser **duas estratégias
+    #: do MAFFT**. Mesma ferramenta, mesma versão, mesmo binário; o que muda é o
+    #: algoritmo — progressivo contra iterativo. É o único par que existe tanto
+    #: em *Variola* quanto em Zika, porque o MUSCLE 5.3 recusa genoma longo por
+    #: projeto e o Clustal Omega não termina.
+    ALINHADORES_PADRAO = ('mafft', 'mafft_iterative')
+
+    @property
+    def aligners(self):
+        """
+        Braços do fator alinhador, declarados pelo experimento.
+
+        Vem de `tree_config.aligners`; sem ele, `ALINHADORES_PADRAO`. Um
+        alinhador desconhecido é erro, não aviso — um braço que não existe
+        produziria árvore com nome de um método que nunca rodou, que é a forma
+        de D1.
+        """
+        escolhidos = tuple(getattr(self, '_aligners', None) or self.ALINHADORES_PADRAO)
+        desconhecidos = [a for a in escolhidos if a not in ALIGNERS]
+        if desconhecidos:
+            raise ValueError(
+                f"Alinhador(es) desconhecido(s) em `aligners`: {desconhecidos}. "
+                f"Disponíveis: {sorted(ALIGNERS)}")
+        return escolhidos
+
     def _alinhar(self, align_method, fasta_path, output_path_align, output_path_align_html):
         """Executa o alinhador pedido. Um método desconhecido é erro, não aviso."""
         if align_method == "clustalo":
             return self.aligner.align_sequences_clustalo(
                 fasta_path=fasta_path, output_path_align=output_path_align,
                 output_path_html=output_path_align_html)
-        if align_method == "mafft":
+        if align_method in ("mafft", "mafft_iterative"):
+            # A estratégia vem da biblioteca, não de uma tabela local: dois
+            # braços do fator alinhador usam o mesmo binário e diferem só nela.
             return self.aligner.align_sequences_mafft(
                 fasta_path=fasta_path, output_path_align=output_path_align,
-                output_path_html=output_path_align_html)
+                output_path_html=output_path_align_html,
+                estrategia=ALIGNERS[align_method].estrategia)
         if align_method == "muscle":
             return self.aligner.align_sequences_muscle(
                 fasta_path=fasta_path, output_path_align=output_path_align,
