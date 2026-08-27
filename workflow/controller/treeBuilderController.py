@@ -944,16 +944,37 @@ class TreeBuilderController:
             f"Disponíveis: {sorted(ALIGNERS)}")
 
     def _get_alignment(self, fasta_path, output_path_align, align_method, output_path_align_html):
-        """Método auxiliar para obter alinhamento."""
+        """
+        Alinhamento do arquivo, reaproveitando o que já estiver em disco.
+
+        **Existir não é servir.** A checagem era `os.path.exists` e nada mais.
+        O alinhador escreve por redirecionamento de stdout, então uma execução
+        interrompida no meio do alinhamento deixa um arquivo de **0 byte** — e a
+        execução seguinte o encontrava, anunciava `Reutilizando` e devolvia um
+        alinhamento vazio. Medido ao interromper o MAFFT iterativo no VARV-49.
+
+        É a terceira vez que este projeto tropeça na mesma forma: foi assim com
+        o binário resolvido por `command -v` que não executava, e com o `pnpm`
+        que existia no PATH e abortava a cada chamada.
+        """
         try:
             if os.path.exists(output_path_align):
-                logging.info(f"Arquivo de alinhamento já existe: {output_path_align}. Reutilizando.")
-                return AlignIO.read(output_path_align, "fasta")
-            else:
-                logging.info(f"STEP: Reusing the sequence alignment file...")
-                align_method, _ = self._resolver_alinhador(align_method, fasta_path)
-                return self._alinhar(align_method, fasta_path,
-                                     output_path_align, output_path_align_html)
+                if os.path.getsize(output_path_align) == 0:
+                    # Um arquivo vazio é o rastro de um alinhamento interrompido.
+                    # Reaproveitá-lo silenciosamente é pior do que refazê-lo.
+                    logging.warning(
+                        f"Alinhamento existente está vazio (0 byte) e será refeito: "
+                        f"{os.path.basename(output_path_align)}. É o rastro de uma "
+                        f"execução interrompida.")
+                    os.remove(output_path_align)
+                else:
+                    logging.info(f"Arquivo de alinhamento já existe: {output_path_align}. Reutilizando.")
+                    return AlignIO.read(output_path_align, "fasta")
+
+            logging.info(f"STEP: Aligning seqs...")
+            align_method, _ = self._resolver_alinhador(align_method, fasta_path)
+            return self._alinhar(align_method, fasta_path,
+                                 output_path_align, output_path_align_html)
         except Exception as e:
             logging.error(f"Erro ao obter alinhamento: {e}")
             raise

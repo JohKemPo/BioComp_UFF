@@ -390,6 +390,25 @@ class AlignmentSeqs():
 
         return alignment
 
+    #: Teto de rodadas de refinamento iterativo, por porte do conjunto.
+    #:
+    #: O `--maxiterate 1000` do MAFFT quer dizer "itere até convergir, no
+    #: máximo mil vezes". Em genoma completo isso não converge em tempo útil —
+    #: medido: **45 min sem terminar** no VARV-49, contra ~12 min do braço
+    #: progressivo inteiro.
+    #:
+    #: **Este repositório já tinha aprendido isso**, com a outra ferramenta: o
+    #: MUSCLE 3.8 recebe `-maxiterate 2` acima de 500 sequências, porque "o
+    #: padrão não termina em tempo útil". O eixo lá é o número de sequências;
+    #: aqui é o **comprimento**, que é o que domina o custo do refinamento.
+    #:
+    #: Duas rodadas continuam sendo FFT-NS-i, e continuam sendo um algoritmo
+    #: diferente do progressivo — que é o contraste que o fator alinhador mede.
+    #: O que se abre mão é da convergência, e isso vai declarado no manifesto.
+    LIMITE_REFINAMENTO_BP = 50_000
+    ITERACOES_CONJUNTO_LONGO = 2
+    ITERACOES_PADRAO = 1000
+
     #: Estratégias do MAFFT que podem ser **pedidas por nome**, em vez de
     #: deduzidas do tamanho do conjunto.
     #:
@@ -405,7 +424,13 @@ class AlignmentSeqs():
         "retree": (["--retree", "2", "--maxiterate", "0"], "FFT-NS-2 (progressiva)"),
         # Refinamento iterativo. Mesma ferramenta, mesmo binário, mesma versão:
         # o que muda é só o algoritmo, que é exatamente o contraste que E4 quer.
-        "iterative": (["--retree", "2", "--maxiterate", "1000"], "FFT-NS-i (iterativa)"),
+        #
+        # `--maxiterate 1000` significa **"itere até convergir"**, não "faça mil
+        # rodadas". Medido em 2026-08-27 no VARV-49 (49 × ~230 kb): o estágio de
+        # refinamento passou de **45 minutos** sem convergir, contra ~12 min do
+        # braço progressivo inteiro. O número de iterações passa a ser
+        # `LIMITE_ITERACOES`, e a razão está lá.
+        "iterative": (["--retree", "2", "--maxiterate", None], "FFT-NS-i (iterativa)"),
         # Máxima acurácia, custo quadrático em comprimento. Inviável em genoma
         # completo; fica declarada para conjuntos curtos.
         "linsi": (["--localpair", "--maxiterate", "1000"], "L-INS-i (alta precisão)"),
@@ -441,6 +466,21 @@ class AlignmentSeqs():
                     f"Estratégia MAFFT desconhecida: '{estrategia}'. "
                     f"Disponíveis: {sorted(self.ESTRATEGIAS_MAFFT)}")
             strategy, rotulo = self.ESTRATEGIAS_MAFFT[estrategia]
+            # O teto de iterações depende do porte, e é resolvido aqui para que
+            # o valor efetivo entre no log e no manifesto — e não fique numa
+            # tabela que ninguém lê.
+            if None in strategy:
+                iteracoes = (self.ITERACOES_CONJUNTO_LONGO
+                             if avg_len > self.LIMITE_REFINAMENTO_BP
+                             else self.ITERACOES_PADRAO)
+                strategy = [str(iteracoes) if a is None else a for a in strategy]
+                rotulo = f"{rotulo}, {iteracoes} rodada(s)"
+                if iteracoes != self.ITERACOES_PADRAO:
+                    logging.warning(
+                        f"Refinamento limitado a {iteracoes} rodada(s): a sequência média "
+                        f"tem {avg_len:.0f} bp, acima de {self.LIMITE_REFINAMENTO_BP}. "
+                        f"Iterar até convergir só termina em conjuntos curtos — medido: "
+                        f"45 min sem convergir no VARV-49.")
             logging.info(f"Estratégia MAFFT: {rotulo} (pedida explicitamente)")
             logging.info(f"STEP: MAFFT Strategy: {rotulo}")
         # Estratégia de Alinhamento Dinâmica
