@@ -128,15 +128,10 @@ def create_subtree(parent_name, subtree_name, subtree_data):
                 query_parts.append(f"CREATE ({f_var})-[:HAS_QUALIFIER]->({q_var}:Qualifier {{key: '{q_key}', value: {q_val_json}}})")
         
         query_parts.append(";") # Finaliza o comando Cypher deste bloco
-        
+
         # Adiciona o bloco completo à lista
         cypher_statements.append("\n".join(query_parts))
-        
-    # Recursão para subárvores filhas
-    for key, value in subtree_data.items():
-        if isinstance(value, dict):
-            cypher_statements.extend(create_subtree(subtree_name, key, value))
-            
+
     return cypher_statements
 
 class Neo4jUploader:
