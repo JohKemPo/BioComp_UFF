@@ -24,6 +24,7 @@ from typing import Callable, Dict, FrozenSet, List, Optional, Sequence, Set, Tup
 from Bio import Phylo
 from Bio.Phylo.BaseTree import Tree
 
+from workflow.alignment.aligners import ALIGNERS as _ALINHADORES_REGISTRADOS
 from workflow.stability.clade_identity import (
     CladeIdentity,
     LegacyAudit,
@@ -40,8 +41,14 @@ INFERENCE_METHODS = ("iqtree", "raxml", "fasttree", "mrbayes",
                      "nj_distance", "upgma_distance",
                      "nj_parsimony", "upgma_parsimony", "parsimony")
 
-#: Alinhadores reconhecidos nos nomes de arquivo produzidos pelo workflow.
-ALIGNERS = ("mafft", "clustalo")
+#: Alinhadores reconhecidos nos nomes de arquivo produzidos pelo workflow —
+#: a mesma fonte que o controlador usa para gerar esses nomes
+#: (`workflow.alignment.aligners.ALIGNERS`), não uma cópia paralela. Cópia
+#: paralela foi a causa do bug encontrado em 2026-09-01: quando DEC-050
+#: acrescentou "mafft_iterative" ao registro real, esta tupla — que só
+#: existia aqui, desatualizada — ficou parada em `("mafft", "clustalo")`, e
+#: todo pipeline do braço iterativo colidia com o do braço progressivo.
+ALIGNERS = tuple(_ALINHADORES_REGISTRADOS.keys())
 
 
 #: Sufixo de versão de acesso GenBank, possivelmente truncado pelo inferidor.
@@ -91,8 +98,17 @@ class PipelineLabel:
         if stem.startswith(prefix):
             stem = stem[len(prefix):]
 
-        tokens = set(stem.split("_"))
-        aligner = next((a for a in ALIGNERS if a in tokens), "unknown")
+        # Delimitado por "_" dos dois lados (a própria posição no stem é livre
+        # — o antigo `tokens = set(stem.split("_"))` também não exigia
+        # posição), e o MAIS LONGO vence, não o primeiro: "mafft" é substring
+        # de "mafft_iterative", e seria sempre encontrado primeiro. O split
+        # em tokens soltos nunca reconhecia o composto, porque o próprio
+        # split já separava os dois em tokens distintos antes da comparação.
+        stem_delimitado = f"_{stem}_"
+        candidatos_alinhador = [
+            a for a in ALIGNERS if f"_{a}_" in stem_delimitado
+        ]
+        aligner = max(candidatos_alinhador, key=len) if candidatos_alinhador else "unknown"
         # Sufixo MAIS LONGO, não o primeiro que casar: `clustalo_nj_parsimony`
         # termina tanto em `parsimony` quanto em `nj_parsimony`, e escolher o
         # curto fundia NJ com UPGMA num único pipeline `clustalo_parsimony` —

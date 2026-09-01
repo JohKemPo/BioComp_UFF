@@ -83,6 +83,63 @@ class TestPipelineLabel(unittest.TestCase):
         self.assertEqual(label.aligner, "clustalo")
         self.assertEqual(label.inference, "nj_distance")
 
+    def test_distinguishes_mafft_from_mafft_iterative(self):
+        """Achado da reexecução de 2026-09-01 (Zika-21, VARV-6, VARV-49): antes
+        desta correção, `mafft_iterative` nunca era reconhecido como alinhador
+        — "mafft" é um prefixo de "mafft_iterative", e o antigo `tokens = set
+        (stem.split("_"))` via os dois como tokens separados. O pipeline do
+        braço iterativo herdava o rótulo do braço progressivo em silêncio, e
+        `TreeSet.from_directory` só não perdia a árvore por sorte: a guarda
+        contra rótulo duplicado (D19) barrava com `ValueError` em vez de
+        sobrescrever — o que bloqueava M1.3 em toda reexecução com os dois
+        braços do MAFFT, não corrigia o rótulo."""
+        progressivo = PipelineLabel.parse(
+            "tree_dataset_final_mafft_fasttree.nexus", prefix="tree_dataset_final_"
+        )
+        iterativo = PipelineLabel.parse(
+            "tree_dataset_final_mafft_iterative_fasttree.nexus", prefix="tree_dataset_final_"
+        )
+        self.assertEqual(progressivo.aligner, "mafft")
+        self.assertEqual(iterativo.aligner, "mafft_iterative")
+        self.assertEqual(progressivo.inference, iterativo.inference)
+        self.assertNotEqual(progressivo.name, iterativo.name)
+
+    def test_mafft_iterative_com_metodo_de_dois_tokens(self):
+        """O braço iterativo combinado com um método de inferência que também
+        tem "_" no nome — garante que a correção do alinhador não quebra a
+        escolha do sufixo mais longo já corrigida por D19."""
+        label = PipelineLabel.parse(
+            "tree_dataset_final_mafft_iterative_nj_parsimony.nexus",
+            prefix="tree_dataset_final_",
+        )
+        self.assertEqual(label.aligner, "mafft_iterative")
+        self.assertEqual(label.inference, "nj_parsimony")
+
+    def test_alinhador_desconhecido_nao_quebra(self):
+        label = PipelineLabel.parse(
+            "tree_dataset_final_desconhecido_iqtree.nexus", prefix="tree_dataset_final_"
+        )
+        self.assertEqual(label.aligner, "unknown")
+        self.assertEqual(label.inference, "iqtree")
+
+    def test_directory_com_os_dois_braços_do_mafft_nao_colide(self):
+        """Reprodução direta do crash de `conferir_correcoes_m1.py` nas três
+        reexecuções de 2026-09-01: dois arquivos do mesmo método de inferência,
+        um por braço do alinhador, no mesmo diretório."""
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            arvore = newick("((A,B),(C,D));")
+            for nome in ("mafft_fasttree", "mafft_iterative_fasttree"):
+                caminho = os.path.join(tmp, f"tree_dataset_final_{nome}.nexus")
+                Phylo.write(arvore, caminho, "nexus")
+            tree_set = TreeSet.from_directory(tmp, normalizer=None)
+            self.assertEqual(len(tree_set), 2)
+            self.assertEqual(
+                {label.name for label in tree_set.labels.values()},
+                {"mafft_fasttree", "mafft_iterative_fasttree"},
+            )
+
 
 class TestAccessionNormalisation(unittest.TestCase):
     """Rótulos truncados por IQ-TREE/RAxML devem reconciliar-se."""
