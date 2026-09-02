@@ -307,11 +307,27 @@ class TreeBuilder:
             # `5 workers x 3 threads` e derrubou o processo com SIGSEGV.
             # Um worker só, com número de threads declarado, torna a execução
             # comparável entre máquinas. Custo medido: ~10% de tempo.
+            #
+            # M3.2/M7.2 — até aqui só busca de ML: sem `--bootstrap`/`--all`, o
+            # RAxML-NG não calcula suporte nenhum (confirmado em
+            # `docs/science/08-ficha-de-chamada-por-metodo.md §3`). `--all`
+            # combina busca de ML + bootstrap + mapeamento de suporte num só
+            # comando (verificado com `raxml-ng --help` e execução real numa
+            # entrada sintética em 2026-09-02) e grava o suporte já mapeado em
+            # `<prefix>.raxml.support` — o `.raxml.bestTree` continua existindo,
+            # mas sem confidence. `--bs-trees 1000` casa a contagem de réplicas
+            # com o `-bb 1000` do IQ-TREE, mas **não é a mesma métrica**: o
+            # `--all` do RAxML-NG por padrão calcula FBP (Felsenstein bootstrap
+            # proportion, bootstrap não-paramétrico clássico), e o `-bb` do
+            # IQ-TREE é UFBoot (bootstrap ultrarrápido, aproximado). Ambos saem
+            # em escala 0-100, mas não são o mesmo suporte e não devem ser lidos
+            # com o mesmo limiar — ver `08-ficha-de-chamada-por-metodo.md §5`.
             cmd = [
-                require_tool('raxml-ng'), '--msa', align_path,
+                require_tool('raxml-ng'), '--all', '--msa', align_path,
                 '--model', 'GTR+G',
                 '--threads', str(self.raxml_threads), '--workers', '1',
                 '--seed', str(self.random_seed), '--tree', 'rand{10}',
+                '--bs-trees', '1000',
                 '--prefix', prefix
             ]
 
@@ -321,19 +337,31 @@ class TreeBuilder:
             # mesma semente, então ele é metadado do resultado, não da máquina.
             tool_runs.registrar('raxml-ng', cmd, saida=output_path_tree,
                                 seed=self.random_seed, threads=self.raxml_threads,
-                                workers=1, model='GTR+G')
+                                workers=1, model='GTR+G',
+                                bootstrap='FBP (Felsenstein) 1000 réplicas via --all',
+                                nota='FBP não é a mesma escala/interpretação do UFBoot do IQ-TREE')
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-            
-            tree_file = prefix + '.raxml.bestTree'
-            if os.path.exists(tree_file):
+
+            # `.raxml.support` só existe quando o bootstrap terminou e o
+            # suporte foi mapeado na árvore de ML; `.raxml.bestTree` é o
+            # fallback sem confidence, para não derrubar o pipeline inteiro se
+            # o bootstrap falhar por algum motivo e a busca de ML tiver ido bem.
+            possible_tree_files = [
+                prefix + '.raxml.support',
+                prefix + '.raxml.bestTree',
+            ]
+
+            tree_file = next((f for f in possible_tree_files if os.path.exists(f)), None)
+
+            if tree_file:
                 tree = Phylo.read(tree_file, 'newick')
-                
+
                 Phylo.write(tree, output_path_tree, 'nexus')
-                
+
                 logging.info(f"Arquivos RAxML-NG salvos em: {tmp_dir}")
                 return tree
             else:
-                raise FileNotFoundError(f"Arquivo de árvore não encontrado: {tree_file}")
+                raise FileNotFoundError(f"Arquivo de árvore não encontrado em: {tmp_dir}")
                     
         except subprocess.CalledProcessError as e:
             logging.error(f"Erro no RAxML-NG: {e.stderr}")
