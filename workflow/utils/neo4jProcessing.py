@@ -3,14 +3,25 @@ from neo4j import GraphDatabase
 
 USER_PLACEHOLDER = "<<USER_UID>>"
 
+def project_name_from_output_path(path: str) -> str:
+    """Deriva o nome do projeto a partir do caminho de saída.
+
+    `path` é sempre `.../projects/<project_name>/out/outputs` (é o que
+    `SubtreeMiner.output_path` + '/outputs' produz) — não existe hoje nenhum
+    campo `project_name` propagado até aqui via config, então a identidade
+    do projeto vem da própria estrutura de diretórios que o pipeline já usa.
+    """
+    return os.path.basename(os.path.dirname(os.path.dirname(path)))
+
 def parse_tree(trees: list, path: str = None, mode: str = "completo"):
+    project_name = project_name_from_output_path(path)
     if all(isinstance(i, list) for i in trees):
         cypher_commands = []
         for tree_list in trees:
             for tree in tree_list:
                 for tree_name, subtrees in tree.items():
-                    cypher_commands.extend(generate_cypher(tree_name, subtrees))
-        
+                    cypher_commands.extend(generate_cypher(tree_name, subtrees, project_name))
+
         # Salvar em um arquivo
         with open(os.path.join(path, 'neo4j_commands.cql'), "w") as f:
             f.write("\n".join(cypher_commands))
@@ -18,8 +29,8 @@ def parse_tree(trees: list, path: str = None, mode: str = "completo"):
         cypher_commands = []
         for tree in trees:
             for tree_name, subtrees in tree.items():
-                cypher_commands.extend(generate_cypher(tree_name, subtrees))
-        
+                cypher_commands.extend(generate_cypher(tree_name, subtrees, project_name))
+
         # Salvar em um arquivo
         with open(os.path.join(path, f'neo4j_commands_{mode}.cql'), "w") as f:
             f.write("\n".join(cypher_commands))
@@ -29,12 +40,12 @@ def sanitize_json_string(json_obj):
     json_str = json.dumps(json_obj, separators=(",", ":"))  
     return json_str.replace("'", "\\'")
 
-def generate_cypher(tree_name, subtrees):
+def generate_cypher(tree_name, subtrees, project_name):
     cypher_statements = []
-    
+
     cypher_statements.append(f"""
     MERGE (u:User {{uid: '{USER_PLACEHOLDER}'}})
-    CREATE (t:Tree {{name: '{tree_name}', uid: '{USER_PLACEHOLDER}'}})
+    CREATE (t:Tree {{name: '{tree_name}', uid: '{USER_PLACEHOLDER}', project: '{project_name}'}})
     MERGE (u)-[:OWNS]->(t);
     """)
     
