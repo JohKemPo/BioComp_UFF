@@ -278,6 +278,39 @@ class TestManifesto(unittest.TestCase):
         self.assertEqual(declarado["random_seed"], 12345)
         self.assertGreaterEqual(declarado["raxml_threads"], 1)
 
+    def test_execution_mode_distingue_disponivel_de_executado(self):
+        """D18 — `M` deixa de ser um número sem proveniência."""
+        manifesto = self._manifesto()
+        manifesto.register_execution_mode(
+            "auto",
+            methods_advanced_available=["iqtree", "fasttree", "raxml", "mrbayes"],
+            methods_advanced_executed=[],
+        )
+        declarado = manifesto.to_dict()["execution_mode"]
+        self.assertEqual(declarado["mode_solicitado"], "auto")
+        self.assertEqual(declarado["metodos_avancados_executados"], [])
+        self.assertEqual(
+            declarado["metodos_avancados_pulados"],
+            ["fasttree", "iqtree", "mrbayes", "raxml"],
+        )
+
+    def test_execution_mode_ausente_e_none_nao_lista_vazia(self):
+        """Regra 5: sem chamar `register_execution_mode`, o campo é `None`
+        (execução antiga do pipeline, sem esse registro) — não `{}`, que
+        pareceria "modo básico, zero métodos avançados disponíveis"."""
+        manifesto = self._manifesto()
+        self.assertIsNone(manifesto.to_dict()["execution_mode"])
+
+    def test_execution_mode_advanced_sem_ignore_executa_tudo_que_esta_disponivel(self):
+        manifesto = self._manifesto()
+        manifesto.register_execution_mode(
+            "advanced",
+            methods_advanced_available=["iqtree", "fasttree", "raxml", "mrbayes"],
+            methods_advanced_executed=["iqtree", "fasttree", "raxml"],  # mrbayes em ignore_mode
+        )
+        declarado = manifesto.to_dict()["execution_mode"]
+        self.assertEqual(declarado["metodos_avancados_pulados"], ["mrbayes"])
+
     def test_horario_de_termino_so_existe_depois_de_finish(self):
         manifesto = self._manifesto()
         manifesto.write()

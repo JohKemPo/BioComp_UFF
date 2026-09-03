@@ -204,6 +204,7 @@ class ExecutionManifest:
         self._outputs: Dict[str, Optional[str]] = {}
         self._tools_effective: Dict[str, Dict] = {}
         self._reproducibility: Dict[str, int] = {}
+        self._execution_mode: Dict[str, object] = {}
         self._log_file: Optional[str] = None
 
         self.run_id = uuid.uuid4().hex
@@ -331,6 +332,40 @@ class ExecutionManifest:
         """
         self._reproducibility = dict(settings)
 
+    def register_execution_mode(self, requested: str, methods_advanced_available: List[str],
+                                 methods_advanced_executed: List[str]) -> None:
+        """
+        Registra o modo pedido contra os métodos avançados de fato executados.
+
+        [D18](../../../docs/science/02-defeitos-que-alteram-resultado.md#d18):
+        o modo `auto`/`basic` roda só distância e parcimônia, e nada no
+        artefato dizia isso além do `mode` cru em `config_backup.json` — a
+        mesma distinção "disponível não é executado" de `tools_invoked`
+        (`tool_runs.py`), agora também para a escolha de método, não só de
+        ferramenta. `M`, o denominador de todo suporte metodológico, deixa de
+        ser um número sem proveniência.
+
+        Parameters
+        ----------
+        requested : str
+            O `mode` cru como pedido (`"auto"`, `"basic"` ou `"advanced"`).
+        methods_advanced_available : list of str
+            Métodos avançados (`iqtree`, `fasttree`, `raxml-ng`, `mrbayes`)
+            resolvíveis no ambiente no momento da execução — vem de
+            `external_tools.resolved_tools`, não de suposição.
+        methods_advanced_executed : list of str
+            Os que de fato rodaram. Vazio em modo básico; igual a
+            `methods_advanced_available` menos `ignore_methods` em `advanced`.
+        """
+        self._execution_mode = {
+            "mode_solicitado": requested,
+            "metodos_avancados_disponiveis": list(methods_advanced_available),
+            "metodos_avancados_executados": list(methods_advanced_executed),
+            "metodos_avancados_pulados": sorted(
+                set(methods_advanced_available) - set(methods_advanced_executed)
+            ),
+        }
+
     def register_tool_run(self, tool: str, command: List[str],
                           saida: Optional[str] = None, **extra) -> None:
         """
@@ -389,6 +424,7 @@ class ExecutionManifest:
             "tools_invoked": self._tools_effective,
             "log_file": self._log_file,
             "reproducibility": dict(self._reproducibility),
+            "execution_mode": dict(self._execution_mode) or None,
             "params": self._sanitizar_params(self.params),
             "inputs_sha256": self._inputs,
             "outputs_sha256": self._outputs,

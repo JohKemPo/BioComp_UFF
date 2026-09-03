@@ -215,13 +215,24 @@ class TreeBuilderController:
         ------
         None
         """
+        # D18 — "auto" sugeria "escolhe sozinho o que faz sentido"; o que o
+        # modo faz é rodar só distância e parcimônia, nunca os métodos
+        # avançados. "basic" é o nome novo, honesto com o comportamento;
+        # "auto" continua aceito como alias — os ~20 projetos já em disco com
+        # mode: "auto" em config_backup.json não podem quebrar.
+        MODOS_BASICOS = ("auto", "basic")
+        descricao_basico = (
+            "BÁSICO (apenas distância NJ/UPGMA e parcimônia — nenhum método "
+            "avançado roda; use mode='advanced' para IQ-TREE/FastTree/RAxML-NG/MrBayes)"
+        )
         mode_descriptions = {
             "distance": "DISTANCE TREE CONSTRUCTOR + CLUSTALW",
-            "parsimony": "PARSIMONY + CLUSTALW", 
-            "auto": "DISTANCE TREE CONSTRUCTOR e PARSIMONY",
+            "parsimony": "PARSIMONY + CLUSTALW",
+            "auto": descricao_basico,
+            "basic": descricao_basico,
             "advanced": "Advanced Methods"
         }
-        
+
         if self.mode in mode_descriptions:
             description = mode_descriptions[self.mode]
             print(f"Iniciando construção das árvores utilizando o método: {description}\n")
@@ -230,7 +241,19 @@ class TreeBuilderController:
         else:
             logging.error(f"Modo desconhecido: {self.mode}")
             raise ValueError(f"Modo desconhecido: {self.mode}")
-        
+
+        if self.mode in MODOS_BASICOS:
+            # D18, opção 2 do defeito: aviso explícito, não só descrição —
+            # "Completed successfully!" no fim da execução (emitido pelo
+            # subtree builder, sempre) não distingue básico de advanced.
+            aviso = (
+                "Modo básico: métodos avançados (IQ-TREE, FastTree, RAxML-NG, "
+                "MrBayes) NÃO serão executados nesta execução. Use "
+                "mode='advanced' para incluí-los."
+            )
+            print(f"AVISO: {aviso}\n")
+            logging.warning(aviso)
+
         print(f"Métodos ignorados: {', '.join([m.upper() for m in self.ignore_methods])}\n")
         logging.info(f"Métodos ignorados: {', '.join([m.upper() for m in self.ignore_methods])}")
         
@@ -264,7 +287,7 @@ class TreeBuilderController:
                     trees_built = self._process_single_mode(file_stem, fasta_path, output_paths, "parsimony")
                     self.count_trees += trees_built
                     
-                elif self.mode == "auto":
+                elif self.mode in MODOS_BASICOS:
                     trees_built, file_multi_trees = self._process_auto_mode(file_stem, fasta_path, output_paths)
                     self.count_trees += trees_built
                     
@@ -316,7 +339,7 @@ class TreeBuilderController:
                 exit(1)
                 
         # Gerar heatmap acumulado para modos auto e advanced
-        if self.mode in ["auto", "advanced"]:
+        if self.mode in MODOS_BASICOS or self.mode == "advanced":
             plot_heatmap_distances(data_dict=multi_trees, base_name='Acumulate', 
                                path=os.path.join(self.output_path, 'outputs/Plots'), distance_matrix=heatmap_matrix)
             logging.info("Heatmap acumulado gerado com sucesso.")

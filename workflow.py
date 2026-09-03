@@ -4,6 +4,7 @@ from workflow.controller.treeBuilderController import TreeBuilderController
 from workflow.controller.subtreeBuilderController import SubtreeBuilderController
 from workflow.utils.manifest import ExecutionManifest
 from workflow.utils import run_logging
+from workflow.utils import external_tools
 from workflow.tree_construction.builder import reproducibility_settings
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -98,6 +99,33 @@ if entrada and os.path.exists(entrada):
 # Semente e paralelização efetivas, resolvidas pela MESMA função que o builder
 # usa — o manifesto não pode declarar um valor e o pipeline usar outro.
 manifest.register_reproducibility(reproducibility_settings(params.get('tree_config', {})))
+
+# D18 — "disponível" não é "executado". Modo básico/auto roda só distância e
+# parcimônia; nada além do `mode` cru em config_backup.json dizia isso, e o
+# denominador de todo suporte metodológico (`M`) ficava sem proveniência.
+# Calculado ANTES de rodar: disponibilidade e ignore_mode já são conhecidos, e
+# não depende do resultado da execução.
+_tree_cfg = params.get('tree_config', {})
+_modo_solicitado = _tree_cfg.get('mode', 'advanced')
+_ignore_bruto = _tree_cfg.get('ignore_mode') or []
+if isinstance(_ignore_bruto, str):
+    _ignore = [m.strip().lower() for m in _ignore_bruto.split(',') if m.strip() and m.strip() != 'none']
+else:
+    _ignore = [m.lower() for m in _ignore_bruto if m and m != 'none']
+# Métodos avançados do controlador (`treeBuilderController._process_advanced_mode`)
+# -> chave de `external_tools.CANDIDATOS`, que usa "raxml-ng", não "raxml".
+_MAPA_METODO_FERRAMENTA = {'iqtree': 'iqtree', 'fasttree': 'fasttree',
+                           'raxml': 'raxml-ng', 'mrbayes': 'mrbayes'}
+_avancados_disponiveis = [
+    metodo for metodo, ferramenta in _MAPA_METODO_FERRAMENTA.items()
+    if external_tools.resolve_tool(ferramenta)
+]
+_avancados_executados = (
+    [] if _modo_solicitado in ('auto', 'basic')
+    else [m for m in _avancados_disponiveis if m not in _ignore]
+)
+manifest.register_execution_mode(_modo_solicitado, _avancados_disponiveis, _avancados_executados)
+
 manifest.write()
 
 if params.get('log_file'):
