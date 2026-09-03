@@ -1,6 +1,6 @@
 import json, sys, os, argparse
 
-from workflow.controller.treeBuilderController import TreeBuilderController
+from workflow.controller.treeBuilderController import TreeBuilderController, MODOS_BASICOS
 from workflow.controller.subtreeBuilderController import SubtreeBuilderController
 from workflow.utils.manifest import ExecutionManifest
 from workflow.utils import run_logging
@@ -121,7 +121,7 @@ _avancados_disponiveis = [
     if external_tools.resolve_tool(ferramenta)
 ]
 _avancados_executados = (
-    [] if _modo_solicitado in ('auto', 'basic')
+    [] if _modo_solicitado in MODOS_BASICOS
     else [m for m in _avancados_disponiveis if m not in _ignore]
 )
 manifest.register_execution_mode(_modo_solicitado, _avancados_disponiveis, _avancados_executados)

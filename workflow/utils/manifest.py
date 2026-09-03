@@ -350,9 +350,11 @@ class ExecutionManifest:
         requested : str
             O `mode` cru como pedido (`"auto"`, `"basic"` ou `"advanced"`).
         methods_advanced_available : list of str
-            Métodos avançados (`iqtree`, `fasttree`, `raxml-ng`, `mrbayes`)
-            resolvíveis no ambiente no momento da execução — vem de
-            `external_tools.resolved_tools`, não de suposição.
+            Nomes de **método do controlador** (`iqtree`, `fasttree`, `raxml`,
+            `mrbayes` — não a chave de ferramenta `external_tools.CANDIDATOS`,
+            que para o RAxML é `"raxml-ng"`). Vem de `external_tools.resolve_tool`
+            por método, não de suposição; quem procurar `"raxml-ng"` aqui não
+            acha — `workflow.py` já faz essa tradução antes de chamar isto.
         methods_advanced_executed : list of str
             Os que de fato rodaram. Vazio em modo básico; igual a
             `methods_advanced_available` menos `ignore_methods` em `advanced`.

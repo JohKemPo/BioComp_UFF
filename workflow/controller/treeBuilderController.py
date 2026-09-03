@@ -26,6 +26,14 @@ from workflow.alignment.alignmentSeq import AlignmentSeqs
 
 from workflow.alignment.aligners import ALIGNERS, AlignerPolicy, resolve_aligner
 
+#: D18 — "basic" é o nome honesto; "auto" continua aceito como alias legado
+#: (projetos já em disco). Nível de módulo, importável por `workflow.py` — que
+#: precisa da mesma lista para computar `execution_mode` do manifesto **antes**
+#: do controlador rodar. Duas cópias da mesma tupla já divergiram uma vez neste
+#: projeto (D5, D19); aqui é a fonte única.
+MODOS_BASICOS = ("auto", "basic")
+
+
 class TreeBuilderController:
     """
     Controlador responsável pela construção e manipulação de árvores filogenéticas.
@@ -219,8 +227,8 @@ class TreeBuilderController:
         # modo faz é rodar só distância e parcimônia, nunca os métodos
         # avançados. "basic" é o nome novo, honesto com o comportamento;
         # "auto" continua aceito como alias — os ~20 projetos já em disco com
-        # mode: "auto" em config_backup.json não podem quebrar.
-        MODOS_BASICOS = ("auto", "basic")
+        # mode: "auto" em config_backup.json não podem quebrar. MODOS_BASICOS
+        # é constante de módulo (topo do arquivo) — `workflow.py` usa a mesma.
         descricao_basico = (
             "BÁSICO (apenas distância NJ/UPGMA e parcimônia — nenhum método "
             "avançado roda; use mode='advanced' para IQ-TREE/FastTree/RAxML-NG/MrBayes)"
