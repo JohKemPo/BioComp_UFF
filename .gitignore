@@ -9,6 +9,9 @@ workflow_dataAcquisition_1/
 
 *.log
 
+# Dado grande de experimento, não pertence ao git (untracked em DEC-075)
+*_NoPipe
+
 
 
 # ------------------------------------------------------------------------------------------------------------------------------
