@@ -80,10 +80,25 @@ def deduplicar_por_sequencia(name, path, outputpath):
     **declarar agora e corrigir na aquisição depois**. O que muda é que o
     descarte deixa de ser silencioso.
 
+    Notes
+    -----
+    Duas escolhas silenciosas ficam aqui declaradas, porque decidem composição
+    de conjunto e nenhuma das duas foi decidida por ninguém:
+
+    1. A chave é ``str(sequence.seq)`` **crua** — sensível a caixa e a lacuna.
+       Dois registros que difiram apenas por *soft-masking* minúsculo não são
+       reconhecidos como iguais e entram os dois na árvore.
+    2. O sobrevivente é a **primeira ocorrência no arquivo**. Não há preferência
+       declarada entre RefSeq e GenBank; a ordem de download decide. Mudar isso
+       muda o rótulo do táxon e, por tabela, a que registro o
+       `raw_data_sequences.gb` — e portanto país, ano e hospedeiro — pertence.
+
     Return
     ------
     tuple of (str, list)
         Caminho do FASTA deduplicado e lista de ``(descartado, mantido)``.
+        ``descartado == mantido`` significa acesso repetido, não par
+        RefSeq/GenBank.
     """
     sequences = list(SeqIO.parse(path, "fasta"))
     unique_sequences = {}
@@ -99,10 +114,20 @@ def deduplicar_por_sequencia(name, path, outputpath):
     SeqIO.write(list(unique_sequences.values()), output_file_tmp, "fasta")
 
     if descartados:
+        # Dois fenômenos diferentes caem no mesmo laço e a mensagem precisa
+        # separá-los: o mesmo acesso baixado duas vezes (`perdido == mantido`,
+        # que escrito como "X (idêntico a X)" lê como contradição) e o par
+        # RefSeq/GenBank do mesmo genoma, que é o de D23 e o único que muda a
+        # identidade do táxon que entra na árvore.
+        def _descrever(perdido, mantido):
+            if perdido == mantido:
+                return f"{perdido} (registro repetido do mesmo acesso)"
+            return f"{perdido} (acesso distinto, sequência idêntica à de {mantido}; mantido {mantido})"
+
         logging.warning(
             f"{len(sequences)} registros → {len(unique_sequences)} sequências distintas. "
             f"Descartados por sequência idêntica: "
-            + "; ".join(f"{perdido} (idêntico a {mantido})" for perdido, mantido in descartados)
+            + "; ".join(_descrever(perdido, mantido) for perdido, mantido in descartados)
         )
     return output_file_tmp, descartados
 
