@@ -10,6 +10,7 @@ import gc
 import time
 
 from workflow.utils.taxonomy import audit_genbank, entrez_term
+from workflow.utils.ncbi_accession import eh_refseq
 
 class workflowAquisitionDatasetNCBI:
     def __init__(self, email, work_dir="workflow_dataAcquisition",
@@ -250,42 +251,62 @@ class workflowAquisitionDatasetNCBI:
         
         try:
             filtered = []
-            seen_seqs = set()
+            # str(seq) maiúscula -> índice em `filtered`. Antes era um `set`
+            # (só sabia dizer "já vi"); precisa ser dict para D23/DEC-082
+            # poder relabelar a posição certa quando o duplicado é RefSeq.
+            posicao_por_sequencia = {}
             batch_size = 5  # Processar em lotes pequenos
-            
+
             # Usar gerador, NÃO list()
             for i, rec in enumerate(SeqIO.parse(input_file, "genbank")):
                 try:
                     if rec.seq is None or len(rec.seq) == 0:
                         continue
-                        
+
                     if self.initial_min_length is not None and len(rec.seq) < self.initial_min_length:
                         continue
-                        
+
                     seq_str = str(rec.seq).upper()
-                    if seq_str in seen_seqs:
+                    indice_existente = posicao_por_sequencia.get(seq_str)
+                    if indice_existente is not None:
+                        # D23/DEC-082: mesma sequência já vista. RefSeq
+                        # prevalece sobre GenBank, relabelando NA POSIÇÃO em
+                        # que o sobrevivente por ordem de chegada já está —
+                        # o conjunto não é reordenado (opção (A) do DEC-082).
+                        sobrevivente = filtered[indice_existente]
+                        if eh_refseq(rec.id) and not eh_refseq(sobrevivente.id):
+                            self.logger.info(
+                                f"D23/DEC-082: {rec.id} (RefSeq) substitui "
+                                f"{sobrevivente.id} (GenBank) na posição "
+                                f"{indice_existente} — mesma sequência, RefSeq preferido."
+                            )
+                            filtered[indice_existente] = rec
                         continue
-                        
-                    seen_seqs.add(seq_str)
+
+                    posicao_por_sequencia[seq_str] = len(filtered)
                     filtered.append(rec)
-                    
+
                     # A cada batch_size registros, forçar limpeza de memória
                     if len(filtered) % batch_size == 0:
                         gc.collect()  # Forçar garbage collector
-                        
+
                 except Exception as e:
                     self.logger.warning(f"Erro ao processar sequência {rec.id}: {e}")
                     continue
-            
+
             # Salvar resultado
             SeqIO.write(filtered, output_file, "genbank")
             self.logger.info(f"Total de sequências filtradas: {len(filtered)}")
-            
-            # Limpar referências grandes
-            del seen_seqs
-            del filtered
+
+            # Limpar referência grande — NUNCA a que é devolvida (achado
+            # incidental: o código anterior fazia `del filtered` e em seguida
+            # `return filtered`, o que sempre lançava `UnboundLocalError`,
+            # sempre caía no `except` mais abaixo, e sempre reescrevia
+            # `output_file` como vazio — nenhuma filtragem por
+            # `initial_min_length` jamais sobreviveu além deste ponto).
+            del posicao_por_sequencia
             gc.collect()
-            
+
             return filtered
             
         except Exception as e:
@@ -382,22 +403,36 @@ class workflowAquisitionDatasetNCBI:
         try:
             records = list(SeqIO.parse(input_file, "genbank"))
             refined = []
-            seq_hashes = set()
-            
+            # hash -> índice em `refined` (era um `set`; precisa ser dict
+            # para D23/DEC-082 poder relabelar a posição certa).
+            posicao_por_hash = {}
+
             for rec in records:
                 if self.refined_min_length is not None and len(rec.seq) < self.refined_min_length:
                     continue
-                
+
                 # Usar hash para detecção rápida de duplicatas exatas
                 seq_hash = hashlib.md5(str(rec.seq).encode()).hexdigest()
-                if seq_hash in seq_hashes:
+                indice_existente = posicao_por_hash.get(seq_hash)
+                if indice_existente is not None:
+                    # D23/DEC-082: mesma sequência já vista (por hash). RefSeq
+                    # prevalece sobre GenBank, relabelando NA POSIÇÃO em que o
+                    # sobrevivente por ordem de chegada já está.
+                    sobrevivente = refined[indice_existente]
+                    if eh_refseq(rec.id) and not eh_refseq(sobrevivente.id):
+                        self.logger.info(
+                            f"D23/DEC-082: {rec.id} (RefSeq) substitui "
+                            f"{sobrevivente.id} (GenBank) na posição "
+                            f"{indice_existente} — mesma sequência, RefSeq preferido."
+                        )
+                        refined[indice_existente] = rec
                     continue
-                    
+
                 # Para similaridade, usar amostragem ou métodos mais eficientes
                 # if not self.is_similar_to_existing(rec, refined):
+                posicao_por_hash[seq_hash] = len(refined)
                 refined.append(rec)
-                seq_hashes.add(seq_hash)
-                    
+
             SeqIO.write(refined, output_file, "genbank")
             self.logger.info(f"Dataset refinado com {len(refined)} sequências")
         except Exception as e:
