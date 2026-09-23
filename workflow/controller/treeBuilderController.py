@@ -831,49 +831,67 @@ class TreeBuilderController:
             raise
         return tree
     
+    #: D26 — os quatro métodos avançados instanciavam `TreeBuilder` sem
+    #: repassar `random_seed`/`raxml_threads`/`iqtree_threads`, então
+    #: `reproducibility_settings` (`builder.py`) sempre caía nos defaults do
+    #: módulo (12345/4/4) — não importa o que o `tree_config` do experimento
+    #: pedisse. O manifesto (`workflow.py:100`) chama a mesma função com o
+    #: `tree_config` de verdade e por isso *declarava* o valor pedido enquanto
+    #: a chamada real usava outro. `getattr` com fallback ausente (não `None`)
+    #: porque `reproducibility_settings` faz `config.get(chave, padrao)`: uma
+    #: chave presente com valor `None` quebraria em `int(None)`.
+    def _reproducibility_kwargs(self):
+        """`tree_config` do experimento, restrito ao que reprodutibilidade lê."""
+        chaves = ('random_seed', 'raxml_threads', 'iqtree_threads')
+        return {chave: getattr(self, chave) for chave in chaves if hasattr(self, chave)}
+
     def build_tree_iqtree(self, fasta_path, output_path_align, output_path_tree, align_method, output_path_align_html):
         """Constrói árvore usando IQ-TREE."""
         logging.info(f"Iniciando construção de árvore com IQ-TREE para {fasta_path}")
         logging.info(f"STEP: Tree Construction with IQ-TREE method.")
 
-        builder = TreeBuilder(fasta_path=fasta_path, output_path_tree=output_path_tree)
-        
+        builder = TreeBuilder(fasta_path=fasta_path, output_path_tree=output_path_tree,
+                              **self._reproducibility_kwargs())
+
         alng = self._get_alignment(fasta_path, output_path_align, align_method, output_path_align_html)
         tree = builder.iqtree_constructor(alng, output_path_tree)
         self.count_nodes.append(tree.count_terminals())
         return tree
-    
+
     def build_tree_fasttree(self, fasta_path, output_path_align, output_path_tree, align_method, output_path_align_html):
         """Constrói árvore usando FastTree."""
         logging.info(f"Iniciando construção de árvore com FastTree para {fasta_path}")
         logging.info(f"STEP: Tree Construction with FastTree method.")
 
-        builder = TreeBuilder(fasta_path=fasta_path, output_path_tree=output_path_tree)
-        
+        builder = TreeBuilder(fasta_path=fasta_path, output_path_tree=output_path_tree,
+                              **self._reproducibility_kwargs())
+
         alng = self._get_alignment(fasta_path, output_path_align, align_method, output_path_align_html)
         tree = builder.fasttree_constructor(alng, output_path_tree)
         self.count_nodes.append(tree.count_terminals())
         return tree
-    
+
     def build_tree_raxml(self, fasta_path, output_path_align, output_path_tree, align_method, output_path_align_html):
         """Constrói árvore usando RAxML-NG."""
         logging.info(f"Iniciando construção de árvore com RAxML-NG para {fasta_path}")
         logging.info(f"STEP: Tree Construction with RAxML-NG method.")
 
-        builder = TreeBuilder(fasta_path=fasta_path, output_path_tree=output_path_tree)
-        
+        builder = TreeBuilder(fasta_path=fasta_path, output_path_tree=output_path_tree,
+                              **self._reproducibility_kwargs())
+
         alng = self._get_alignment(fasta_path, output_path_align, align_method, output_path_align_html)
         tree = builder.raxml_ng_constructor(alng, output_path_tree)
         self.count_nodes.append(tree.count_terminals())
         return tree
-    
+
     def build_tree_mrbayes(self, fasta_path, output_path_align, output_path_tree, align_method, output_path_align_html):
         """Constrói árvore usando MrBayes."""
         logging.info(f"Iniciando construção de árvore com MrBayes para {fasta_path}")
         logging.info(f"STEP: Tree Construction with MrBayes method.")
 
-        builder = TreeBuilder(fasta_path=fasta_path, output_path_tree=output_path_tree)
-        
+        builder = TreeBuilder(fasta_path=fasta_path, output_path_tree=output_path_tree,
+                              **self._reproducibility_kwargs())
+
         alng = self._get_alignment(fasta_path, output_path_align, align_method, output_path_align_html)
         tree = builder.mrbayes_constructor(alng, output_path_tree)
         self.count_nodes.append(tree.count_terminals())

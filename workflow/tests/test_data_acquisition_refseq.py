@@ -7,7 +7,8 @@ por conteúdo guardando a **primeira ocorrência no arquivo** — sem preferênc
 declarada entre RefSeq e GenBank, o mesmo genoma virava um acesso diferente
 conforme a ordem de download (a mesma classe de defeito caracterizada em
 `workflow.tests.test_deduplicacao` para `dataValidation.deduplicar_por_sequencia`,
-que é outro caminho — o do `TreeBuilderController` — e não muda aqui).
+que é outro caminho — o do `TreeBuilderController` — e agora recebe a mesma
+preferência, ver `test_deduplicacao.test_refseq_decide_o_sobrevivente_independente_da_ordem`).
 
 O que estes testes travam:
 

@@ -12,11 +12,17 @@ caminho não prova que o caminho existe.** Por isso há, além dos testes de
 unidade, um que entra pelo `_validate_and_prepare_fasta` do controlador e
 confere que o descarte chegou ao registro que alimenta o manifesto.
 
-Os testes de sobrevivência (`test_ordem_do_arquivo_decide_o_sobrevivente`,
-`test_forma_do_par_variola`) são de **caracterização**: eles fixam o
-comportamento arbitrário de hoje — primeira ocorrência vence — para que a
-escolha de preferência entre RefSeq e GenBank, quando o usuário a tomar, tenha
-de ser feita alterando um teste deliberadamente, e não por acidente.
+Os testes de sobrevivência (`test_refseq_decide_o_sobrevivente_independente_da_ordem`,
+`test_forma_do_par_variola`) fixavam o comportamento arbitrário de antes de
+DEC-082 — primeira ocorrência vence — deliberadamente, para que a escolha de
+preferência entre RefSeq e GenBank, quando o usuário a tomasse, tivesse de ser
+feita alterando um teste de propósito, e não por acidente. A decisão foi
+tomada (DEC-082, opção A) e já valia nas duas rotas de aquisição — esta
+função, chamada pelo `TreeBuilderController`, era a terceira implementação do
+mesmo defeito e ainda não tinha a preferência; corrigida e os dois testes
+reescritos de propósito para travar o novo comportamento, com a mesma regra e
+o mesmo texto de log das outras duas implementações
+(`workflow.tests.test_data_acquisition_refseq`).
 
 Executar com:
 
@@ -66,15 +72,19 @@ class TestDeduplicacaoPorSequencia(unittest.TestCase):
         return deduplicar_por_sequencia(nome, entrada, self.dir)
 
     def test_duas_sequencias_identicas_com_rotulos_diferentes(self):
-        """O caso mínimo de D23: RefSeq e GenBank do mesmo genoma."""
+        """O caso mínimo de D23: RefSeq e GenBank do mesmo genoma.
+
+        D23/DEC-082: RefSeq (`NC_008291.1`) vence sobre GenBank (`DQ437594.1`)
+        mesmo chegando depois — a ordem de chegada não decide mais.
+        """
         saida, descartados = self._rodar([
             ("DQ437594.1", "Taterapox virus strain Dahomey 1968", _SEQ_TATERAPOX),
             ("NC_008291.1", "Taterapox virus", _SEQ_TATERAPOX),
         ])
 
-        self.assertEqual(descartados, [("NC_008291.1", "DQ437594.1")],
+        self.assertEqual(descartados, [("DQ437594.1", "NC_008291.1")],
                          "o descarte precisa dizer quem saiu e em favor de quem")
-        self.assertEqual(_ids(saida), ["DQ437594.1"],
+        self.assertEqual(_ids(saida), ["NC_008291.1"],
                          "o FASTA deduplicado guarda uma entrada por sequência distinta")
 
     def test_descarte_e_anunciado_no_log_com_os_dois_acessos(self):
@@ -118,14 +128,16 @@ class TestDeduplicacaoPorSequencia(unittest.TestCase):
         self.assertEqual(descartados, [])
         self.assertEqual(_ids(saida), ["A.1", "B.1", "C.1"])
 
-    def test_ordem_do_arquivo_decide_o_sobrevivente(self):
-        """CARACTERIZAÇÃO — o comportamento arbitrário de hoje, fixado.
+    def test_refseq_decide_o_sobrevivente_independente_da_ordem(self):
+        """D23/DEC-082, opção (A) — RefSeq vence, a ordem de chegada não decide mais.
 
-        Os mesmos dois registros em ordem invertida produzem o **outro**
-        sobrevivente. É por isso que o mesmo táxon aparece como `DQ437594.1` em
-        VARV-49 e como `NC_008291.1` em VARV-121, e é a pergunta de curadoria
-        que aguarda decisão do usuário. Quando ela for tomada, este teste tem de
-        ser reescrito de propósito.
+        Os mesmos dois registros em ordem invertida produzem **o mesmo**
+        sobrevivente agora: o acesso RefSeq. Antes de DEC-082, este teste
+        (então chamado `test_ordem_do_arquivo_decide_o_sobrevivente`) fixava o
+        oposto — é por isso que o mesmo táxon aparecia como `DQ437594.1` em
+        VARV-49 e como `NC_008291.1` em VARV-121. `descartados` sempre
+        registra o GenBank como descartado e o RefSeq como mantido,
+        independente de quem chegou primeiro.
         """
         _, genbank_primeiro = self._rodar([
             ("DQ437594.1", "GenBank", _SEQ_TATERAPOX),
@@ -136,15 +148,35 @@ class TestDeduplicacaoPorSequencia(unittest.TestCase):
             ("DQ437594.1", "GenBank", _SEQ_TATERAPOX),
         ], nome="ordem_b")
 
-        self.assertEqual(genbank_primeiro, [("NC_008291.1", "DQ437594.1")])
+        self.assertEqual(genbank_primeiro, [("DQ437594.1", "NC_008291.1")])
         self.assertEqual(refseq_primeiro, [("DQ437594.1", "NC_008291.1")])
 
+    def test_grupo_sem_nenhum_refseq_mantem_a_primeira_ocorrencia(self):
+        """CASO-LIMITE — sem acesso RefSeq no grupo, a preferência não se aplica.
+
+        Dois acessos GenBank do mesmo genoma: nenhum é RefSeq, então a regra
+        de DEC-082 não decide nada e o comportamento — primeira ocorrência
+        vence — continua o de antes. Isto não é uma escolha nova; é a
+        ausência da condição que dispara a nova regra.
+        """
+        _, descartados = self._rodar([
+            ("DQ437594.1", "GenBank", _SEQ_TATERAPOX),
+            ("DQ999999.1", "GenBank, outro acesso, mesma sequência", _SEQ_TATERAPOX),
+        ], nome="sem_refseq")
+
+        self.assertEqual(descartados, [("DQ999999.1", "DQ437594.1")])
+
     def test_forma_do_par_variola(self):
-        """CARACTERIZAÇÃO — a forma medida em `data/replication-RetMax200-ITRs`.
+        """CARACTERIZAÇÃO — a forma medida em `data/replication-RetMax200-ITRs`,
+        já com a preferência RefSeq de DEC-082 aplicada.
 
         Um grupo de três (acesso repetido **e** gêmeo RefSeq) e um grupo de
         dois, sobre um conjunto que também tem sequências únicas: 4 registros
-        de Taterapox/Camelpox + 1 distinta → 3 sequências distintas.
+        de Taterapox/Camelpox + 1 distinta → 3 sequências distintas. O
+        RefSeq de cada par substitui o GenBank **na mesma posição** que o
+        GenBank já ocupava (o conjunto não é reordenado) — por isso a
+        reaparição de `DQ437594.1` no fim ainda é descartada em favor de
+        `NC_008291.1`, não reintroduzida.
         """
         saida, descartados = self._rodar([
             ("DQ437594.1", "Taterapox GenBank", _SEQ_TATERAPOX),
@@ -156,11 +188,11 @@ class TestDeduplicacaoPorSequencia(unittest.TestCase):
         ], nome="variola")
 
         self.assertEqual(descartados, [
-            ("NC_008291.1", "DQ437594.1"),
-            ("NC_003391.1", "AF438165.1"),
-            ("DQ437594.1", "DQ437594.1"),
+            ("DQ437594.1", "NC_008291.1"),
+            ("AF438165.1", "NC_003391.1"),
+            ("DQ437594.1", "NC_008291.1"),
         ])
-        self.assertEqual(_ids(saida), ["DQ437594.1", "AF438165.1", "KP123456.1"])
+        self.assertEqual(_ids(saida), ["NC_008291.1", "NC_003391.1", "KP123456.1"])
 
     def test_chave_e_sensivel_a_caixa(self):
         """CARACTERIZAÇÃO da escolha silenciosa nº 1 da docstring.
@@ -221,8 +253,10 @@ class TestCaminhoDoControlador(unittest.TestCase):
         registro = tool_runs.execucoes().get("deduplicacao")
         self.assertIsNotNone(
             registro, "sem registro, o manifesto sai com o descarte invisível — é D23")
+        # D23/DEC-082: RefSeq (NC_008291.1) vence sobre GenBank (DQ437594.1),
+        # não a ordem de chegada — DQ437594.1 é quem sai.
         self.assertEqual(registro["descartados"],
-                         [{"descartado": "NC_008291.1", "mantido": "DQ437594.1"}])
+                         [{"descartado": "DQ437594.1", "mantido": "NC_008291.1"}])
         self.assertIn("D23", registro["nota"])
         self.assertEqual(registro["runs"][0]["command"][0], "deduplicar_por_sequencia")
 

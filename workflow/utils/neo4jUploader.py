@@ -1,13 +1,31 @@
+import os
+import sys
+
 from neo4j import GraphDatabase
 
-# Configurações da instância
-URI = "neo4j+s://795fbce6.databases.neo4j.io"
-USERNAME = "neo4j"
-PASSWORD = "W5oxKVUAezR78m2WIsblPwAwcNlb-L1amRIlGH6xbd8"
-DATABASE = "neo4j" 
+# Configurações da instância — lidas do ambiente (DEC-052: credencial Neo4j
+# Aura em texto puro achada em jun/2025; corrigido para nunca mais gravar
+# segredo em código). Sem `NEO4J_URI`/`NEO4J_PASSWORD`, o script recusa
+# rodar em vez de cair para um valor hardcoded — mesmo padrão de
+# `Backend/src/seguranca.py` (ADMIN_TOKEN) e de `.env.example` na raiz do
+# projeto principal.
+URI = os.environ.get("NEO4J_URI")
+USERNAME = os.environ.get("NEO4J_USERNAME", "neo4j")
+PASSWORD = os.environ.get("NEO4J_PASSWORD")
+DATABASE = os.environ.get("NEO4J_DATABASE", "neo4j")
 
-# Caminho para o arquivo .cql
-CQL_FILE = "/home/hilai360/Documents/Joao - IC/Zika/adjusted.cql"
+if not URI or not PASSWORD:
+    raise SystemExit(
+        "NEO4J_URI e NEO4J_PASSWORD precisam estar no ambiente — nenhuma "
+        "credencial fica hardcoded neste arquivo (DEC-052)."
+    )
+
+# Caminho para o arquivo .cql — era um caminho absoluto de outra máquina
+# (`/home/hilai360/...`), nunca portável; agora é argumento de linha de
+# comando, sem valor padrão hardcoded.
+if len(sys.argv) < 2:
+    raise SystemExit("uso: python neo4jUploader.py <caminho para o .cql>")
+CQL_FILE = sys.argv[1]
 
 # Conectar ao banco
 driver = GraphDatabase.driver(URI, auth=(USERNAME, PASSWORD))

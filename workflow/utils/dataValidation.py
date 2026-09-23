@@ -2,6 +2,8 @@ from Bio import SeqIO
 import logging
 import os
 
+from workflow.utils.ncbi_accession import eh_refseq
+
 # Função que verifica se todas as sequências são proteínas válidas no formato FASTA
 def validate_sequences(file_path):
     """
@@ -76,22 +78,26 @@ def deduplicar_por_sequencia(name, path, outputpath):
     experimento para experimento** — `DQ437594` em VARV-52, `NC_008291` em
     VARV-121.
 
-    A composição não é alterada aqui: a decisão do usuário em 2026-08-26 foi
-    **declarar agora e corrigir na aquisição depois**. O que muda é que o
-    descarte deixa de ser silencioso.
+    A composição não é alterada por esta função além da preferência abaixo:
+    a decisão do usuário em 2026-08-26 foi **declarar agora e corrigir na
+    aquisição depois**; DEC-082 (2026-09-04) decidiu a opção (A) — quando o
+    grupo de sequências idênticas contém um acesso RefSeq, ele é o rótulo do
+    sobrevivente, **na mesma posição** em que o sobrevivente por ordem de
+    chegada já estava (o conjunto não é reordenado). Item 1 do D23 já
+    aplicava essa preferência nas duas rotas de aquisição
+    (`workflow_dataAcquisition.py`, `Backend/src/services/ncbi_acquisition.py`)
+    — esta função, chamada pelo `TreeBuilderController` numa reexecução, era
+    a terceira implementação do mesmo defeito e não recebia a preferência;
+    corrigida aqui para as três ficarem consistentes.
 
     Notes
     -----
-    Duas escolhas silenciosas ficam aqui declaradas, porque decidem composição
-    de conjunto e nenhuma das duas foi decidida por ninguém:
+    Uma escolha silenciosa continua aqui, porque decide composição de
+    conjunto e ninguém a decidiu ainda:
 
     1. A chave é ``str(sequence.seq)`` **crua** — sensível a caixa e a lacuna.
        Dois registros que difiram apenas por *soft-masking* minúsculo não são
        reconhecidos como iguais e entram os dois na árvore.
-    2. O sobrevivente é a **primeira ocorrência no arquivo**. Não há preferência
-       declarada entre RefSeq e GenBank; a ordem de download decide. Mudar isso
-       muda o rótulo do táxon e, por tabela, a que registro o
-       `raw_data_sequences.gb` — e portanto país, ano e hospedeiro — pertence.
 
     Return
     ------
@@ -108,7 +114,21 @@ def deduplicar_por_sequencia(name, path, outputpath):
         if chave not in unique_sequences:
             unique_sequences[chave] = sequence
         else:
-            descartados.append((sequence.id, unique_sequences[chave].id))
+            sobrevivente = unique_sequences[chave]
+            # D23/DEC-082, opção (A): RefSeq prevalece sobre GenBank,
+            # substituindo o sobrevivente NA MESMA CHAVE (posição no dict de
+            # saída preservada, conjunto não reordenado) — mesma regra e
+            # mesmo texto de log de `workflow_dataAcquisition.py`/
+            # `ncbi_acquisition.py`, para as três implementações concordarem.
+            if eh_refseq(sequence.id) and not eh_refseq(sobrevivente.id):
+                logging.info(
+                    f"D23/DEC-082: {sequence.id} (RefSeq) substitui "
+                    f"{sobrevivente.id} (GenBank) — mesma sequência, RefSeq preferido."
+                )
+                unique_sequences[chave] = sequence
+                descartados.append((sobrevivente.id, sequence.id))
+            else:
+                descartados.append((sequence.id, sobrevivente.id))
 
     output_file_tmp = os.path.join(outputpath, f'{name}_NoPipe')
     SeqIO.write(list(unique_sequences.values()), output_file_tmp, "fasta")
