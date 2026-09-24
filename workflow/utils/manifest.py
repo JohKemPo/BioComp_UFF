@@ -39,6 +39,7 @@ __all__ = [
     "tool_versions",
     "file_digest",
     "MANIFEST_FILENAME",
+    "anexar_execucao_isolada",
 ]
 
 MANIFEST_FILENAME = "manifest.json"
@@ -124,6 +125,108 @@ def file_digest(path: str, chunk: int = 1024 * 1024) -> Optional[str]:
         for bloco in iter(lambda: handle.read(chunk), b""):
             digestor.update(bloco)
     return digestor.hexdigest()
+
+
+def _relativo_a(path: str, raiz: str) -> str:
+    """Versão livre de `ExecutionManifest._relativo` — mesma regra, sem instância."""
+    try:
+        return os.path.relpath(os.path.abspath(path), raiz)
+    except ValueError:
+        return os.path.basename(path)
+
+
+def _fora_da_raiz_de(path: str, raiz: str) -> str:
+    """Versão livre de `ExecutionManifest._fora_da_raiz` — mesma regra, sem instância."""
+    relativo = _relativo_a(path, raiz)
+    return os.path.basename(path) if relativo.startswith(os.pardir) else relativo
+
+
+def anexar_execucao_isolada(out_dir: str, diretorio_saida: str) -> bool:
+    """
+    Acrescenta ao `manifest.json` já existente o desfecho de uma etapa
+    disparada **fora** de `workflow.py` (E12.11: relógio molecular via CLI/API
+    isolada, sem reprocessar o resto do projeto).
+
+    Drena `tool_runs` exatamente como `ExecutionManifest.drain_tool_runs` drena
+    numa execução normal — mesma fonte, mesmos campos —, mas anexa a um
+    manifesto que a execução original já fechou, em vez de construir um novo.
+    Um manifesto inteiro (``git``, ``environment``, ``params``, ``inputs_sha256``
+    da árvore original) descreve a execução que **construiu** o projeto; gerar
+    outro do zero para uma etapa isolada sobrescreveria essa proveniência com
+    uma que nunca existiu — pior que a lacuna que isto fecha.
+
+    Se o projeto não tem manifesto (anterior a M2.5, ou nunca gerado), não
+    inventa um: devolve `False` e deixa `tool_runs` como estava, para o
+    chamador decidir se isso é motivo de aviso.
+
+    Parameters
+    ----------
+    out_dir : str
+        O diretório ``out/`` do projeto (mesmo `--out` do CLI da etapa).
+    diretorio_saida : str
+        Onde a etapa isolada gravou seus próprios arquivos (ex.
+        ``out/outputs/molecular_clock/``) — hasheados e somados a
+        `outputs_sha256`, sem tocar o que já estava lá.
+
+    Returns
+    -------
+    bool
+        `True` se um manifesto existia e foi atualizado; `False` se não havia
+        manifesto para anexar.
+    """
+    project_root = os.path.dirname(os.path.abspath(out_dir))
+    caminho = os.path.join(out_dir, "outputs", MANIFEST_FILENAME)
+    if not os.path.isfile(caminho):
+        return False
+
+    with open(caminho, "r", encoding="utf-8") as f:
+        dados = json.load(f)
+
+    agora = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+    metodos_existentes = dados.get("inference_methods") or []
+    for registro in tool_runs.metodos():
+        entrada = {
+            "metodo": registro["metodo"],
+            "estado": registro["estado"],
+            "saida": _fora_da_raiz_de(registro["saida"], project_root),
+            "via": "isolado",
+            "registrado_em": agora,
+        }
+        if registro.get("alinhador") is not None:
+            entrada["alinhador"] = registro["alinhador"]
+        if registro.get("motivo"):
+            entrada["motivo"] = ExecutionManifest._CAMINHO_EM_TEXTO.sub(
+                lambda m: _fora_da_raiz_de(m.group(1), project_root), registro["motivo"])
+        metodos_existentes.append(entrada)
+    dados["inference_methods"] = metodos_existentes
+
+    tools_existentes = dados.get("tools_invoked") or {}
+    for ferramenta, execucao in tool_runs.execucoes().items():
+        entrada = tools_existentes.setdefault(ferramenta, {"runs": []})
+        for chamada in execucao.get("runs", []):
+            comando = [_fora_da_raiz_de(t, project_root) if os.sep in t else t
+                       for t in chamada.get("command", [])]
+            registro_chamada = {"command": comando, "via": "isolado", "registrado_em": agora}
+            if chamada.get("saida"):
+                registro_chamada["saida"] = _fora_da_raiz_de(chamada["saida"], project_root)
+            entrada["runs"].append(registro_chamada)
+    dados["tools_invoked"] = tools_existentes
+
+    outputs_existentes = dados.get("outputs_sha256") or {}
+    if os.path.isdir(diretorio_saida):
+        for raiz, subdirs, arquivos in os.walk(diretorio_saida):
+            subdirs[:] = sorted(subdirs)
+            for arquivo in sorted(arquivos):
+                caminho_arquivo = os.path.join(raiz, arquivo)
+                outputs_existentes[_relativo_a(caminho_arquivo, project_root)] = (
+                    file_digest(caminho_arquivo))
+    dados["outputs_sha256"] = outputs_existentes
+
+    with open(caminho, "w", encoding="utf-8") as f:
+        json.dump(dados, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+    return True
 
 
 def _git(repo: str, *args: str) -> Optional[str]:
@@ -220,10 +323,7 @@ class ExecutionManifest:
 
     def _relativo(self, path: str) -> str:
         """Caminho relativo à raiz do projeto; nunca absoluto (D15)."""
-        try:
-            return os.path.relpath(os.path.abspath(path), self.project_root)
-        except ValueError:
-            return os.path.basename(path)
+        return _relativo_a(path, self.project_root)
 
     def _fora_da_raiz(self, path: str) -> str:
         """
@@ -242,8 +342,7 @@ class ExecutionManifest:
         `tools_available`, e *onde* ela estava instalada não é reproduzível
         noutra máquina de qualquer forma.
         """
-        relativo = self._relativo(path)
-        return os.path.basename(path) if relativo.startswith(os.pardir) else relativo
+        return _fora_da_raiz_de(path, self.project_root)
 
     def _sanitizar_comando(self, comando: List[str]) -> List[str]:
         """

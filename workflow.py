@@ -2,6 +2,7 @@ import json, sys, os, argparse
 
 from workflow.controller.treeBuilderController import TreeBuilderController, MODOS_BASICOS
 from workflow.controller.subtreeBuilderController import SubtreeBuilderController
+from workflow.controller.molecularClockController import MolecularClockController
 from workflow.utils.manifest import ExecutionManifest
 from workflow.utils import run_logging
 from workflow.utils import external_tools
@@ -140,6 +141,12 @@ try:
 
     subtree_builder_controller = SubtreeBuilderController(**params["subtree_config"])
     subtree_builder_controller()
+
+    # E12.10 — datação leve (LSD2), sequencial, depois da mineração (DEC-127).
+    # Lê `run_molecular_clock` e `molecular_clock_*` do `tree_config`; desligada,
+    # só registra `ignorado_por_configuracao`. Não levanta: falha vira
+    # `tentado_e_falhou` com motivo no manifesto e em relogio_molecular.json.
+    MolecularClockController(**params["tree_config"])()
     _desfecho = ("concluido", None)
 except BaseException as e:
     # `BaseException`, não `Exception`: o controlador encerra com `exit(1)`
@@ -158,4 +165,8 @@ finally:
     # metade do diagnóstico.
     manifest.drain_tool_runs()
     manifest.register_outputs(os.path.join(params['output_log']))
+    # E12.11 — `.nex`/`.json` não estão nos sufixos padrão; a datação grava
+    # os dois, e sem isto o manifesto não teria o SHA-256 do que ela produziu.
+    manifest.register_outputs(os.path.join(params['output_log'], 'outputs', 'molecular_clock'),
+                              suffixes=('.nex', '.json'))
     manifest.finish()

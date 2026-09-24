@@ -23,7 +23,8 @@ import unittest
 from workflow.utils import tool_runs
 from workflow.utils.external_tools import CANDIDATOS
 from workflow.utils.manifest import (ExecutionManifest, MANIFEST_FILENAME,
-                                     file_digest, tool_versions)
+                                     anexar_execucao_isolada, file_digest,
+                                     tool_versions)
 
 
 class TestDigest(unittest.TestCase):
@@ -352,6 +353,120 @@ class TestManifesto(unittest.TestCase):
             texto = handle.read()
         json.loads(texto)   # não levanta
         self.assertIn('"manifest_version": 2', texto)
+
+
+class TestAnexarExecucaoIsolada(unittest.TestCase):
+    """`anexar_execucao_isolada` — proveniência de uma etapa disparada fora de
+    `workflow.py` (E12.11: relógio molecular via CLI/API, achado da fila de
+    triagem de DEC-129/DEC-137). Fixa três propriedades: não inventa um
+    manifesto que a execução original não teve, não apaga nada que já estava
+    lá, e sanitiza caminho absoluto do motivo como o resto do módulo (D15).
+    """
+
+    def setUp(self):
+        self.raiz = tempfile.mkdtemp()
+        self.out_dir = os.path.join(self.raiz, "out")
+        os.makedirs(os.path.join(self.out_dir, "outputs"))
+        self.entrada = os.path.join(self.raiz, "dataset.fasta")
+        with open(self.entrada, "w") as handle:
+            handle.write(">a\nACGT\n")
+        self.params = {"project_name": "teste", "tree_config": {"input_path": self.entrada}}
+        tool_runs.limpar()
+
+    def tearDown(self):
+        shutil.rmtree(self.raiz, ignore_errors=True)
+        tool_runs.limpar()
+
+    def _manifesto_existente(self):
+        manifesto = ExecutionManifest(self.raiz, self.params)
+        manifesto.register_input(self.entrada)
+        manifesto.finish()
+        return manifesto
+
+    def _lido(self):
+        with open(os.path.join(self.out_dir, "outputs", MANIFEST_FILENAME),
+                  encoding="utf-8") as handle:
+            return json.load(handle)
+
+    def test_sem_manifesto_devolve_false_sem_inventar_um(self):
+        """Projeto sem manifesto (anterior a M2.5, ou nunca gerado): a função
+        não cria um do zero — geraria proveniência (git, environment) que a
+        execução original nunca teve."""
+        tool_runs.registrar_metodo("relogio_molecular", "executado", saida="x.nex")
+        self.assertFalse(anexar_execucao_isolada(self.out_dir, self.out_dir))
+        self.assertFalse(
+            os.path.exists(os.path.join(self.out_dir, "outputs", MANIFEST_FILENAME)))
+
+    def test_anexa_metodo_e_preserva_o_resto(self):
+        manifesto = self._manifesto_existente()
+        antes = self._lido()
+
+        tool_runs.registrar_metodo("relogio_molecular", "tentado_e_falhou",
+                                   saida=os.path.join(self.out_dir, "outputs",
+                                                       "molecular_clock", "a.timetree.nex"),
+                                   alinhador="mafft", motivo="sem sinal temporal")
+
+        self.assertTrue(anexar_execucao_isolada(self.out_dir, self.out_dir))
+        depois = self._lido()
+
+        # A entrada nova chegou, marcada como isolada.
+        metodos = depois["inference_methods"]
+        self.assertEqual(len(metodos), 1)
+        self.assertEqual(metodos[0]["metodo"], "relogio_molecular")
+        self.assertEqual(metodos[0]["estado"], "tentado_e_falhou")
+        self.assertEqual(metodos[0]["via"], "isolado")
+        self.assertIn("registrado_em", metodos[0])
+
+        # Nada do resto do manifesto original mudou — mesmo run_id, mesmo
+        # ambiente, mesma proveniência de entrada.
+        for chave in ("run_id", "started_at_utc", "environment", "git",
+                     "inputs_sha256", "params", "tools_available"):
+            self.assertEqual(antes[chave], depois[chave], f"{chave} não deveria mudar")
+
+    def test_chamar_duas_vezes_acumula_nao_substitui(self):
+        """Uma segunda datação isolada, depois, soma à primeira — não apaga o
+        registro de que a primeira tentativa aconteceu."""
+        self._manifesto_existente()
+        tool_runs.registrar_metodo("relogio_molecular", "tentado_e_falhou", saida="a.nex",
+                                   motivo="primeira tentativa")
+        anexar_execucao_isolada(self.out_dir, self.out_dir)
+        tool_runs.limpar()
+        tool_runs.registrar_metodo("relogio_molecular", "executado", saida="b.nex")
+        anexar_execucao_isolada(self.out_dir, self.out_dir)
+
+        metodos = self._lido()["inference_methods"]
+        self.assertEqual(len(metodos), 2)
+        self.assertEqual(metodos[0]["estado"], "tentado_e_falhou")
+        self.assertEqual(metodos[1]["estado"], "executado")
+
+    def test_sanitiza_caminho_absoluto_no_motivo(self):
+        """D15: o motivo de uma falha pode citar caminho absoluto (exceção,
+        stderr de ferramenta) — a versão anexada não pode vazá-lo."""
+        self._manifesto_existente()
+        motivo = f"FileNotFoundError: {os.path.join(self.raiz, 'nao_existe.nex')} ausente"
+        tool_runs.registrar_metodo("relogio_molecular", "tentado_e_falhou",
+                                   saida="a.nex", motivo=motivo)
+        anexar_execucao_isolada(self.out_dir, self.out_dir)
+
+        motivo_gravado = self._lido()["inference_methods"][0]["motivo"]
+        self.assertNotIn(self.raiz, motivo_gravado)
+        self.assertIn("nao_existe.nex", motivo_gravado)
+
+    def test_hasheia_saidas_novas_da_etapa_isolada(self):
+        self._manifesto_existente()
+        destino = os.path.join(self.out_dir, "outputs", "molecular_clock")
+        os.makedirs(destino)
+        arquivo = os.path.join(destino, "relogio_molecular.json")
+        with open(arquivo, "w") as handle:
+            handle.write('{"estado": "executado"}')
+
+        anexar_execucao_isolada(self.out_dir, destino)
+
+        outputs = self._lido()["outputs_sha256"]
+        chave_esperada = os.path.join("out", "outputs", "molecular_clock",
+                                      "relogio_molecular.json")
+        self.assertIn(chave_esperada, outputs)
+        self.assertEqual(outputs[chave_esperada], file_digest(arquivo))
 
 
 if __name__ == "__main__":
