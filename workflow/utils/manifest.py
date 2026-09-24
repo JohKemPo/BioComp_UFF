@@ -205,6 +205,9 @@ class ExecutionManifest:
         self._tools_effective: Dict[str, Dict] = {}
         self._reproducibility: Dict[str, int] = {}
         self._execution_mode: Dict[str, object] = {}
+        self._inference_methods: List[Dict] = []
+        self._model_selection: List[Dict] = []
+        self._outcome: Optional[Dict[str, Optional[str]]] = None
         self._log_file: Optional[str] = None
 
         self.run_id = uuid.uuid4().hex
@@ -252,6 +255,22 @@ class ExecutionManifest:
         """
         return [self._fora_da_raiz(token) if os.sep in token else token
                 for token in comando]
+
+    #: Caminho absoluto dentro de texto livre: começa em `/` depois de início
+    #: de linha, espaço ou delimitador, e vai até o próximo espaço/aspa.
+    _CAMINHO_EM_TEXTO = re.compile(r"(?:^|(?<=[\s'\"(\[=,:]))(/[^\s'\"\]),]+)", re.MULTILINE)
+
+    def _sanitizar_texto(self, texto: str) -> str:
+        """
+        Texto livre sem caminho absoluto.
+
+        O motivo de uma falha vem de exceção e de `stderr` de ferramenta, e os
+        dois citam caminho absoluto — `FileNotFoundError` do `require_tool`
+        cita o PATH, e `CalledProcessError` cita a linha de comando inteira,
+        com o binário dentro do env conda do usuário. Gravar cru é
+        [D15](../../../docs/science/02-defeitos-que-alteram-resultado.md#d15).
+        """
+        return self._CAMINHO_EM_TEXTO.sub(lambda m: self._fora_da_raiz(m.group(1)), texto)
 
     def _sanitizar_params(self, valor):
         """
@@ -402,8 +421,75 @@ class ExecutionManifest:
         for ferramenta, dados in tool_runs.execucoes().items():
             chamadas = dados.pop("runs", [])
             for chamada in chamadas:
+                extras_da_chamada = {k: v for k, v in chamada.items()
+                                     if k not in ("command", "saida")}
                 self.register_tool_run(ferramenta, chamada["command"],
                                        saida=chamada.get("saida"), **dados)
+                # Fatos anotados depois da chamada (`tool_runs.anotar`) são da
+                # chamada, não da ferramenta: o ASDSF de uma cadeia do MrBayes
+                # não é o da outra.
+                if extras_da_chamada:
+                    self._tools_effective[ferramenta]["runs"][-1].update(extras_da_chamada)
+
+        for registro in tool_runs.metodos():
+            self.register_method_state(**registro)
+
+        for selecao in tool_runs.selecoes_modelo():
+            self.register_model_selection(selecao)
+
+    def register_model_selection(self, selecao: Dict) -> None:
+        """
+        Registra a seleção de modelo de um alinhamento — M7.3.
+
+        `alinhamento` e `relatorio` são caminhos (relativizados, D15); o
+        `comando` é higienizado como os de `tools_invoked`; o `motivo` de uma
+        falha, como o de `inference_methods`.
+        """
+        registro = dict(selecao)
+        for chave in ("alinhamento", "relatorio"):
+            if registro.get(chave):
+                registro[chave] = self._fora_da_raiz(registro[chave])
+        if registro.get("comando"):
+            registro["comando"] = self._sanitizar_comando(registro["comando"])
+        if registro.get("motivo"):
+            registro["motivo"] = self._sanitizar_texto(registro["motivo"])
+        self._model_selection.append(registro)
+
+    def register_method_state(self, metodo: str, estado: str, saida: str,
+                              alinhador: Optional[str] = None,
+                              motivo: Optional[str] = None) -> None:
+        """
+        Registra o desfecho de um pipeline — M7.6.
+
+        `execution_mode` é o **plano**, calculado antes de rodar; este é o
+        **fato**. Uma execução que pediu RAxML-NG e viu o RAxML-NG morrer tem
+        o método em `metodos_avancados_executados` do plano e aqui como
+        ``tentado_e_falhou``, com o motivo.
+        """
+        if estado not in tool_runs.ESTADOS_METODO:
+            raise ValueError(f"Estado de método desconhecido: {estado!r}")
+        registro: Dict[str, str] = {"metodo": metodo, "estado": estado,
+                                    "saida": self._fora_da_raiz(saida)}
+        if alinhador is not None:
+            registro["alinhador"] = alinhador
+        if motivo:
+            registro["motivo"] = self._sanitizar_texto(motivo)
+        self._inference_methods.append(registro)
+
+    def register_outcome(self, status: str, motivo: Optional[str] = None) -> None:
+        """
+        Desfecho da execução inteira: ``concluido`` ou ``falhou``.
+
+        O manifesto é fechado no `finally` de `workflow.py`, então
+        `finished_at_utc` existe também quando a execução morreu — e até aqui
+        quem separava as duas coisas era o log (`execution_state.py` do
+        backend diz isso num comentário). Um manifesto que conclui sem dizer
+        se deu certo é meia declaração.
+        """
+        if status not in ("concluido", "falhou"):
+            raise ValueError(f"Desfecho desconhecido: {status!r}")
+        self._outcome = {"status": status,
+                         "motivo": self._sanitizar_texto(motivo) if motivo else None}
 
     # ------------------------------------------------------------------ #
     # Serialização
@@ -427,6 +513,19 @@ class ExecutionManifest:
             "log_file": self._log_file,
             "reproducibility": dict(self._reproducibility),
             "execution_mode": dict(self._execution_mode) or None,
+            # M7.6 — campos acrescentados sem mudar a forma de nenhum outro,
+            # por isso `manifest_version` continua 2: um leitor da v2 que não
+            # os conhece segue lendo o resto igual. `None` = a execução ainda
+            # não chegou lá (manifesto parcial), não "nenhum método".
+            "inference_methods": ([dict(m) for m in self._inference_methods]
+                                  if self._inference_methods else None),
+            "outcome": dict(self._outcome) if self._outcome else None,
+            # M7.3 — uma entrada por alinhamento: modelo escolhido pelo BIC,
+            # candidatos e a tradução para cada ferramenta. Acrescentado, como
+            # os de M7.6; `None` = nenhum método baseado em modelo chegou a
+            # precisar de seleção (ou manifesto parcial).
+            "model_selection": ([dict(m) for m in self._model_selection]
+                                if self._model_selection else None),
             "params": self._sanitizar_params(self.params),
             "inputs_sha256": self._inputs,
             "outputs_sha256": self._outputs,

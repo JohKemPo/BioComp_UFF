@@ -16,7 +16,11 @@ import datetime
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, '../..'))
 
-from workflow.tree_construction.builder import TreeBuilder
+from workflow.tree_construction.builder import (TreeBuilder, MRBAYES_DEFAULTS,
+                                                reproducibility_settings)
+from workflow.tree_construction.modelo_substituicao import (
+    MODELO_LEGADO, POLITICA_SELECAO_PADRAO, POLITICAS_SELECAO_MODELO,
+    TAXAS_CANDIDATAS, SelecaoDeModeloFalhou, selecionar_modelo)
 from workflow.utils.dataValidation import (duplicate_names, duplicate_seq,
                                            validate_sequences, deduplicar_por_sequencia)
 from workflow.utils.dataCleaning import clean_NoPipe, clean_tmp, copiar_arquivos
@@ -32,6 +36,19 @@ from workflow.alignment.aligners import ALIGNERS, AlignerPolicy, resolve_aligner
 #: do controlador rodar. Duas cópias da mesma tupla já divergiram uma vez neste
 #: projeto (D5, D19); aqui é a fonte única.
 MODOS_BASICOS = ("auto", "basic")
+
+#: M7.6 — o que fazer quando um método de inferência não produz árvore.
+#:
+#: ``fail`` (padrão) é o comportamento de sempre: a exceção sobe e a execução
+#: para. ``continue`` segue com os demais pipelines. Nos dois casos o manifesto
+#: registra o pipeline como ``tentado_e_falhou``, com o motivo — o que muda é
+#: só se a execução continua. É a mesma forma de `aligner_on_unavailable`:
+#: o padrão é falhar, e seguir adiante é decisão declarada do experimento.
+#:
+#: Sem ``continue``, a saída para um método que quebra era tirá-lo à mão via
+#: `ignore_mode` e rodar de novo — e aí "quebrou" e "excluído de propósito"
+#: ficavam indistinguíveis no artefato (D18, DM-11).
+POLITICAS_FALHA_METODO = ("fail", "continue")
 
 
 class TreeBuilderController:
@@ -116,6 +133,29 @@ class TreeBuilderController:
         # Definir métodos a serem ignorados
         self.ignore_methods = self._parse_ignore_methods()
 
+        # M7.6 — validado aqui, antes de qualquer alinhamento: um valor
+        # desconhecido descoberto só na primeira falha seria uma segunda falha.
+        self.on_method_failure = getattr(self, 'on_method_failure', None) or 'fail'
+        if self.on_method_failure not in POLITICAS_FALHA_METODO:
+            raise ValueError(
+                f"on_method_failure desconhecido: {self.on_method_failure!r}. "
+                f"Válidos: {POLITICAS_FALHA_METODO}")
+        # Pipelines que já falharam nesta execução. O modo `advanced` visita
+        # cada método avançado uma vez por método de distância (NJ e UPGMA);
+        # com `continue`, sem isto o mesmo método quebrado rodaria de novo.
+        self._falharam = set()
+
+        # M7.3 — política de modelo, validada na largada pelo mesmo motivo.
+        self.model_selection = (getattr(self, 'model_selection', None)
+                                or POLITICA_SELECAO_PADRAO)
+        if self.model_selection not in POLITICAS_SELECAO_MODELO:
+            raise ValueError(
+                f"model_selection desconhecido: {self.model_selection!r}. "
+                f"Válidos: {POLITICAS_SELECAO_MODELO}")
+        # Uma seleção por alinhamento: `caminho do alinhamento -> tradução`,
+        # ou a exceção, se falhou (não se tenta de novo para o método seguinte).
+        self._selecoes_modelo = {}
+
         # clean_tmp(self.output_path)
         clean_NoPipe(self.input_path)
 
@@ -157,6 +197,56 @@ class TreeBuilderController:
             True se o método deve ser ignorado, False caso contrário.
         """
         return method.lower() in self.ignore_methods
+
+    # ------------------------------------------------------------------ #
+    # M7.6 — desfecho de cada pipeline, no manifesto
+    # ------------------------------------------------------------------ #
+
+    def _registrar_ignorado(self, rotulo, saida, alinhador, motivo):
+        tool_runs.registrar_metodo(rotulo, "ignorado_por_configuracao", saida,
+                                   alinhador=alinhador, motivo=motivo)
+
+    def _construir_com_desfecho(self, rotulo, saida, alinhador, construir):
+        """
+        Roda `construir()` e registra o desfecho do pipeline.
+
+        Toda exceção vira ``tentado_e_falhou`` **antes** de qualquer decisão
+        sobre continuar: mesmo com a política ``fail``, o `finally` de
+        `workflow.py` drena o registro, e o manifesto da execução que morreu
+        diz qual pipeline a matou e por quê.
+
+        Return
+        ------
+        tree or None
+            ``None`` só com a política ``continue`` e depois de uma falha.
+        """
+        if saida in self._falharam:
+            return None
+        try:
+            tree = construir()
+        except Exception as e:
+            self._falharam.add(saida)
+            tool_runs.registrar_metodo(rotulo, "tentado_e_falhou", saida,
+                                       alinhador=alinhador, motivo=self._motivo(e))
+            if self.on_method_failure == 'fail':
+                raise
+            logging.error(
+                f"Pipeline {alinhador}/{rotulo} FALHOU e foi deixado de fora desta "
+                f"execução (on_method_failure='continue'): {self._motivo(e)}")
+            return None
+        tool_runs.registrar_metodo(rotulo, "executado", saida, alinhador=alinhador)
+        return tree
+
+    @staticmethod
+    def _motivo(e):
+        """Tipo e mensagem da exceção, mais a cauda do `stderr` quando houver."""
+        motivo = f"{type(e).__name__}: {e}"
+        stderr = getattr(e, 'stderr', None)
+        if isinstance(stderr, bytes):
+            stderr = stderr.decode('utf-8', errors='ignore')
+        if stderr and stderr.strip():
+            motivo += f" | stderr: {stderr.strip()[-300:]}"
+        return motivo
 
     def _initialize_multi_trees_structure(self):
         """
@@ -449,18 +539,22 @@ class TreeBuilderController:
         name = f'tree_{file_stem}_{mode_type}.{self.output_format}'
         logging.info(f"Construindo árvore por {mode_type} para o arquivo {file_stem}")
         
+        saida = os.path.join(output_paths['tree'], name)
         if mode_type == "distance":
-            tree = self.build_tree_distance_matrix(
+            construir = lambda: self.build_tree_distance_matrix(
                 fasta_path, output_paths['align_base'], output_paths['dnd'], 
-                output_paths['dnd_original'], os.path.join(output_paths['tree'], name), 
+                output_paths['dnd_original'], saida,
                 self.align_method, output_paths['align_html']
             )
         else:  # parsimony
-            tree = self.build_tree_parsimony(
+            construir = lambda: self.build_tree_parsimony(
                 fasta_path, output_paths['align_base'], output_paths['dnd'],
-                output_paths['dnd_original'], os.path.join(output_paths['tree'], name),
+                output_paths['dnd_original'], saida,
                 self.align_method, output_paths['align_html']
             )
+        tree = self._construir_com_desfecho(mode_type, saida, self.align_method, construir)
+        if tree is None:
+            return 0
             
         self.save_tree_image(
             title=name, tree=[tree], 
@@ -499,14 +593,43 @@ class TreeBuilderController:
                     trees_built += self._process_tree_method(
                         file_stem, fasta_path, output_paths, alg, method, "distance", multi_trees
                     )
+                else:
+                    self._registrar_basico_ignorado(file_stem, alg, method, "distance")
                 
                 # Processar árvore de parcimônia
                 if not self._should_ignore_method("parsimony"):
                     trees_built += self._process_tree_method(
                         file_stem, fasta_path, output_paths, alg, method, "parsimony", multi_trees
                     )
+                else:
+                    self._registrar_basico_ignorado(file_stem, alg, method, "parsimony")
+
+        # D18/M7.6 — o modo básico não roda método avançado nenhum. Isso é
+        # configuração, e o manifesto diz: cada pipeline avançado aparece como
+        # ignorado, com o `mode` como motivo — não simplesmente ausente.
+        for alg in self.aligners:
+            for adv_method in self.METODOS_AVANCADOS:
+                self._registrar_ignorado(
+                    adv_method, self._saida_avancado(file_stem, alg, adv_method), alg,
+                    f"mode={self.mode!r} é básico e não executa métodos avançados (D18)")
         
         return trees_built, multi_trees
+
+    #: Os quatro métodos avançados, na ordem em que o modo `advanced` os roda.
+    METODOS_AVANCADOS = ('iqtree', 'fasttree', 'raxml', 'mrbayes')
+
+    def _saida_basico(self, file_stem, alg, method, method_type):
+        name = f'tree_{file_stem}_{alg}_{method}_{method_type}.{self.output_format}'
+        return os.path.join(self.output_path, 'Trees', name)
+
+    def _saida_avancado(self, file_stem, alg, method):
+        name = f'tree_{file_stem}_{alg}_{method}.{self.output_format}'
+        return os.path.join(self.output_path, 'Trees', name)
+
+    def _registrar_basico_ignorado(self, file_stem, alg, method, method_type):
+        self._registrar_ignorado(
+            f'{method}_{method_type}', self._saida_basico(file_stem, alg, method, method_type),
+            alg, f"ignore_mode contém {method_type!r}")
 
     def _process_advanced_mode(self, file_stem, fasta_path, output_paths):
         """
@@ -528,7 +651,7 @@ class TreeBuilderController:
         """
         multi_trees = self._initialize_multi_trees_structure()
         trees_built = 0
-        advanced_methods = ['iqtree', 'fasttree', 'raxml', 'mrbayes']
+        advanced_methods = list(self.METODOS_AVANCADOS)
         
         for alg in self.aligners:
             for method in ['nj', 'upgma']:
@@ -539,11 +662,15 @@ class TreeBuilderController:
                     trees_built += self._process_tree_method(
                         file_stem, fasta_path, output_paths, alg, method, "distance", multi_trees
                     )
+                else:
+                    self._registrar_basico_ignorado(file_stem, alg, method, "distance")
                 
                 if not self._should_ignore_method("parsimony"):
                     trees_built += self._process_tree_method(
                         file_stem, fasta_path, output_paths, alg, method, "parsimony", multi_trees
                     )
+                else:
+                    self._registrar_basico_ignorado(file_stem, alg, method, "parsimony")
                 
                 # Processar métodos avançados
                 for adv_method in advanced_methods:
@@ -551,6 +678,10 @@ class TreeBuilderController:
                         trees_built += self._process_advanced_tree_method(
                             file_stem, fasta_path, output_paths, alg, adv_method, multi_trees
                         )
+                    else:
+                        self._registrar_ignorado(
+                            adv_method, self._saida_avancado(file_stem, alg, adv_method), alg,
+                            f"ignore_mode contém {adv_method!r}")
         
         return trees_built, multi_trees
 
@@ -583,10 +714,14 @@ class TreeBuilderController:
         name = f'tree_{file_stem}_{alg}_{method}_{method_type}.{self.output_format}'
         output_path_align = output_paths['align_base'].replace('.aln', f'_{alg}.aln')
         output_path_tree = os.path.join(self.output_path, 'Trees', name)
+        rotulo = f'{method}_{method_type}'
         
         # Verificar se a árvore já existe
         existing_tree = self._load_existing_tree(output_path_tree, self.output_format)
         if existing_tree:
+            tool_runs.registrar_metodo(
+                rotulo, "reaproveitado", output_path_tree, alinhador=alg,
+                motivo="árvore já estava em disco; lida, não produzida nesta execução")
             multi_trees[alg][method_type][method].append(existing_tree)
             return 0
         
@@ -594,15 +729,18 @@ class TreeBuilderController:
         logging.debug(f"Construindo árvore de {method_type} ({alg} - {method}) para o arquivo {file_stem}")
         
         if method_type == "distance":
-            tree = self.build_tree_distance_matrix(
+            construir = lambda: self.build_tree_distance_matrix(
                 fasta_path, output_path_align, output_paths['dnd'], 
                 output_paths['dnd_original'], output_path_tree, alg, output_paths['align_html']
             )
         else:  # parsimony
-            tree = self.build_tree_parsimony(
+            construir = lambda: self.build_tree_parsimony(
                 fasta_path, output_path_align, output_paths['dnd'],
                 output_paths['dnd_original'], output_path_tree, alg, output_paths['align_html']
             )
+        tree = self._construir_com_desfecho(rotulo, output_path_tree, alg, construir)
+        if tree is None:
+            return 0
             
         self.save_tree_image(
             title=name, tree=[tree], 
@@ -643,6 +781,9 @@ class TreeBuilderController:
         # Verificar se a árvore já existe
         existing_tree = self._load_existing_tree(output_path_tree, self.output_format)
         if existing_tree:
+            tool_runs.registrar_metodo(
+                method, "reaproveitado", output_path_tree, alinhador=alg,
+                motivo="árvore já estava em disco; lida, não produzida nesta execução")
             multi_trees[alg][method].append(existing_tree)
             return 0
         
@@ -657,9 +798,13 @@ class TreeBuilderController:
         }
         
         if method in builder_methods:
-            tree = builder_methods[method](
+            tree = self._construir_com_desfecho(
+                method, output_path_tree, alg,
+                lambda: builder_methods[method](
                 fasta_path, output_path_align, output_path_tree, alg, output_paths['align_html']
-            )
+                ))
+            if tree is None:
+                return 0
             
             self.save_tree_image(
                 title=name, tree=[tree],
@@ -845,15 +990,110 @@ class TreeBuilderController:
         chaves = ('random_seed', 'raxml_threads', 'iqtree_threads')
         return {chave: getattr(self, chave) for chave in chaves if hasattr(self, chave)}
 
+    def _mrbayes_kwargs(self):
+        """
+        `mrbayes_*` do `tree_config` — M7.4. Mesma lição de D26: um parâmetro
+        que o builder sabe ler e o controlador não repassa é constante com
+        nome de configuração.
+
+        Repassa a chave **presente**, inclusive com valor `None`: para
+        `mrbayes_asdsf_max`, `null` explícito significa "gate desligado" e é
+        diferente de ausente (padrão 0,01) — `mrbayes_settings` distingue os
+        dois por `in`, então o `None` não pode ser filtrado aqui.
+        """
+        return {chave: getattr(self, chave) for chave in MRBAYES_DEFAULTS
+                if hasattr(self, chave)}
+
+    def _modelo_do_alinhamento(self, output_path_align, alng, alinhador):
+        """
+        Modelo de substituição do alinhamento — M7.3, opção C′.
+
+        A seleção (`iqtree -m MF --mset mrbayes -mrate E,I,G,I+G`, só
+        ModelFinder, sem árvore) roda **uma vez por alinhamento**, na primeira
+        vez em que um método baseado em modelo (IQ-TREE, RAxML-NG, MrBayes)
+        precisa dela — e antes dele. Preguiçosa de propósito: se as três
+        árvores já estão em disco (`reaproveitado`), nada as usa, e uma seleção
+        rodada à toa entraria no manifesto como se tivesse decidido alguma
+        coisa. O FastTree não passa por aqui: não segue modelo escolhido
+        (GTR+CAT20, declarado como aproximação).
+
+        Falha na seleção (binário ausente, tempo, relatório sem modelo, modelo
+        sem tradução) é guardada e **relevantada para cada método que
+        dependia dela**: cada um vira ``tentado_e_falhou`` com o motivo (M7.6),
+        e a política ``on_method_failure`` decide se a execução continua — o
+        FastTree e os métodos de distância seguem com ``continue``. Não há
+        recuo para GTR+G: seria substituição silenciosa (D1). Para rodar o
+        literal antigo, `model_selection: "nenhuma"`, declarado.
+
+        Return
+        ------
+        dict
+            Tradução do modelo para cada ferramenta
+            (`modelo_substituicao.traduzir`), ou `MODELO_LEGADO`.
+
+        Raises
+        ------
+        SelecaoDeModeloFalhou
+        """
+        selecoes = self.__dict__.setdefault('_selecoes_modelo', {})
+        if output_path_align in selecoes:
+            anterior = selecoes[output_path_align]
+            if isinstance(anterior, SelecaoDeModeloFalhou):
+                raise SelecaoDeModeloFalhou(
+                    f"seleção de modelo deste alinhamento já falhou: {anterior}")
+            return anterior
+
+        politica = getattr(self, 'model_selection', None) or POLITICA_SELECAO_PADRAO
+        if politica == 'nenhuma':
+            tool_runs.registrar_selecao_modelo(
+                output_path_align, 'desligada_por_configuracao', alinhador=alinhador,
+                politica=politica, traducao=dict(MODELO_LEGADO),
+                motivo=("model_selection='nenhuma': literais anteriores a M7.3 "
+                        "(IQ-TREE/RAxML-NG -m GTR+G, MrBayes lset nst=6 rates=gamma)"))
+            selecoes[output_path_align] = MODELO_LEGADO
+            return MODELO_LEGADO
+
+        diretorio = os.path.join(self.output_path, 'tmp',
+                                 f'modelfinder_{Path(output_path_align).stem}')
+        semente = reproducibility_settings(self._reproducibility_kwargs())['random_seed']
+        logging.info(f"STEP: seleção de modelo (ModelFinder, BIC) para "
+                     f"{os.path.basename(output_path_align)}")
+        try:
+            resultado = selecionar_modelo(
+                alng, diretorio, semente,
+                timeout_s=getattr(self, 'model_selection_timeout_s', None))
+        except SelecaoDeModeloFalhou as e:
+            selecoes[output_path_align] = e
+            tool_runs.registrar_selecao_modelo(
+                output_path_align, 'falhou', alinhador=alinhador, politica=politica,
+                motivo=f"SelecaoDeModeloFalhou: {e}")
+            logging.error(f"Seleção de modelo FALHOU para "
+                          f"{os.path.basename(output_path_align)}: {e}")
+            raise
+
+        traducao = resultado['traducao']
+        tool_runs.registrar_selecao_modelo(
+            output_path_align, 'concluida', alinhador=alinhador, politica=politica,
+            criterio='BIC', conjunto_candidatos=f'--mset mrbayes -mrate {TAXAS_CANDIDATAS}',
+            modelo_escolhido=resultado['modelo_escolhido'], traducao=traducao,
+            candidatos=resultado['candidatos'], relatorio=resultado['relatorio'],
+            comando=resultado['comando'], seed=semente)
+        logging.info(f"Modelo escolhido por BIC: {resultado['modelo_escolhido']} -> "
+                     f"IQ-TREE {traducao['iqtree']}, RAxML-NG {traducao['raxml-ng']}, "
+                     f"MrBayes '{traducao['mrbayes_lset']}'")
+        selecoes[output_path_align] = traducao
+        return traducao
+
     def build_tree_iqtree(self, fasta_path, output_path_align, output_path_tree, align_method, output_path_align_html):
         """Constrói árvore usando IQ-TREE."""
         logging.info(f"Iniciando construção de árvore com IQ-TREE para {fasta_path}")
         logging.info(f"STEP: Tree Construction with IQ-TREE method.")
 
-        builder = TreeBuilder(fasta_path=fasta_path, output_path_tree=output_path_tree,
-                              **self._reproducibility_kwargs())
-
         alng = self._get_alignment(fasta_path, output_path_align, align_method, output_path_align_html)
+        builder = TreeBuilder(fasta_path=fasta_path, output_path_tree=output_path_tree,
+                              modelo_substituicao=self._modelo_do_alinhamento(
+                                  output_path_align, alng, align_method),
+                              **self._reproducibility_kwargs())
         tree = builder.iqtree_constructor(alng, output_path_tree)
         self.count_nodes.append(tree.count_terminals())
         return tree
@@ -876,10 +1116,11 @@ class TreeBuilderController:
         logging.info(f"Iniciando construção de árvore com RAxML-NG para {fasta_path}")
         logging.info(f"STEP: Tree Construction with RAxML-NG method.")
 
-        builder = TreeBuilder(fasta_path=fasta_path, output_path_tree=output_path_tree,
-                              **self._reproducibility_kwargs())
-
         alng = self._get_alignment(fasta_path, output_path_align, align_method, output_path_align_html)
+        builder = TreeBuilder(fasta_path=fasta_path, output_path_tree=output_path_tree,
+                              modelo_substituicao=self._modelo_do_alinhamento(
+                                  output_path_align, alng, align_method),
+                              **self._reproducibility_kwargs())
         tree = builder.raxml_ng_constructor(alng, output_path_tree)
         self.count_nodes.append(tree.count_terminals())
         return tree
@@ -889,10 +1130,11 @@ class TreeBuilderController:
         logging.info(f"Iniciando construção de árvore com MrBayes para {fasta_path}")
         logging.info(f"STEP: Tree Construction with MrBayes method.")
 
-        builder = TreeBuilder(fasta_path=fasta_path, output_path_tree=output_path_tree,
-                              **self._reproducibility_kwargs())
-
         alng = self._get_alignment(fasta_path, output_path_align, align_method, output_path_align_html)
+        builder = TreeBuilder(fasta_path=fasta_path, output_path_tree=output_path_tree,
+                              modelo_substituicao=self._modelo_do_alinhamento(
+                                  output_path_align, alng, align_method),
+                              **self._reproducibility_kwargs(), **self._mrbayes_kwargs())
         tree = builder.mrbayes_constructor(alng, output_path_tree)
         self.count_nodes.append(tree.count_terminals())
         return tree

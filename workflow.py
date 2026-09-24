@@ -131,13 +131,24 @@ manifest.write()
 if params.get('log_file'):
     sys.stdout = open(os.path.join(params['output_log'], 'outputs', 'output_log.txt'), "w")
 
+# M7.6 — desfecho declarado. Começa como falha: se nem o `except` chegar a
+# rodar (sinal, interrupção), o manifesto não pode afirmar sucesso por omissão.
+_desfecho = ("falhou", "a execução terminou sem chegar ao fim dos controladores")
 try:
     tree_builder_controller = TreeBuilderController(**params["tree_config"])
     tree_builder_controller()
 
     subtree_builder_controller = SubtreeBuilderController(**params["subtree_config"])
     subtree_builder_controller()
+    _desfecho = ("concluido", None)
+except BaseException as e:
+    # `BaseException`, não `Exception`: o controlador encerra com `exit(1)`
+    # quando um arquivo falha, e isso é `SystemExit`. O motivo detalhado de
+    # cada pipeline está em `inference_methods`; aqui vai o que parou tudo.
+    _desfecho = ("falhou", f"{type(e).__name__}: {e}")
+    raise
 finally:
+    manifest.register_outcome(*_desfecho)
     # Também no caminho de erro: o manifesto de uma execução que falhou é o que
     # permite diagnosticar a falha depois, e D17 mostrou que elas acontecem.
     #
