@@ -51,6 +51,28 @@ MODOS_BASICOS = ("auto", "basic")
 POLITICAS_FALHA_METODO = ("fail", "continue")
 
 
+def eh_fasta(caminho) -> bool:
+    """
+    O arquivo é FASTA: o primeiro caractere não-branco é ``>``.
+
+    DEC-146 — o diretório de entrada era lido inteiro, e uma nota de proveniência
+    (`PROVENIENCIA.md`, convenção do DEC-038) ao lado do FASTA "passava nas
+    validações" (zero registros validam vacuamente), ia para o MAFFT e
+    derrubava a execução. O critério é o conteúdo, não a extensão: os
+    conjuntos `ORTHOMCL*` são FASTA sem extensão.
+    """
+    if not os.path.isfile(caminho):
+        return False
+    try:
+        with open(caminho, encoding="utf-8", errors="replace") as fh:
+            for linha in fh:
+                if linha.strip():
+                    return linha.lstrip().startswith(">")
+    except OSError:
+        return False
+    return False
+
+
 class TreeBuilderController:
     """
     Controlador responsável pela construção e manipulação de árvores filogenéticas.
@@ -117,7 +139,13 @@ class TreeBuilderController:
             path = os.path.join(self.output_path, dir)
             os.makedirs(path, exist_ok=True)
         
-        self.files = sorted(os.listdir(self.input_path))
+        self.files = []
+        for nome in sorted(os.listdir(self.input_path)):
+            if eh_fasta(os.path.join(self.input_path, nome)):
+                self.files.append(nome)
+            else:
+                logging.warning(
+                    f"Arquivo {nome} ignorado: não é FASTA (não começa com '>') — DEC-146.")
         self.count_trees = 0
         self.count_nodes = list()
         self.list_times = list()
