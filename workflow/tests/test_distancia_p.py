@@ -19,6 +19,7 @@ from workflow.tree_construction.distancia_p import (
     SemSitioComparavel,
     matriz_distancia_p,
     p_distancia_par,
+    pares_sem_sitio_comparavel,
 )
 
 #: Árvore com comprimento de ramo explícito — sem isso, `root_at_midpoint`
@@ -105,6 +106,62 @@ class TestMatrizDistanciaP(unittest.TestCase):
         aln = _alinhamento({"A": "acgtacgt", "B": "----acgt", "C": "acgt----", "D": "acgtacgt"})
         with self.assertRaises(SemSitioComparavel):
             matriz_distancia_p(aln)
+
+    def test_excecao_da_matriz_nomeia_todos_os_pares(self):
+        """DEC-146: antes a mensagem dizia 'este par' sem dizer qual."""
+        aln = _alinhamento({"A": "acgtacgt", "B": "----acgt", "C": "acgt----",
+                            "D": "acnn----"})
+        with self.assertRaises(SemSitioComparavel) as ctx:
+            matriz_distancia_p(aln)
+        self.assertEqual(ctx.exception.pares, [("C", "B"), ("D", "B")])
+        self.assertIn("C × B", str(ctx.exception))
+        self.assertIn("D × B", str(ctx.exception))
+        self.assertIn("on_method_failure='continue'", str(ctx.exception))
+
+    def test_mensagem_corta_em_cinco_pares_e_conta_o_resto(self):
+        seqs = {"F": "acgt----"}
+        seqs.update({f"G{i}": "----acgt" for i in range(7)})
+        with self.assertRaises(SemSitioComparavel) as ctx:
+            matriz_distancia_p(_alinhamento(seqs))
+        self.assertEqual(len(ctx.exception.pares), 7)
+        self.assertIn("e mais 2", str(ctx.exception))
+        self.assertIn("8 sequências", str(ctx.exception))
+
+
+class TestParesSemSitioComparavel(unittest.TestCase):
+    def test_oraculo_independente_contra_p_distancia_par(self):
+        """A versão vetorizada concorda par a par com o laço de `p_distancia_par`."""
+        import random
+
+        random.seed(11)
+        for _ in range(30):
+            n, L = random.randint(2, 9), random.randint(1, 25)
+            seqs = {}
+            for k in range(n):
+                inicio = random.randint(0, L)
+                fim = random.randint(inicio, L)
+                miolo = "".join(random.choice("acgtnNrY-") for _ in range(fim - inicio))
+                seqs[f"s{k}"] = "-" * inicio + miolo + "-" * (L - fim)
+            aln = _alinhamento(seqs)
+            esperado = []
+            for i in range(n):
+                for j in range(i):
+                    try:
+                        p_distancia_par(aln[i].seq, aln[j].seq)
+                    except SemSitioComparavel:
+                        esperado.append((aln[i].id, aln[j].id))
+            self.assertEqual(pares_sem_sitio_comparavel(aln), esperado, seqs)
+
+    def test_sem_par_vazio(self):
+        aln = _alinhamento({"A": "acgt", "B": "a--t", "C": "nnnt"})
+        self.assertEqual(pares_sem_sitio_comparavel(aln), [])
+
+    def test_uma_sequencia_nao_tem_par(self):
+        self.assertEqual(pares_sem_sitio_comparavel(_alinhamento({"A": "----"})), [])
+
+    def test_maiuscula_e_minuscula_iguais(self):
+        aln = _alinhamento({"A": "ACGT----", "B": "----acgt", "C": "NNNNACGT"})
+        self.assertEqual(pares_sem_sitio_comparavel(aln), [("B", "A"), ("C", "A")])
 
 
 class TestFitchAmbiguidadeIupac(unittest.TestCase):

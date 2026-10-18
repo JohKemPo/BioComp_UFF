@@ -36,12 +36,18 @@ Ambas seguem a regra 5 do projeto: um par sem nenhum sítio comparável (as
 duas sequências não têm nenhuma posição em que ambas tenham base) não vira
 `1.0` como se fosse a distância máxima medida — levanta `SemSitioComparavel`,
 porque "sem dado" não é o mesmo número que "totalmente diferente".
+
+Isso acontece com dado real, não só em teste: um conjunto que mistura
+fragmentos de genes diferentes (em `Zika479_Test_large`, um fragmento de NS3
+contra quatro de NS5) não tem sítio homólogo entre esses pares. A p-distância
+é indefinida ali, e NJ/UPGMA sobre o alinhamento inteiro também (DEC-146).
 """
 
 from __future__ import annotations
 
-from typing import Dict, FrozenSet, Iterable, Tuple
+from typing import Dict, FrozenSet, Iterable, List, Sequence, Tuple
 
+import numpy as np
 from Bio.Phylo.TreeConstruction import DistanceMatrix, ParsimonyScorer
 
 #: Tabela IUPAC de ambiguidade de nucleotídeo, minúscula (as sequências do
@@ -75,12 +81,79 @@ IUPAC_AMBIGUIDADE: Dict[str, FrozenSet[str]] = {
 LETRAS_SEM_INFORMACAO = frozenset({"-", "n"})
 
 
+#: Quantos pares a mensagem da exceção nomeia. O motivo vai para o manifesto,
+#: que corta em 600 caracteres (`tool_runs._MOTIVO_MAX`); a lista inteira fica
+#: em `SemSitioComparavel.pares`.
+_PARES_NA_MENSAGEM = 5
+
+
 class SemSitioComparavel(ValueError):
-    """As duas sequências não têm nenhum sítio em que ambas têm base determinada."""
+    """
+    Nenhum sítio em que as duas sequências de um par têm base determinada.
+
+    Attributes
+    ----------
+    pares : list of tuple(str, str)
+        Todos os pares sem sítio comparável. Vazio quando a exceção vem de
+        `p_distancia_par`, que só conhece as duas sequências, não os nomes.
+    """
+
+    def __init__(self, mensagem: str, pares: Sequence[Tuple[str, str]] = ()) -> None:
+        super().__init__(mensagem)
+        self.pares = list(pares)
+
+    @classmethod
+    def para_pares(cls, pares: Sequence[Tuple[str, str]],
+                   n_sequencias: int) -> "SemSitioComparavel":
+        nomeados = "; ".join(f"{a} × {b}" for a, b in pares[:_PARES_NA_MENSAGEM])
+        resto = len(pares) - _PARES_NA_MENSAGEM
+        if resto > 0:
+            nomeados += f"; e mais {resto}"
+        envolvidos = len({t for par in pares for t in par})
+        return cls(
+            f"{len(pares)} par(es) sem nenhum sítio em que as duas sequências têm "
+            f"base determinada ({envolvidos} de {n_sequencias} sequências envolvidas) "
+            f"— p-distância indefinida, NJ/UPGMA não se calculam sobre este "
+            f"alinhamento (D28): {nomeados}. Com on_method_failure='continue' o "
+            f"método fica tentado_e_falhou e os demais seguem.",
+            pares,
+        )
 
 
 def _normalizar(seq) -> str:
     return str(seq).lower()
+
+
+def pares_sem_sitio_comparavel(alignment) -> List[Tuple[str, str]]:
+    """
+    Pares do alinhamento sem nenhum sítio em que ambas têm base determinada.
+
+    Mesmo critério de `p_distancia_par` (fora de `LETRAS_SEM_INFORMACAO`),
+    calculado de uma vez para todos os pares: sobreposição = M·Mᵀ, onde
+    M[i, c] = 1 se a sequência i tem base na coluna c.
+
+    Return
+    ------
+    list of tuple(str, str)
+        `(id_i, id_j)` com `j < i`, na ordem em que `matriz_distancia_p`
+        visita os pares.
+    """
+    nomes = [r.id for r in alignment]
+    if len(nomes) < 2:
+        return []
+    sem_info = np.frombuffer("".join(sorted(LETRAS_SEM_INFORMACAO)).encode("ascii"),
+                             dtype=np.uint8)
+    # float32 conta exato até 2^24 colunas — muito acima de qualquer genoma
+    # viral alinhado (o maior aqui, VARV, tem ~214 mil colunas).
+    tem_base = np.stack([
+        ~np.isin(np.frombuffer(_normalizar(r.seq).encode("ascii", "replace"),
+                               dtype=np.uint8), sem_info)
+        for r in alignment
+    ]).astype(np.float32)
+    sobreposicao = tem_base @ tem_base.T
+    return [(nomes[i], nomes[j])
+            for i in range(len(nomes)) for j in range(i)
+            if sobreposicao[i, j] == 0]
 
 
 def p_distancia_par(seq1, seq2) -> Tuple[float, int]:
@@ -130,8 +203,12 @@ def matriz_distancia_p(alignment) -> DistanceMatrix:
     ------
     SemSitioComparavel
         Se algum par do alinhamento não tiver nenhum sítio comparável —
-        não silenciado como distância máxima.
+        não silenciado como distância máxima. Levantada antes de calcular
+        qualquer distância, com **todos** os pares em `.pares`.
     """
+    sem_sitio = pares_sem_sitio_comparavel(alignment)
+    if sem_sitio:
+        raise SemSitioComparavel.para_pares(sem_sitio, len(alignment))
     nomes = [r.id for r in alignment]
     dm = DistanceMatrix(nomes)
     for i in range(len(alignment)):
