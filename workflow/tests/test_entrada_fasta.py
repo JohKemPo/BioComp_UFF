@@ -1,5 +1,5 @@
 """
-DEC-146 — o diretório de entrada só entrega FASTA ao pipeline.
+DEC-152 — o diretório de entrada só entrega FASTA ao pipeline.
 
 Em 2026-10-16 a reexecução de VARV-52 morreu em menos de 1s: o diretório
 `*-clean` tinha um `PROVENIENCIA.md` ao lado do FASTA, o controlador o tratou

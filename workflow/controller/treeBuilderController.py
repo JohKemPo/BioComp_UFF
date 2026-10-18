@@ -55,7 +55,7 @@ def eh_fasta(caminho) -> bool:
     """
     O arquivo é FASTA: o primeiro caractere não-branco é ``>``.
 
-    DEC-146 — o diretório de entrada era lido inteiro, e uma nota de proveniência
+    DEC-152 — o diretório de entrada era lido inteiro, e uma nota de proveniência
     (`PROVENIENCIA.md`, convenção do DEC-038) ao lado do FASTA "passava nas
     validações" (zero registros validam vacuamente), ia para o MAFFT e
     derrubava a execução. O critério é o conteúdo, não a extensão: os
@@ -145,7 +145,7 @@ class TreeBuilderController:
                 self.files.append(nome)
             else:
                 logging.warning(
-                    f"Arquivo {nome} ignorado: não é FASTA (não começa com '>') — DEC-146.")
+                    f"Arquivo {nome} ignorado: não é FASTA (não começa com '>') — DEC-152.")
         self.count_trees = 0
         self.count_nodes = list()
         self.list_times = list()

@@ -108,7 +108,7 @@ class TestMatrizDistanciaP(unittest.TestCase):
             matriz_distancia_p(aln)
 
     def test_excecao_da_matriz_nomeia_todos_os_pares(self):
-        """DEC-146: antes a mensagem dizia 'este par' sem dizer qual."""
+        """DEC-152: antes a mensagem dizia 'este par' sem dizer qual."""
         aln = _alinhamento({"A": "acgtacgt", "B": "----acgt", "C": "acgt----",
                             "D": "acnn----"})
         with self.assertRaises(SemSitioComparavel) as ctx:

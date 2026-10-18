@@ -40,7 +40,7 @@ porque "sem dado" não é o mesmo número que "totalmente diferente".
 Isso acontece com dado real, não só em teste: um conjunto que mistura
 fragmentos de genes diferentes (em `Zika479_Test_large`, um fragmento de NS3
 contra quatro de NS5) não tem sítio homólogo entre esses pares. A p-distância
-é indefinida ali, e NJ/UPGMA sobre o alinhamento inteiro também (DEC-146).
+é indefinida ali, e NJ/UPGMA sobre o alinhamento inteiro também (DEC-152).
 """
 
 from __future__ import annotations
