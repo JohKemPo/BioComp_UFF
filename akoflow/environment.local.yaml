@@ -1,0 +1,42 @@
+environment:
+  id: ptm-local
+  name: PhyloTreeMiner local Docker
+  description: Runtime local (driver local, container) no Docker desta maquina
+  status: ready
+version:
+  id: ptm-local-v1
+  environmentId: ptm-local
+  version: 1
+  status: published
+  networkModel: local
+  interferenceModel: none
+  costModel: free
+  configurationHash: ptm-local-v1
+runtimes:
+  - environmentVersionId: ptm-local-v1
+    id: ptm-local-runtime
+    name: Local Docker host
+    driver: local
+    mode: execution
+    role: compute
+    capabilities: {batch: true, container: true}
+resources:
+  - id: ptm-local-docker
+    environmentVersionId: ptm-local-v1
+    type: machine
+    name: Local Docker host
+    providerId: local-docker
+    cpuCores: 12
+    cpuCapacity: 12
+    memoryBytes: 25769803776
+    storageBytes: 21474836480
+    computeSpeedup: 1
+    pricePerSecond: 0
+    bootOverheadSeconds: 0
+    containerOverheadSeconds: 0
+    schedulable: true
+storages: []
+connections: []
+activityResourceProfiles: []
+resourceRuntimeBindings:
+  - {resourceId: ptm-local-docker, runtimeId: ptm-local-runtime, enabled: true}

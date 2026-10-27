@@ -34,4 +34,9 @@ ENV PYTHONPATH=/app/BioComp_UFF MPLBACKEND=Agg
 
 # A versão da ferramenta faz parte do resultado (DEC-044): o build falha se divergir da receita.
 RUN python /app/BioComp_UFF/akoflow/conferir_ferramentas.py
+
+# O daemon do AkôFlow cria o workspace de cada atividade como root no host (runtime local) e o
+# monta no contêiner; com o usuário padrão do micromamba (uid 57439) a atividade falha com
+# `PermissionError: '.'` (medido, docs/akoflow/08). Por isso a imagem roda como root.
+USER root
 WORKDIR /work
