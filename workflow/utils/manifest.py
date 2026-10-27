@@ -40,6 +40,7 @@ __all__ = [
     "file_digest",
     "MANIFEST_FILENAME",
     "anexar_execucao_isolada",
+    "anexar_remineracao",
 ]
 
 MANIFEST_FILENAME = "manifest.json"
@@ -222,6 +223,75 @@ def anexar_execucao_isolada(out_dir: str, diretorio_saida: str) -> bool:
                 outputs_existentes[_relativo_a(caminho_arquivo, project_root)] = (
                     file_digest(caminho_arquivo))
     dados["outputs_sha256"] = outputs_existentes
+
+    with open(caminho, "w", encoding="utf-8") as f:
+        json.dump(dados, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+    return True
+
+
+def anexar_remineracao(out_dir: str, motivo: str, entradas: Dict[str, Optional[str]],
+                       saidas_anteriores: Dict[str, Optional[str]],
+                       saidas: Dict[str, Optional[str]], repos: Dict[str, str],
+                       detalhes: Optional[Dict] = None) -> bool:
+    """
+    Acrescenta ao `manifest.json` já existente o registro de uma **remineração**:
+    as árvores de `out/Trees` foram reaproveitadas e só a mineração (e o que
+    depende dela) foi refeita, por um código diferente do da execução original
+    (D29: o item do FPMax passou a ser a bipartição canônica).
+
+    Como `anexar_execucao_isolada`, não gera manifesto novo: `git`,
+    `environment`, `params` e `inputs_sha256` continuam descrevendo a execução
+    que **construiu** as árvores, e o registro da remineração vai em
+    ``remineracoes``, lista que só cresce. Em `outputs_sha256` as chaves
+    reescritas passam a ter o digest novo — o manifesto não pode declarar um
+    digest que o arquivo em disco já não tem —; o digest que valia antes fica em
+    ``saidas_anteriores_sha256`` do registro.
+
+    Parameters
+    ----------
+    out_dir : str
+        O diretório ``out/`` do projeto.
+    motivo : str
+        Por que se remineirou (ex. ``"D29"``).
+    entradas, saidas_anteriores, saidas : dict of str -> str or None
+        ``caminho relativo à raiz do projeto -> SHA-256``: o que a remineração
+        leu, o que ela vai sobrescrever (como estava) e o que gravou.
+    repos : dict of str -> str
+        ``nome -> caminho`` dos repositórios cujo commit e estado sujo ficam
+        no registro, como em `ExecutionManifest`.
+    detalhes : dict, optional
+        Campos extras do registro (versões, contagens), já sem caminho absoluto.
+
+    Returns
+    -------
+    bool
+        `True` se um manifesto existia e foi atualizado; `False` se não havia
+        manifesto — nesse caso não inventa um.
+    """
+    caminho = os.path.join(out_dir, "outputs", MANIFEST_FILENAME)
+    if not os.path.isfile(caminho):
+        return False
+
+    with open(caminho, "r", encoding="utf-8") as f:
+        dados = json.load(f)
+
+    registro = {
+        "run_id": uuid.uuid4().hex,
+        "registrado_em": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "via": "remine",
+        "motivo": motivo,
+        "git": {nome: _git_state(repo) for nome, repo in repos.items()},
+        "entradas_sha256": dict(sorted(entradas.items())),
+        "saidas_anteriores_sha256": dict(sorted(saidas_anteriores.items())),
+        "saidas_sha256": dict(sorted(saidas.items())),
+    }
+    registro.update(detalhes or {})
+    dados.setdefault("remineracoes", []).append(registro)
+
+    outputs = dados.get("outputs_sha256") or {}
+    outputs.update(saidas)
+    dados["outputs_sha256"] = outputs
 
     with open(caminho, "w", encoding="utf-8") as f:
         json.dump(dados, f, indent=2, ensure_ascii=False)

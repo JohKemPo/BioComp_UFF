@@ -18,7 +18,8 @@ import hashlib, os, time
 # D5 — a identidade de clado usada em produção é a canônica, definida uma única
 # vez em `workflow.stability.clade_identity`. As funções `legacy_*` deste módulo
 # ficam só para auditoria e para reler artefatos antigos.
-from workflow.stability.clade_identity import (canonical_item_id,
+from workflow.stability.clade_identity import (canonical_bipartition,
+                                               canonical_item_id,
                                                strip_accession_version)
 
 
@@ -75,30 +76,76 @@ def dict_to_tree(node_dict: Dict) -> Clade:
 
 def extract_terminais_list(data: Dict) -> List:
     """
-    Extrai uma lista de hashes terminais de subárvores a partir de uma estrutura de dados hierárquica.
+    Extrai a transação de uma árvore: os itens (bipartições canônicas) de suas subárvores.
 
     A função percorre o dicionário fornecido, que contém informações sobre árvores e subárvores,
     e agrega os valores de 'List_terminals_hash' de todas as subárvores em uma lista.
+
+    D29 — o item é a bipartição canônica, não o clado como escrito. Subárvore cujo
+    clado não é bipartição não trivial (o clado-raiz, o clado de n-1 táxons)
+    tem 'List_terminals_hash' ``None`` e fica de fora; a mesma bipartição vista
+    por dois nós da mesma árvore (os dois filhos de uma raiz bifurcante, um nó
+    unário) conta uma vez. Transação é conjunto: a ordem estável só mantém a
+    saída reprodutível.
 
     Parameters
     ----------
     data : dict
         Dicionário contendo informações sobre as árvores e subárvores, onde cada subárvore
-        possui uma lista de hashes terminais armazenada na chave 'List_terminals_hash'.
+        possui o item armazenado na chave 'List_terminals_hash'.
 
     Return
     ------
     list
-        Lista contendo todos os valores de 'List_terminals_hash' extraídos das subárvores.
+        Itens distintos da transação, na ordem em que aparecem; vazia se a árvore
+        não tem bipartição não trivial (n < 4, ou só arestas triviais).
     """
     all_terminais = []
+    vistos = set()
     
     for _, tree_info in data.items():
         for _, subtree_info in tree_info.items():
-            all_terminais.append(subtree_info['List_terminals_hash'])
-                
+            item = subtree_info['List_terminals_hash']
+            if item is None or item in vistos:
+                continue
+            vistos.add(item)
+            all_terminais.append(item)
 
     return all_terminais
+
+def verificar_mesmo_conjunto_de_folhas(data: List[Dict]) -> None:
+    """
+    Recusa a mineração de árvores que não compartilham o mesmo conjunto de táxons (D29).
+
+    Uma bipartição só é comparável entre árvores sobre o mesmo ``X``; com
+    conjuntos diferentes, "o mesmo item" não tem significado e o suporte seria
+    ruído. A recusa é a de `TreeSet`. O conjunto vem de 'Tree_terminals_hash',
+    gravado em toda subárvore pelo `SubtreeBuilder`; registro sem o campo (metadado
+    anterior ao D29) não pode ser verificado e é ignorado.
+
+    Parameters
+    ----------
+    data : list of dict
+        Uma entrada por árvore, ``{nome_da_árvore: {nome_da_subárvore: registro}}``.
+
+    Raises
+    ------
+    ValueError
+        Se duas árvores têm conjuntos de táxons diferentes.
+    """
+    por_arvore = {}
+    for info in data:
+        for tree_name, subtree_info in info.items():
+            ids = {sub.get('Tree_terminals_hash') for sub in subtree_info.values()} - {None}
+            if ids:
+                por_arvore[tree_name] = ids
+    distintos = {i for ids in por_arvore.values() for i in ids}
+    if len(distintos) > 1:
+        referencia = next(iter(por_arvore))
+        divergentes = [n for n, ids in por_arvore.items() if ids != por_arvore[referencia]]
+        raise ValueError(
+            f"Árvore(s) {sorted(divergentes)[:5]} não compartilham o mesmo conjunto de "
+            f"táxons de '{referencia}': a bipartição só é comparável sobre o mesmo X.")
 
 def preencher_matriz(matriz: Matrix, valor_preenchimento: Any, max_columns: int) -> Matrix:
     """
@@ -309,12 +356,14 @@ def encode_list_to_int(lst: List) -> int:
 
 def encode_clade_to_int(terminal_names: List[str]) -> int:
     """
-    Identidade canônica de um clado, a partir dos nomes de seus terminais (D5).
+    Identidade de um clado **como escrito**, a partir dos nomes de seus terminais (D5).
 
-    Invariante à ordem de travessia e com 60 bits de espaço. Os nomes são
-    normalizados por `strip_accession_version`, de modo que o mesmo clado tenha a
-    mesma identidade numa árvore de IQ-TREE (rótulo truncado em 10 caracteres) e
-    numa de FastTree (rótulo íntegro) — ver D13.
+    Canônica quanto à ordem de travessia e ao rótulo (60 bits de espaço; os nomes
+    são normalizados por `strip_accession_version`, de modo que o mesmo clado tenha
+    a mesma identidade numa árvore de IQ-TREE, com rótulo truncado em 10
+    caracteres, e numa de FastTree, com rótulo íntegro — ver D13). **Não é
+    canônica quanto à raiz**: o mesmo ramo escrito pelo outro lado é outro clado
+    e outro inteiro. Para o item de mineração use `encode_bipartition_to_int` (D29).
 
     Parameters
     ----------
@@ -324,9 +373,36 @@ def encode_clade_to_int(terminal_names: List[str]) -> int:
     Return
     ------
     int
-        Identificador canônico do clado.
+        Identificador do clado como escrito.
     """
     return canonical_item_id(strip_accession_version(name) for name in terminal_names)
+
+def encode_bipartition_to_int(terminal_names: List[str], all_terminal_names: List[str]) -> Optional[int]:
+    """
+    Item de mineração: identidade da bipartição canônica do clado (D29).
+
+    O clado lido do Newick depende de onde cada programa escreveu a raiz; a
+    bipartição não (`03-metricas §2.2`). Usa a mesma `canonical_bipartition` do
+    relatório de estabilidade e a mesma `canonical_item_id`, de modo que um ramo
+    tem um só inteiro, qualquer que seja o lado em que o arquivo o escreveu.
+
+    Parameters
+    ----------
+    terminal_names : list of str
+        Nomes dos terminais do clado, em qualquer ordem.
+    all_terminal_names : list of str
+        Nomes de todos os terminais da árvore.
+
+    Return
+    ------
+    int or None
+        Identificador da bipartição, ou ``None`` quando o clado não é uma
+        bipartição não trivial (o clado-raiz, o de n-1 táxons, um terminal).
+        ``None`` é "não é item", nunca um número.
+    """
+    todos = frozenset(strip_accession_version(name) for name in all_terminal_names)
+    lado = canonical_bipartition((strip_accession_version(name) for name in terminal_names), todos)
+    return canonical_item_id(lado) if lado is not None else None
 
 def decode_tree_hash(encoded_data: Dict) -> Optional[str]:
     """

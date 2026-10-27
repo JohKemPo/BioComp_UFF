@@ -9,9 +9,11 @@ sys.path.append(os.path.join(current_dir, '../..'))
 from workflow.utils.messages import Messages
 from workflow.utils.treeUtils import (tree_to_dict, 
                                       calculate_tree_hash,
+                                      encode_bipartition_to_int,
                                       encode_clade_to_int,
                                       encode_list_to_int, 
                                       download_sequences)
+from workflow.stability.clade_identity import strip_accession_version
 
 class SubtreeBuilder:
     """
@@ -94,6 +96,8 @@ class SubtreeBuilder:
         raw_data_sequences = os.path.join(self.output_path, 'outputs', 'raw_data_sequences.gb')
         
         tree_seqs = tree.get_terminals()
+        # D29 — o item é a bipartição canônica, que precisa do conjunto inteiro de táxons.
+        todos_os_terminais = [strip_accession_version(t.name) for t in tree_seqs]
         new_seqs = [s for s in tree_seqs if s.name not in self.downloaded_sequences_cache]
         
         if new_seqs:
@@ -107,6 +111,8 @@ class SubtreeBuilder:
         if self.resume_infos:
             print('======================================================')        
             self.messagesManager.print_tree_info(name=name_tree, hash_value=tree_hash)
+
+        tree_leaves_id = encode_clade_to_int(todos_os_terminais)
 
         dict_tree_terminals_hash = dict()
         dict_aux = dict()
@@ -156,11 +162,15 @@ class SubtreeBuilder:
                 # D5 — a identidade do clado sai dos NOMES dos terminais, não da
                 # lista de hashes na ordem de travessia. `..._legacy` fica só para
                 # auditar artefatos antigos e nunca é usada como item de mineração.
-                clade_id = encode_clade_to_int(subtree_terminal_names)
+                # D29 — o item é a bipartição canônica (`None` para o clado-raiz e
+                # o de n-1 táxons); o clado como escrito fica em `..._rooted`.
+                clade_id = encode_bipartition_to_int(subtree_terminal_names, todos_os_terminais)
 
                 dict_aux[name_subtree] = {
                     'Terminals': subtree_list_termials,
                     'List_terminals_hash': clade_id,
+                    'List_terminals_hash_rooted': encode_clade_to_int(subtree_terminal_names),
+                    'Tree_terminals_hash': tree_leaves_id,
                     'List_terminals_hash_legacy': encode_list_to_int(subtree_list_termials),
                     'data_terminals': hash_list,
                     'metadata': tree_to_dict(clade)

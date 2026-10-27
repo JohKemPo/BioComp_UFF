@@ -15,7 +15,8 @@ sys.path.append(os.path.join(current_dir, '../..'))
 from workflow.utils.treeUtils import (extract_terminais_list,
                                       extract_name_tree,
                                       extract_subtree_info,
-                                      dict_to_tree)
+                                      dict_to_tree,
+                                      verificar_mesmo_conjunto_de_folhas)
 from workflow.utils.neo4jProcessing import parse_tree
 
 class SubtreeMiner:
@@ -119,11 +120,22 @@ class SubtreeMiner:
         List[Dict]
             Lista de dicionários com subárvores processadas e atualizadas.
         """
+        verificar_mesmo_conjunto_de_folhas(data)
+
         for metadata in data:
             self.matriz_subtree.append(extract_terminais_list(metadata))
-        
+            logging.info(f'|B(T)| de {list(metadata)}: {len(self.matriz_subtree[-1])} bipartições não triviais')
+
         self.max_columns = max(len(row) for row in self.matriz_subtree)
         self.max_rows = len(self.matriz_subtree)
+
+        if self.max_columns == 0:
+            # D29 — n < 4 ou só arestas triviais: não há item. Mineração "não
+            # aplicável", nunca um CSV de zero padrões nem uma chamada ao `fpmax`
+            # sobre matriz sem colunas.
+            logging.warning("D29: nenhuma árvore tem bipartição não trivial (n < 4, ou só arestas "
+                            "triviais); mineração não aplicável, all_results_fpmax.csv não foi gravado.")
+            return data
 
         print(f'\nMATRIZ DE SUBÁRVORES\n')
 
