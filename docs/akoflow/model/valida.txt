@@ -1,0 +1,5 @@
+atividades 39 | arestas dependsOn 84 | DAG: True
+dataDependencies 16 | todas com o dependsOn correspondente
+spec: esboço ['activities', 'dataDependencies', 'image', 'namespace'] | fora do exemplo: ['dataDependencies']
+activity: esboço ['command', 'cpuLimit', 'dependsOn', 'memoryLimit', 'name', 'runtime'] | fora do exemplo: []
+command: esboço ['arguments', 'entrypoint'] | fora do exemplo: []

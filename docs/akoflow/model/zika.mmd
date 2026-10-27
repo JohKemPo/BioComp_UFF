@@ -1,0 +1,217 @@
+flowchart LR
+  F_in[/"data/Zika479_Test_large/dataset_final.fasta<br/>55 820 B"/]
+  F_cfg[/"config zika21.json"/]
+  F_gbref[/"raw_data_sequences.gb congelado<br/>(do projeto de referência)"/]
+  preparar_entrada["preparar-entrada"]
+  F_in --> preparar_entrada
+  F_cfg --> preparar_entrada
+  F_fa[/"out/entrada/dataset_final.fasta<br/>+ acessos.txt + config_backup.json"/]
+  preparar_entrada --> F_fa
+  baixar_metadados["baixar-metadados"]
+  F_fa --> baixar_metadados
+  F_gbref --> baixar_metadados
+  F_gb[/"out/outputs/raw_data_sequences.gb"/]
+  baixar_metadados --> F_gb
+  subgraph S_mafft["braço mafft"]
+    direction LR
+    alinhar_mafft["alinhar-mafft<br/>cpu 4"]
+    F_aln_mafft[/"tmp/dataset_final_mafft.aln<br/>Align/dataset_final_mafft.aln"/]
+    modelo_mafft["modelo-mafft<br/>ModelFinder BIC"]
+    F_mod_mafft[/"tmp/modelfinder_dataset_final_mafft/<br/>selecao.json"/]
+    arvore_mafft_nj_distance["arvore-mafft-nj-distance<br/>tentado_e_falhou (D28)"]
+    F_t_arvore_mafft_nj_distance[/"sem árvore<br/>prov/arvore-mafft-nj-distance.json"/]
+    subarvores_mafft_nj_distance["subarvores-mafft-nj-distance"]
+    F_s_subarvores_mafft_nj_distance[/"Subtrees/*_InnerN.nexus<br/>outputs/subarvores/*.json"/]
+    arvore_mafft_upgma_distance["arvore-mafft-upgma-distance<br/>tentado_e_falhou (D28)"]
+    F_t_arvore_mafft_upgma_distance[/"sem árvore<br/>prov/arvore-mafft-upgma-distance.json"/]
+    subarvores_mafft_upgma_distance["subarvores-mafft-upgma-distance"]
+    F_s_subarvores_mafft_upgma_distance[/"Subtrees/*_InnerN.nexus<br/>outputs/subarvores/*.json"/]
+    arvore_mafft_nj_parsimony["arvore-mafft-nj-parsimony<br/>tentado_e_falhou (D28)"]
+    F_t_arvore_mafft_nj_parsimony[/"sem árvore<br/>prov/arvore-mafft-nj-parsimony.json"/]
+    subarvores_mafft_nj_parsimony["subarvores-mafft-nj-parsimony"]
+    F_s_subarvores_mafft_nj_parsimony[/"Subtrees/*_InnerN.nexus<br/>outputs/subarvores/*.json"/]
+    arvore_mafft_upgma_parsimony["arvore-mafft-upgma-parsimony<br/>tentado_e_falhou (D28)"]
+    F_t_arvore_mafft_upgma_parsimony[/"sem árvore<br/>prov/arvore-mafft-upgma-parsimony.json"/]
+    subarvores_mafft_upgma_parsimony["subarvores-mafft-upgma-parsimony"]
+    F_s_subarvores_mafft_upgma_parsimony[/"Subtrees/*_InnerN.nexus<br/>outputs/subarvores/*.json"/]
+    arvore_mafft_fasttree["arvore-mafft-fasttree"]
+    F_t_arvore_mafft_fasttree[/"Trees/tree_dataset_final_mafft_fasttree.nexus<br/>Plots/*.png"/]
+    subarvores_mafft_fasttree["subarvores-mafft-fasttree"]
+    F_s_subarvores_mafft_fasttree[/"Subtrees/*_InnerN.nexus<br/>outputs/subarvores/*.json"/]
+    arvore_mafft_iqtree["arvore-mafft-iqtree"]
+    F_t_arvore_mafft_iqtree[/"Trees/tree_dataset_final_mafft_iqtree.nexus<br/>Plots/*.png"/]
+    subarvores_mafft_iqtree["subarvores-mafft-iqtree"]
+    F_s_subarvores_mafft_iqtree[/"Subtrees/*_InnerN.nexus<br/>outputs/subarvores/*.json"/]
+    arvore_mafft_raxml["arvore-mafft-raxml"]
+    F_t_arvore_mafft_raxml[/"Trees/tree_dataset_final_mafft_raxml.nexus<br/>Plots/*.png"/]
+    subarvores_mafft_raxml["subarvores-mafft-raxml"]
+    F_s_subarvores_mafft_raxml[/"Subtrees/*_InnerN.nexus<br/>outputs/subarvores/*.json"/]
+  end
+  F_fa --> alinhar_mafft
+  alinhar_mafft --> F_aln_mafft
+  F_aln_mafft --> modelo_mafft
+  modelo_mafft --> F_mod_mafft
+  F_aln_mafft --> arvore_mafft_nj_distance
+  arvore_mafft_nj_distance --> F_t_arvore_mafft_nj_distance
+  F_t_arvore_mafft_nj_distance --> subarvores_mafft_nj_distance
+  F_gb --> subarvores_mafft_nj_distance
+  subarvores_mafft_nj_distance --> F_s_subarvores_mafft_nj_distance
+  F_s_subarvores_mafft_nj_distance --> minerar_fpmax
+  F_t_arvore_mafft_nj_distance --> heatmap_rf
+  F_aln_mafft --> arvore_mafft_upgma_distance
+  arvore_mafft_upgma_distance --> F_t_arvore_mafft_upgma_distance
+  F_t_arvore_mafft_upgma_distance --> subarvores_mafft_upgma_distance
+  F_gb --> subarvores_mafft_upgma_distance
+  subarvores_mafft_upgma_distance --> F_s_subarvores_mafft_upgma_distance
+  F_s_subarvores_mafft_upgma_distance --> minerar_fpmax
+  F_t_arvore_mafft_upgma_distance --> heatmap_rf
+  F_aln_mafft --> arvore_mafft_nj_parsimony
+  arvore_mafft_nj_parsimony --> F_t_arvore_mafft_nj_parsimony
+  F_t_arvore_mafft_nj_parsimony --> subarvores_mafft_nj_parsimony
+  F_gb --> subarvores_mafft_nj_parsimony
+  subarvores_mafft_nj_parsimony --> F_s_subarvores_mafft_nj_parsimony
+  F_s_subarvores_mafft_nj_parsimony --> minerar_fpmax
+  F_t_arvore_mafft_nj_parsimony --> heatmap_rf
+  F_aln_mafft --> arvore_mafft_upgma_parsimony
+  arvore_mafft_upgma_parsimony --> F_t_arvore_mafft_upgma_parsimony
+  F_t_arvore_mafft_upgma_parsimony --> subarvores_mafft_upgma_parsimony
+  F_gb --> subarvores_mafft_upgma_parsimony
+  subarvores_mafft_upgma_parsimony --> F_s_subarvores_mafft_upgma_parsimony
+  F_s_subarvores_mafft_upgma_parsimony --> minerar_fpmax
+  F_t_arvore_mafft_upgma_parsimony --> heatmap_rf
+  F_aln_mafft --> arvore_mafft_fasttree
+  arvore_mafft_fasttree --> F_t_arvore_mafft_fasttree
+  F_t_arvore_mafft_fasttree --> subarvores_mafft_fasttree
+  F_gb --> subarvores_mafft_fasttree
+  subarvores_mafft_fasttree --> F_s_subarvores_mafft_fasttree
+  F_s_subarvores_mafft_fasttree --> minerar_fpmax
+  F_t_arvore_mafft_fasttree --> heatmap_rf
+  F_aln_mafft --> arvore_mafft_iqtree
+  F_mod_mafft --> arvore_mafft_iqtree
+  arvore_mafft_iqtree --> F_t_arvore_mafft_iqtree
+  F_t_arvore_mafft_iqtree --> subarvores_mafft_iqtree
+  F_gb --> subarvores_mafft_iqtree
+  subarvores_mafft_iqtree --> F_s_subarvores_mafft_iqtree
+  F_s_subarvores_mafft_iqtree --> minerar_fpmax
+  F_t_arvore_mafft_iqtree --> heatmap_rf
+  F_aln_mafft --> arvore_mafft_raxml
+  F_mod_mafft --> arvore_mafft_raxml
+  arvore_mafft_raxml --> F_t_arvore_mafft_raxml
+  F_t_arvore_mafft_raxml --> subarvores_mafft_raxml
+  F_gb --> subarvores_mafft_raxml
+  subarvores_mafft_raxml --> F_s_subarvores_mafft_raxml
+  F_s_subarvores_mafft_raxml --> minerar_fpmax
+  F_t_arvore_mafft_raxml --> heatmap_rf
+  subgraph S_mafft_iterative["braço mafft_iterative"]
+    direction LR
+    alinhar_mafft_iterative["alinhar-mafft-iterative<br/>cpu 4"]
+    F_aln_mafft_iterative[/"tmp/dataset_final_mafft_iterative.aln<br/>Align/dataset_final_mafft_iterative.aln"/]
+    modelo_mafft_iterative["modelo-mafft-iterative<br/>ModelFinder BIC"]
+    F_mod_mafft_iterative[/"tmp/modelfinder_dataset_final_mafft_iterative/<br/>selecao.json"/]
+    arvore_mafft_iterative_nj_distance["arvore-mafft-iterative-nj-distance"]
+    F_t_arvore_mafft_iterative_nj_distance[/"Trees/tree_dataset_final_mafft_iterative_nj_distance.nexus<br/>Plots/*.png"/]
+    subarvores_mafft_iterative_nj_distance["subarvores-mafft-iterative-nj-distance"]
+    F_s_subarvores_mafft_iterative_nj_distance[/"Subtrees/*_InnerN.nexus<br/>outputs/subarvores/*.json"/]
+    arvore_mafft_iterative_upgma_distance["arvore-mafft-iterative-upgma-distance"]
+    F_t_arvore_mafft_iterative_upgma_distance[/"Trees/tree_dataset_final_mafft_iterative_upgma_distance.nexus<br/>Plots/*.png"/]
+    subarvores_mafft_iterative_upgma_distance["subarvores-mafft-iterative-upgma-distance"]
+    F_s_subarvores_mafft_iterative_upgma_distance[/"Subtrees/*_InnerN.nexus<br/>outputs/subarvores/*.json"/]
+    arvore_mafft_iterative_nj_parsimony["arvore-mafft-iterative-nj-parsimony"]
+    F_t_arvore_mafft_iterative_nj_parsimony[/"Trees/tree_dataset_final_mafft_iterative_nj_parsimony.nexus<br/>Plots/*.png"/]
+    subarvores_mafft_iterative_nj_parsimony["subarvores-mafft-iterative-nj-parsimony"]
+    F_s_subarvores_mafft_iterative_nj_parsimony[/"Subtrees/*_InnerN.nexus<br/>outputs/subarvores/*.json"/]
+    arvore_mafft_iterative_upgma_parsimony["arvore-mafft-iterative-upgma-parsimony"]
+    F_t_arvore_mafft_iterative_upgma_parsimony[/"Trees/tree_dataset_final_mafft_iterative_upgma_parsimony.nexus<br/>Plots/*.png"/]
+    subarvores_mafft_iterative_upgma_parsimony["subarvores-mafft-iterative-upgma-parsimony"]
+    F_s_subarvores_mafft_iterative_upgma_parsimony[/"Subtrees/*_InnerN.nexus<br/>outputs/subarvores/*.json"/]
+    arvore_mafft_iterative_fasttree["arvore-mafft-iterative-fasttree"]
+    F_t_arvore_mafft_iterative_fasttree[/"Trees/tree_dataset_final_mafft_iterative_fasttree.nexus<br/>Plots/*.png"/]
+    subarvores_mafft_iterative_fasttree["subarvores-mafft-iterative-fasttree"]
+    F_s_subarvores_mafft_iterative_fasttree[/"Subtrees/*_InnerN.nexus<br/>outputs/subarvores/*.json"/]
+    arvore_mafft_iterative_iqtree["arvore-mafft-iterative-iqtree"]
+    F_t_arvore_mafft_iterative_iqtree[/"Trees/tree_dataset_final_mafft_iterative_iqtree.nexus<br/>Plots/*.png"/]
+    subarvores_mafft_iterative_iqtree["subarvores-mafft-iterative-iqtree"]
+    F_s_subarvores_mafft_iterative_iqtree[/"Subtrees/*_InnerN.nexus<br/>outputs/subarvores/*.json"/]
+    arvore_mafft_iterative_raxml["arvore-mafft-iterative-raxml"]
+    F_t_arvore_mafft_iterative_raxml[/"Trees/tree_dataset_final_mafft_iterative_raxml.nexus<br/>Plots/*.png"/]
+    subarvores_mafft_iterative_raxml["subarvores-mafft-iterative-raxml"]
+    F_s_subarvores_mafft_iterative_raxml[/"Subtrees/*_InnerN.nexus<br/>outputs/subarvores/*.json"/]
+  end
+  F_fa --> alinhar_mafft_iterative
+  alinhar_mafft_iterative --> F_aln_mafft_iterative
+  F_aln_mafft_iterative --> modelo_mafft_iterative
+  modelo_mafft_iterative --> F_mod_mafft_iterative
+  F_aln_mafft_iterative --> arvore_mafft_iterative_nj_distance
+  arvore_mafft_iterative_nj_distance --> F_t_arvore_mafft_iterative_nj_distance
+  F_t_arvore_mafft_iterative_nj_distance --> subarvores_mafft_iterative_nj_distance
+  F_gb --> subarvores_mafft_iterative_nj_distance
+  subarvores_mafft_iterative_nj_distance --> F_s_subarvores_mafft_iterative_nj_distance
+  F_s_subarvores_mafft_iterative_nj_distance --> minerar_fpmax
+  F_t_arvore_mafft_iterative_nj_distance --> heatmap_rf
+  F_aln_mafft_iterative --> arvore_mafft_iterative_upgma_distance
+  arvore_mafft_iterative_upgma_distance --> F_t_arvore_mafft_iterative_upgma_distance
+  F_t_arvore_mafft_iterative_upgma_distance --> subarvores_mafft_iterative_upgma_distance
+  F_gb --> subarvores_mafft_iterative_upgma_distance
+  subarvores_mafft_iterative_upgma_distance --> F_s_subarvores_mafft_iterative_upgma_distance
+  F_s_subarvores_mafft_iterative_upgma_distance --> minerar_fpmax
+  F_t_arvore_mafft_iterative_upgma_distance --> heatmap_rf
+  F_aln_mafft_iterative --> arvore_mafft_iterative_nj_parsimony
+  arvore_mafft_iterative_nj_parsimony --> F_t_arvore_mafft_iterative_nj_parsimony
+  F_t_arvore_mafft_iterative_nj_parsimony --> subarvores_mafft_iterative_nj_parsimony
+  F_gb --> subarvores_mafft_iterative_nj_parsimony
+  subarvores_mafft_iterative_nj_parsimony --> F_s_subarvores_mafft_iterative_nj_parsimony
+  F_s_subarvores_mafft_iterative_nj_parsimony --> minerar_fpmax
+  F_t_arvore_mafft_iterative_nj_parsimony --> heatmap_rf
+  F_aln_mafft_iterative --> arvore_mafft_iterative_upgma_parsimony
+  arvore_mafft_iterative_upgma_parsimony --> F_t_arvore_mafft_iterative_upgma_parsimony
+  F_t_arvore_mafft_iterative_upgma_parsimony --> subarvores_mafft_iterative_upgma_parsimony
+  F_gb --> subarvores_mafft_iterative_upgma_parsimony
+  subarvores_mafft_iterative_upgma_parsimony --> F_s_subarvores_mafft_iterative_upgma_parsimony
+  F_s_subarvores_mafft_iterative_upgma_parsimony --> minerar_fpmax
+  F_t_arvore_mafft_iterative_upgma_parsimony --> heatmap_rf
+  F_aln_mafft_iterative --> arvore_mafft_iterative_fasttree
+  arvore_mafft_iterative_fasttree --> F_t_arvore_mafft_iterative_fasttree
+  F_t_arvore_mafft_iterative_fasttree --> subarvores_mafft_iterative_fasttree
+  F_gb --> subarvores_mafft_iterative_fasttree
+  subarvores_mafft_iterative_fasttree --> F_s_subarvores_mafft_iterative_fasttree
+  F_s_subarvores_mafft_iterative_fasttree --> minerar_fpmax
+  F_t_arvore_mafft_iterative_fasttree --> heatmap_rf
+  F_aln_mafft_iterative --> arvore_mafft_iterative_iqtree
+  F_mod_mafft_iterative --> arvore_mafft_iterative_iqtree
+  arvore_mafft_iterative_iqtree --> F_t_arvore_mafft_iterative_iqtree
+  F_t_arvore_mafft_iterative_iqtree --> subarvores_mafft_iterative_iqtree
+  F_gb --> subarvores_mafft_iterative_iqtree
+  subarvores_mafft_iterative_iqtree --> F_s_subarvores_mafft_iterative_iqtree
+  F_s_subarvores_mafft_iterative_iqtree --> minerar_fpmax
+  F_t_arvore_mafft_iterative_iqtree --> heatmap_rf
+  F_aln_mafft_iterative --> arvore_mafft_iterative_raxml
+  F_mod_mafft_iterative --> arvore_mafft_iterative_raxml
+  arvore_mafft_iterative_raxml --> F_t_arvore_mafft_iterative_raxml
+  F_t_arvore_mafft_iterative_raxml --> subarvores_mafft_iterative_raxml
+  F_gb --> subarvores_mafft_iterative_raxml
+  subarvores_mafft_iterative_raxml --> F_s_subarvores_mafft_iterative_raxml
+  F_s_subarvores_mafft_iterative_raxml --> minerar_fpmax
+  F_t_arvore_mafft_iterative_raxml --> heatmap_rf
+  heatmap_rf["heatmap-rf"]
+  F_hm[/"Plots/tree_dataset_final_heatmap_of_distances.png"/]
+  heatmap_rf --> F_hm
+  minerar_fpmax["minerar-fpmax<br/>FPMax OFST, suporte auto"]
+  F_meta[/"metadata.json · metadata.csv<br/>all_results_fpmax.csv"/]
+  minerar_fpmax --> F_meta
+  gerar_cql["gerar-cql"]
+  F_cql[/"neo4j_commands_tree_dataset.cql"/]
+  F_meta --> gerar_cql
+  gerar_cql --> F_cql
+  graficos_suporte["graficos-suporte"]
+  F_pl[/"support_frequence_*.png"/]
+  F_meta --> graficos_suporte
+  graficos_suporte --> F_pl
+  consolidar_manifesto["consolidar-manifesto"]
+  F_man[/"manifest.json (v2) · manifest.prov.json<br/>log_setup_*.log · output_log.txt"/]
+  F_hm --> consolidar_manifesto
+  F_cql --> consolidar_manifesto
+  F_pl --> consolidar_manifesto
+  consolidar_manifesto --> F_man
+  classDef falha stroke-dasharray: 5 5
+  class arvore_mafft_nj_distance,arvore_mafft_upgma_distance,arvore_mafft_nj_parsimony,arvore_mafft_upgma_parsimony falha
+

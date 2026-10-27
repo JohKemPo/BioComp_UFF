@@ -1,0 +1,2066 @@
+LOCUS       KF383046                 753 bp    RNA     linear   VRL 15-MAR-2014
+DEFINITION  Zika virus strain ArA982 envelope protein gene, partial cds.
+ACCESSION   KF383046
+VERSION     KF383046.1
+KEYWORDS    .
+SOURCE      Zika virus
+  ORGANISM  Zika virus
+            Viruses; Riboviria; Orthornavirae; Kitrinoviricota; Flasuviricetes;
+            Amarillovirales; Flaviviridae; Orthoflavivirus; Euflavivirus;
+            Orthoflavivirus zikaense.
+REFERENCE   1  (bases 1 to 753)
+  AUTHORS   Faye,O., Freire,C.C., Iamarino,A., Faye,O., de Oliveira,J.V.,
+            Diallo,M., Zanotto,P.M. and Sall,A.A.
+  TITLE     Molecular evolution of Zika virus during its emergence in the
+            20(th) century
+  JOURNAL   PLoS Negl Trop Dis 8 (1), E2636 (2014)
+   PUBMED   24421913
+REFERENCE   2  (bases 1 to 753)
+  AUTHORS   Faye,O., Freire,C.C.M., Chen,R., Iamarino,A., Faye,O.,
+            Oliveira,J.V.C., Diallo,M., Weaver,S.C., Zanotto,P.M.A. and
+            Sall,A.A.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (28-JUN-2013) Microbiology, University of Sao Paulo,
+            Lineu Prestes Ave, Sao Paulo, Sao Paulo 05508-000, Brazil
+COMMENT     ##Assembly-Data-START##
+            Sequencing Technology :: Sanger dideoxy sequencing
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..753
+                     /organism="Zika virus"
+                     /mol_type="genomic RNA"
+                     /strain="ArA982"
+                     /db_xref="taxon:64320"
+                     /geo_loc_name="Cote d'Ivoire"
+                     /collection_date="1999"
+     CDS             <1..>753
+                     /codon_start=1
+                     /product="envelope protein"
+                     /protein_id="AHL43468.1"
+                     /translation="QPENLEYRIMLSVHGSQHSGMIVNDIGHETDENRAKVEVTPNSP
+                     RAEATLGGFGSLGLDCEPRTGLDFSDLYYLTMNNKHWLVHKEWFHDIPLPWHAGADTG
+                     TPHWNNKEALVEFKDAHAKRQTVVVLGSQEGAVHTALAGALEAEMDGAKGRLFSGHLK
+                     CRLKMDKLRLKGALYSLCTAAFTFTKVPAETLHGTVTVEVQYAGTDGPCKVPAQMAVD
+                     MQTLTPVGRLITANPVITESTENSRMMLELDPT"
+ORIGIN      
+        1 cagccggaga acttggagta ccggataatg ctatcagtgc atggctccca gcatagcggg
+       61 atgattgtta atgacatagg acatgaaact gacgaaaaca gagcgaaagt cgaggttacg
+      121 cctaattcac caagagcgga agcaaccttg ggaggctttg gaagcttagg acttgactgt
+      181 gaaccaagga caggccttga cttttcagat ctgtattacc tgaccatgaa caataagcat
+      241 tggttggtgc acaaagagtg gtttcatgac atcccattgc cttggcatgc tggggcagac
+      301 accggaactc cacactggaa caacaaagag gcattggtag aattcaagga tgcccacgcc
+      361 aagaggcaaa ccgtcgtcgt tctggggagc caggaaggag ccgttcacac ggctctcgct
+      421 ggagctctag aggctgagat ggatggtgca aagggaaggc tgttctctgg ccatttgaaa
+      481 tgccgcctaa aaatggacaa gcttagattg aagggtgcgt tatattcctt gtgcactgcg
+      541 gcattcacat tcaccaaggt cccagctgaa acactgcatg gaacagtcac agtggaggtg
+      601 cagtatgcag ggacagatgg accctgcaag gtcccagccc agatggcggt ggacatgcag
+      661 accctgaccc cagttggaag gctgattacg gcaaatcccg tgataactga gagcactgaa
+      721 aactcgagaa tgatgttgga gctggaccca acc
+//
+
+LOCUS       KF383038                 753 bp    RNA     linear   VRL 15-MAR-2014
+DEFINITION  Zika virus strain ArA986 envelope protein gene, partial cds.
+ACCESSION   KF383038
+VERSION     KF383038.1
+KEYWORDS    .
+SOURCE      Zika virus
+  ORGANISM  Zika virus
+            Viruses; Riboviria; Orthornavirae; Kitrinoviricota; Flasuviricetes;
+            Amarillovirales; Flaviviridae; Orthoflavivirus; Euflavivirus;
+            Orthoflavivirus zikaense.
+REFERENCE   1  (bases 1 to 753)
+  AUTHORS   Faye,O., Freire,C.C., Iamarino,A., Faye,O., de Oliveira,J.V.,
+            Diallo,M., Zanotto,P.M. and Sall,A.A.
+  TITLE     Molecular evolution of Zika virus during its emergence in the
+            20(th) century
+  JOURNAL   PLoS Negl Trop Dis 8 (1), E2636 (2014)
+   PUBMED   24421913
+REFERENCE   2  (bases 1 to 753)
+  AUTHORS   Faye,O., Freire,C.C.M., Chen,R., Iamarino,A., Faye,O.,
+            Oliveira,J.V.C., Diallo,M., Weaver,S.C., Zanotto,P.M.A. and
+            Sall,A.A.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (28-JUN-2013) Microbiology, University of Sao Paulo,
+            Lineu Prestes Ave, Sao Paulo, Sao Paulo 05508-000, Brazil
+COMMENT     ##Assembly-Data-START##
+            Sequencing Technology :: Sanger dideoxy sequencing
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..753
+                     /organism="Zika virus"
+                     /mol_type="genomic RNA"
+                     /strain="ArA986"
+                     /db_xref="taxon:64320"
+                     /geo_loc_name="Cote d'Ivoire"
+                     /collection_date="1999"
+     CDS             <1..>753
+                     /codon_start=1
+                     /product="envelope protein"
+                     /protein_id="AHL43460.1"
+                     /translation="QPENLEYRIMLSVHGSQHSGMIVNDIGHETDENRAKVEVTPNSP
+                     RAEATLGGFGSLGLDCEPRTGLDFSDLYYLTMNNKHWLVHKEWFHDIPLPWHAGADTG
+                     TPHWNNKEALVEFKDAHAKRQTVVVLGSQEGAVHTALAGALEAEMDGAKGRLFSGHLK
+                     CRLKMDKLRLKGVSYSLCTAAFTFTKVPAETLHGTVTVEVQYAGTDGPCKVPAQMAVD
+                     MQTLTPVGRLITANPIITESTENSRMMLELDPT"
+ORIGIN      
+        1 cagccggaga acttggagta ccggataatg ctgtcagtgc atggctccca gcatagcggg
+       61 atgattgtca atgatatagg acatgaaact gacgaaaaca gagcgaaagt cgaggttacg
+      121 cctaattcac caagagcgga agcaaccttg ggaggctttg gaagcttagg acttgactgt
+      181 gaaccaagga caggccttga cttttcagat ctgtattacc tgaccatgaa caataagcat
+      241 tggttggtgc acaaagagtg gtttcatgac atcccattgc cttggcatgc tggggcagac
+      301 accggaactc cacactggaa caacaaagag gcattggtag aattcaagga tgcccacgcc
+      361 aagaggcaaa ccgtcgtcgt tctggggagc caggaaggag ccgttcacac ggctctcgct
+      421 ggagctctag aggctgagat ggatggtgca aagggaaggc tgttctctgg ccatttgaaa
+      481 tgccgcctaa aaatggacaa gcttagattg aagggcgtgt catattcctt gtgcactgcg
+      541 gcattcacat tcaccaaggt cccagctgaa acactgcatg gaacagtcac agtggaggtg
+      601 cagtatgcag ggacagatgg accctgcaag gtcccagccc agatggcggt ggacatgcag
+      661 accctgaccc cagttggaag gctgataacg gcaaatccca tcataactga gagcactgaa
+      721 aactcgagaa tgatgttgga gctggaccca acc
+//
+
+LOCUS       KF383037                 753 bp    RNA     linear   VRL 15-MAR-2014
+DEFINITION  Zika virus strain ArA506 envelope protein gene, partial cds.
+ACCESSION   KF383037
+VERSION     KF383037.1
+KEYWORDS    .
+SOURCE      Zika virus
+  ORGANISM  Zika virus
+            Viruses; Riboviria; Orthornavirae; Kitrinoviricota; Flasuviricetes;
+            Amarillovirales; Flaviviridae; Orthoflavivirus; Euflavivirus;
+            Orthoflavivirus zikaense.
+REFERENCE   1  (bases 1 to 753)
+  AUTHORS   Faye,O., Freire,C.C., Iamarino,A., Faye,O., de Oliveira,J.V.,
+            Diallo,M., Zanotto,P.M. and Sall,A.A.
+  TITLE     Molecular evolution of Zika virus during its emergence in the
+            20(th) century
+  JOURNAL   PLoS Negl Trop Dis 8 (1), E2636 (2014)
+   PUBMED   24421913
+REFERENCE   2  (bases 1 to 753)
+  AUTHORS   Faye,O., Freire,C.C.M., Chen,R., Iamarino,A., Faye,O.,
+            Oliveira,J.V.C., Diallo,M., Weaver,S.C., Zanotto,P.M.A. and
+            Sall,A.A.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (28-JUN-2013) Microbiology, University of Sao Paulo,
+            Lineu Prestes Ave, Sao Paulo, Sao Paulo 05508-000, Brazil
+COMMENT     ##Assembly-Data-START##
+            Sequencing Technology :: Sanger dideoxy sequencing
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..753
+                     /organism="Zika virus"
+                     /mol_type="genomic RNA"
+                     /strain="ArA506"
+                     /db_xref="taxon:64320"
+                     /geo_loc_name="Cote d'Ivoire"
+                     /collection_date="1996"
+     CDS             <1..>753
+                     /codon_start=1
+                     /product="envelope protein"
+                     /protein_id="AHL43459.1"
+                     /translation="SPENLEYRIMLSVHGSQHSGMIVNDIGHETDENRAKVEVTPNSP
+                     RAEATLGGFGSLGLDCEPRTGLDFSDLYYLTMNNKHWLVHKEWFHDIPLPWHAGADTG
+                     TPHWNNKEALVEFKDAHAKRQTVVVLGSQEGAVHTALAGALEAEMDGAKGRLFSGHLK
+                     CRLKMDKLRLKGVSYSLCTAAFTFTKVPAETLHGTVTVEVQYAGTDGPCKVPAQMAVD
+                     MQTLTPVGRLITANPVITESTKNSKMMLELDPP"
+ORIGIN      
+        1 tcaccggaga atctggagta tcggataatg ctatcagtgc atggctccca gcatagcggg
+       61 atgattgtca atgatatagg acatgaaact gacgaaaaca gagcgaaagt cgaggttacg
+      121 cctaattcac caagagcgga agcaaccttg ggaggctttg gaagcttagg acttgactgt
+      181 gaaccaagga caggccttga cttttcagat ctgtattacc tgaccatgaa caataagcat
+      241 tggttggtgc acaaagagtg gtttcatgac atcccattgc cttggcatgc tggggcagac
+      301 accggaactc cacactggaa caacaaagag gcattggtag aattcaagga tgcccacgcc
+      361 aagaggcaaa ccgtcgtcgt tctggggagc caggaaggag ccgttcacac ggctctcgct
+      421 ggagctctag aggctgagat ggatggtgca aagggaaggc tgttctctgg ccatttgaaa
+      481 tgccgcctaa aaatggacaa gcttagattg aagggcgtgt catattcctt gtgcactgcg
+      541 gcattcacat tcaccaaggt cccagctgaa acactgcatg gaacagtcac agtggaggtg
+      601 cagtatgcag ggacagatgg accctgcaag gtcccagccc agatggcggt ggacatgcag
+      661 accctgaccc cagttggaag gctgataacc gccaaccccg tgattactga aagcactaag
+      721 aactcaaaga tgatgttgga gcttgaccca cca
+//
+
+LOCUS       KF383036                 753 bp    RNA     linear   VRL 15-MAR-2014
+DEFINITION  Zika virus strain ArA975 envelope protein gene, partial cds.
+ACCESSION   KF383036
+VERSION     KF383036.1
+KEYWORDS    .
+SOURCE      Zika virus
+  ORGANISM  Zika virus
+            Viruses; Riboviria; Orthornavirae; Kitrinoviricota; Flasuviricetes;
+            Amarillovirales; Flaviviridae; Orthoflavivirus; Euflavivirus;
+            Orthoflavivirus zikaense.
+REFERENCE   1  (bases 1 to 753)
+  AUTHORS   Faye,O., Freire,C.C., Iamarino,A., Faye,O., de Oliveira,J.V.,
+            Diallo,M., Zanotto,P.M. and Sall,A.A.
+  TITLE     Molecular evolution of Zika virus during its emergence in the
+            20(th) century
+  JOURNAL   PLoS Negl Trop Dis 8 (1), E2636 (2014)
+   PUBMED   24421913
+REFERENCE   2  (bases 1 to 753)
+  AUTHORS   Faye,O., Freire,C.C.M., Chen,R., Iamarino,A., Faye,O.,
+            Oliveira,J.V.C., Diallo,M., Weaver,S.C., Zanotto,P.M.A. and
+            Sall,A.A.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (28-JUN-2013) Microbiology, University of Sao Paulo,
+            Lineu Prestes Ave, Sao Paulo, Sao Paulo 05508-000, Brazil
+COMMENT     ##Assembly-Data-START##
+            Sequencing Technology :: Sanger dideoxy sequencing
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..753
+                     /organism="Zika virus"
+                     /mol_type="genomic RNA"
+                     /strain="ArA975"
+                     /db_xref="taxon:64320"
+                     /geo_loc_name="Cote d'Ivoire"
+                     /collection_date="1999"
+     CDS             <1..>753
+                     /codon_start=1
+                     /product="envelope protein"
+                     /protein_id="AHL43458.1"
+                     /translation="SPENLEYRIMLSVHGSQHSGMIVNDIGHETDENRAKVEVTPNSP
+                     RAEATLGGFGSLGLDCEPRTGLDFSDLYYLTMNNKHWLVHKEWFHDIPLPWHAGADTG
+                     TPHWNNKEALVEFKDAHAKRQTVVVLGSQEGAVHTALAGALEAEMDGAKGRLFSGHLK
+                     CRLKMDKLRLKGVSYSLCTAAFTFTKVPAETLHGTVTVEVQYAGTDGPCKVPAQMAVD
+                     MQTLTPVGRLITANPVITESTKNSKMMLELDPP"
+ORIGIN      
+        1 tcaccggaaa atctggagta tcggataatg ctatcagtgc atggctccca gcatagcggg
+       61 atgattgtca atgatatagg acatgaaact gacgaaaaca gagcgaaagt cgaggttacg
+      121 cctaattcac caagagcgga agcaaccttg ggaggctttg gaagcttagg acttgactgt
+      181 gaaccaagga caggccttga cttttcagat ctgtattacc tgaccatgaa caataagcat
+      241 tggttggtgc acaaagagtg gtttcatgac atcccattgc cttggcatgc tggggcagac
+      301 accggaactc cacactggaa caacaaagag gcattggtag aattcaagga tgcccacgcc
+      361 aagaggcaaa ccgtcgtcgt tctggggagc caggaaggag ccgttcacac ggctctcgct
+      421 ggagctctag aggctgagat ggatggtgca aagggaaggc tgttctctgg ccatttgaaa
+      481 tgccgcctaa aaatggacaa gcttagattg aagggcgtgt catattcctt gtgcactgcg
+      541 gcattcacat tcaccaaggt cccagctgaa acactgcatg gaacagtcac agtggaggtg
+      601 cagtatgcag ggacagatgg accctgcaag gtcccagccc agatggcggt ggacatgcag
+      661 accctgaccc cagttggaag gctgataacc gccaaccccg tgattactga aagcactaag
+      721 aactcaaaga tgatgttgga gcttgaccca cca
+//
+
+LOCUS       KF383045                 753 bp    RNA     linear   VRL 15-MAR-2014
+DEFINITION  Zika virus strain ArA27106 envelope protein gene, partial cds.
+ACCESSION   KF383045
+VERSION     KF383045.1
+KEYWORDS    .
+SOURCE      Zika virus
+  ORGANISM  Zika virus
+            Viruses; Riboviria; Orthornavirae; Kitrinoviricota; Flasuviricetes;
+            Amarillovirales; Flaviviridae; Orthoflavivirus; Euflavivirus;
+            Orthoflavivirus zikaense.
+REFERENCE   1  (bases 1 to 753)
+  AUTHORS   Faye,O., Freire,C.C., Iamarino,A., Faye,O., de Oliveira,J.V.,
+            Diallo,M., Zanotto,P.M. and Sall,A.A.
+  TITLE     Molecular evolution of Zika virus during its emergence in the
+            20(th) century
+  JOURNAL   PLoS Negl Trop Dis 8 (1), E2636 (2014)
+   PUBMED   24421913
+REFERENCE   2  (bases 1 to 753)
+  AUTHORS   Faye,O., Freire,C.C.M., Chen,R., Iamarino,A., Faye,O.,
+            Oliveira,J.V.C., Diallo,M., Weaver,S.C., Zanotto,P.M.A. and
+            Sall,A.A.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (28-JUN-2013) Microbiology, University of Sao Paulo,
+            Lineu Prestes Ave, Sao Paulo, Sao Paulo 05508-000, Brazil
+COMMENT     ##Assembly-Data-START##
+            Sequencing Technology :: Sanger dideoxy sequencing
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..753
+                     /organism="Zika virus"
+                     /mol_type="genomic RNA"
+                     /strain="ArA27106"
+                     /db_xref="taxon:64320"
+                     /geo_loc_name="Cote d'Ivoire"
+                     /collection_date="1990"
+     CDS             <1..>753
+                     /codon_start=1
+                     /product="envelope protein"
+                     /protein_id="AHL43467.1"
+                     /translation="QPENLEYRIMLSVHGSQHSGMIVNDIGHETDENRAKVEVTPNSP
+                     RAEATLGGFGSLGLDCEPRTGLDFSDLYYLTMNNKHWLVHKEWFHDIPLPWHAGADTG
+                     TPHWNNKEALVEFKDAHAKRQTVVVLGSQEGAVHTALAGALEAEMDGAKGRLFSGHLK
+                     CRLKMDKLRLKGVSYSLCTAAFTFTKVPAETLHGTVTVEVQYAGTDGPCKVPAQMAVD
+                     MQTLTPVGRLITANPIITESTENSRMMLELDPT"
+ORIGIN      
+        1 cagccggaga acttggagta ccggataatg ctgtcagtgc atggatccca gcacagtggg
+       61 atgattgtga atgacatagg acatgaaact gacgaaaaca gagcaaaagt cgaggtaaca
+      121 cccaattcac caagagcaga agcaaccttg ggaggttttg gaagcttggg acttgactgt
+      181 gagccaagga caggtcttga tttctcagat ctgtattacc tgaccatgaa caataagcat
+      241 tggttggtgc acaaagagtg gtttcatgac atcccactac cttggcatgc tggtgcagac
+      301 actggaactc cacactggaa caacaaagag gcattggtgg agtttaagga tgctcacgcc
+      361 aagaggcaaa ctgttgtggt tctggggagc caagaaggag ctgttcacac ggccctcgct
+      421 ggagctctgg aggctgagat ggatggcgca aagggaaggc tattctctgg ccatttgaaa
+      481 tgccgtctaa aaatggacaa gcttaggctg aagggtgtgt catattccct gtgtaccgca
+      541 gcgttcacat tcaccaaggt cccagctgaa acattgcatg gaacagtcac agtggaggtg
+      601 cagtatgcag ggacagatgg accctgcaag gtcccagccc agatggcggt ggacatgcag
+      661 accctgaccc cagttggaag gctgataacg gcaaatccca tcataactga gagcactgaa
+      721 aactcgagaa tgatgttgga gctggaccca acc
+//
+
+LOCUS       KF383039                 753 bp    RNA     linear   VRL 15-MAR-2014
+DEFINITION  Zika virus strain HD78788 envelope protein gene, partial cds.
+ACCESSION   KF383039
+VERSION     KF383039.1
+KEYWORDS    .
+SOURCE      Zika virus
+  ORGANISM  Zika virus
+            Viruses; Riboviria; Orthornavirae; Kitrinoviricota; Flasuviricetes;
+            Amarillovirales; Flaviviridae; Orthoflavivirus; Euflavivirus;
+            Orthoflavivirus zikaense.
+REFERENCE   1  (bases 1 to 753)
+  AUTHORS   Faye,O., Freire,C.C., Iamarino,A., Faye,O., de Oliveira,J.V.,
+            Diallo,M., Zanotto,P.M. and Sall,A.A.
+  TITLE     Molecular evolution of Zika virus during its emergence in the
+            20(th) century
+  JOURNAL   PLoS Negl Trop Dis 8 (1), E2636 (2014)
+   PUBMED   24421913
+REFERENCE   2  (bases 1 to 753)
+  AUTHORS   Faye,O., Freire,C.C.M., Chen,R., Iamarino,A., Faye,O.,
+            Oliveira,J.V.C., Diallo,M., Weaver,S.C., Zanotto,P.M.A. and
+            Sall,A.A.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (28-JUN-2013) Microbiology, University of Sao Paulo,
+            Lineu Prestes Ave, Sao Paulo, Sao Paulo 05508-000, Brazil
+COMMENT     ##Assembly-Data-START##
+            Sequencing Technology :: Sanger dideoxy sequencing
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..753
+                     /organism="Zika virus"
+                     /mol_type="genomic RNA"
+                     /strain="HD78788"
+                     /db_xref="taxon:64320"
+                     /geo_loc_name="Senegal"
+                     /collection_date="1991"
+     CDS             <1..>753
+                     /codon_start=1
+                     /product="envelope protein"
+                     /protein_id="AHL43461.1"
+                     /translation="QPENLEYRIILSVHGSQHSGMIVNDTGHETDENRAKVEVTPNSP
+                     RAEATLGGFGSLGLDCEPRTGLDFSDLYYLTMNNKHWLVHKEWFHDIPLPWHAGADTG
+                     TPHWNNKEALVEFKDAHAKRQTVVVLGSQEGAVHTALAGALEAEMDGAKGRLFSGHLK
+                     CRLKMDKLRLKGVSYSLCTAAFTFTKVPAETLHGTVTVEVQYAGTDGPCKVPAQMAVD
+                     MQTLTPVGRLITANPIITESTENSRMMLELDPT"
+ORIGIN      
+        1 cagccggaga acttggagta ccggataatt ctatcagtgc atggatccca gcacagtggg
+       61 atgattgtga atgacacagg acatgaaact gacgaaaaca gagcaaaggt cgaggtcaca
+      121 cccaattcac caagagcaga agcaaccttg ggaggttttg gaagcttggg acttgactgt
+      181 gaaccaagga caggccttga cttctcagat ctgtattacc tgaccatgaa caacaagcat
+      241 tggttggtgc acaaggagtg gtttcatgac atcccattac cttggcatgc tggtgcagac
+      301 actggaactc cacactggaa caacaaagag gcattggtgg agttcaagga cgcccacgcc
+      361 aagaggcaaa ctgttgtggt tctggggagc caagagggag ctgttcacac ggccctcgct
+      421 ggagctctgg aggctgagat ggatggtgca aagggaaggc tattctctgg ccatttgaaa
+      481 tgccgcctaa aaatggacaa gcttaggttg aagggtgtgt catattccct gtgtactgca
+      541 gcgttcacat tcaccaaggt cccagctgaa acattgcatg gaacagttac agtggaggtg
+      601 cagtatgcag ggacagatgg accctgcaag gtcccagccc agatggcggt ggacatgcag
+      661 accctgaccc cagttggaag gctgataacg gcaaatccca tcataactga gagcactgaa
+      721 aactcgagaa tgatgttgga gctggaccca acc
+//
+
+LOCUS       KF383034                 753 bp    RNA     linear   VRL 15-MAR-2014
+DEFINITION  Zika virus strain ArD30156 envelope protein gene, partial cds.
+ACCESSION   KF383034
+VERSION     KF383034.1
+KEYWORDS    .
+SOURCE      Zika virus
+  ORGANISM  Zika virus
+            Viruses; Riboviria; Orthornavirae; Kitrinoviricota; Flasuviricetes;
+            Amarillovirales; Flaviviridae; Orthoflavivirus; Euflavivirus;
+            Orthoflavivirus zikaense.
+REFERENCE   1  (bases 1 to 753)
+  AUTHORS   Faye,O., Freire,C.C., Iamarino,A., Faye,O., de Oliveira,J.V.,
+            Diallo,M., Zanotto,P.M. and Sall,A.A.
+  TITLE     Molecular evolution of Zika virus during its emergence in the
+            20(th) century
+  JOURNAL   PLoS Negl Trop Dis 8 (1), E2636 (2014)
+   PUBMED   24421913
+REFERENCE   2  (bases 1 to 753)
+  AUTHORS   Faye,O., Freire,C.C.M., Chen,R., Iamarino,A., Faye,O.,
+            Oliveira,J.V.C., Diallo,M., Weaver,S.C., Zanotto,P.M.A. and
+            Sall,A.A.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (28-JUN-2013) Microbiology, University of Sao Paulo,
+            Lineu Prestes Ave, Sao Paulo, Sao Paulo 05508-000, Brazil
+COMMENT     ##Assembly-Data-START##
+            Sequencing Technology :: Sanger dideoxy sequencing
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..753
+                     /organism="Zika virus"
+                     /mol_type="genomic RNA"
+                     /strain="ArD30156"
+                     /db_xref="taxon:64320"
+                     /geo_loc_name="Senegal"
+                     /collection_date="1979"
+     CDS             <1..>753
+                     /codon_start=1
+                     /product="envelope protein"
+                     /protein_id="AHL43456.1"
+                     /translation="QPENLEYRIMLSVHGSQHSGMIVNDTGHETDENRAKVEVTPNSP
+                     RAEATLGGFGSLGLDCEPRTGLDFSDLYYLTMNNKHWLVHKEWFHDIPLPWHAGADTG
+                     TPHWNNKEALVEFKDAHAKRQTVVVLGSQEGAVHTALAGALEAEMDGAKGRLFSGHLK
+                     CRLKMDKLRLKGVSYSLCTAAFTFTKVPAETLHGTVTVEVQYAGTDGPCKVPAQMAVD
+                     MQTLTPVGRLITANPVITESTENSKMMLELDPP"
+ORIGIN      
+        1 cagccggaga acttggagta ccggataatg ctatcagtgc atggatccca gcacagtggg
+       61 atgattgtga atgacacagg acatgagact gacgaaaaca gagcaaaagt cgaggtcaca
+      121 cccaattcac caagagcaga agcaaccttg ggaggttttg gaagcttggg acttgactgt
+      181 gaaccaagga caggccttga cttctcagat ctgtattacc tgaccatgaa caataagcat
+      241 tggttggtgc acaaggagtg gtttcatgac atcccattac cttggcacgc tggtgcagac
+      301 actggaactc cacactggaa caacaaagag gcattggtgg agttcaagga cgcccatgcc
+      361 aagaggcaaa ctgttgtggt tctggggagc caagagggag ctgttcacac ggccctcgct
+      421 ggagctttgg aggctgagat ggatggtgca aagggaaggc tattctctgg ccatttgaaa
+      481 tgccgcctaa aaatggacaa gcttaggttg aagggtgtgt catattccct gtgtaccgca
+      541 gcgttcacat ttaccaaggt cccagctgaa acattgcatg gaacagtcac agtggaggtg
+      601 cagtatgcag ggacagatgg accctgcaag gtcccagccc agatggcggt ggacatgcag
+      661 accctgaccc cagttggaag gctgataacc gccaatcctg tgatcactga aagtactgag
+      721 aattcaaaga tgatgttgga gctcgaccca cca
+//
+
+LOCUS       KF383031                 753 bp    RNA     linear   VRL 15-MAR-2014
+DEFINITION  Zika virus strain ArD9957 envelope protein gene, partial cds.
+ACCESSION   KF383031
+VERSION     KF383031.1
+KEYWORDS    .
+SOURCE      Zika virus
+  ORGANISM  Zika virus
+            Viruses; Riboviria; Orthornavirae; Kitrinoviricota; Flasuviricetes;
+            Amarillovirales; Flaviviridae; Orthoflavivirus; Euflavivirus;
+            Orthoflavivirus zikaense.
+REFERENCE   1  (bases 1 to 753)
+  AUTHORS   Faye,O., Freire,C.C., Iamarino,A., Faye,O., de Oliveira,J.V.,
+            Diallo,M., Zanotto,P.M. and Sall,A.A.
+  TITLE     Molecular evolution of Zika virus during its emergence in the
+            20(th) century
+  JOURNAL   PLoS Negl Trop Dis 8 (1), E2636 (2014)
+   PUBMED   24421913
+REFERENCE   2  (bases 1 to 753)
+  AUTHORS   Faye,O., Freire,C.C.M., Chen,R., Iamarino,A., Faye,O.,
+            Oliveira,J.V.C., Diallo,M., Weaver,S.C., Zanotto,P.M.A. and
+            Sall,A.A.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (28-JUN-2013) Microbiology, University of Sao Paulo,
+            Lineu Prestes Ave, Sao Paulo, Sao Paulo 05508-000, Brazil
+COMMENT     ##Assembly-Data-START##
+            Sequencing Technology :: Sanger dideoxy sequencing
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..753
+                     /organism="Zika virus"
+                     /mol_type="genomic RNA"
+                     /strain="ArD9957"
+                     /db_xref="taxon:64320"
+                     /geo_loc_name="Senegal"
+                     /collection_date="1969"
+     CDS             <1..>753
+                     /codon_start=1
+                     /product="envelope protein"
+                     /protein_id="AHL43453.1"
+                     /translation="QPENLEYRIMLSVHGSQHSGMIVNDIGHETDENRAKVEVTPNSP
+                     RAEATLGSFGSLGLDCEPRTGLDFSDLYYLTMNNKHWLVHKEWFHDIPLPWHAGADTG
+                     TPHWNNKEALVELKDAHAKRQTVVVLGSQEGAVHTALAGALEAEMDGAKGRLFSGHLK
+                     CRLKMDKLRLKGVSYSLCTAAFTFTKVPAETLHGTVTVEVQYAGTDGPCKVPAQMAVD
+                     MQTLTPVGRLITANPVITESTENSKMMLELDPP"
+ORIGIN      
+        1 cagccggaga acttggagta ccggataatg ctatcagtgc atggatccca gcacagtggg
+       61 atgattgtga atgacatagg acatgaaact gacgaaaaca gagcaaaagt cgaggtcaca
+      121 cccaactcac caagagcaga agcaaccttg ggaagttttg gaagcttggg acttgactgt
+      181 gaaccaagga caggcctcga cttctcagat ctgtattacc tgaccatgaa caataagcat
+      241 tggttggtgc acaaggagtg gtttcatgac atcccattac cttggcatgc tggcgcagac
+      301 actggaactc cacactggaa caacaaagag gcattggtgg agcttaagga cgcccacgcc
+      361 aagaggcaaa ctgttgtggt tctggggagc caagagggag ctgttcacac ggccctcgct
+      421 ggagctttgg aggctgagat ggatggtgca aagggaaggc tattctctgg ccatttgaaa
+      481 tgccgcctaa aaatggacaa gcttaggttg aagggtgtgt catattccct gtgtaccgca
+      541 gcgttcacat ttaccaaggt cccagctgaa acattgcatg gaacagtcac agtggaggtg
+      601 cagtatgcag ggacagatgg accctgcaag gtcccagccc agatggcggt ggacatgcag
+      661 accctgaccc cagttggaag gctgataacc gccaaccctg tgatcactga aagtactgag
+      721 aattcaaaga tgatgttgga gctcgaccca cca
+//
+
+LOCUS       KF383029                 753 bp    RNA     linear   VRL 15-MAR-2014
+DEFINITION  Zika virus strain ArD165522 envelope protein gene, partial cds.
+ACCESSION   KF383029
+VERSION     KF383029.1
+KEYWORDS    .
+SOURCE      Zika virus
+  ORGANISM  Zika virus
+            Viruses; Riboviria; Orthornavirae; Kitrinoviricota; Flasuviricetes;
+            Amarillovirales; Flaviviridae; Orthoflavivirus; Euflavivirus;
+            Orthoflavivirus zikaense.
+REFERENCE   1  (bases 1 to 753)
+  AUTHORS   Faye,O., Freire,C.C., Iamarino,A., Faye,O., de Oliveira,J.V.,
+            Diallo,M., Zanotto,P.M. and Sall,A.A.
+  TITLE     Molecular evolution of Zika virus during its emergence in the
+            20(th) century
+  JOURNAL   PLoS Negl Trop Dis 8 (1), E2636 (2014)
+   PUBMED   24421913
+REFERENCE   2  (bases 1 to 753)
+  AUTHORS   Faye,O., Freire,C.C.M., Chen,R., Iamarino,A., Faye,O.,
+            Oliveira,J.V.C., Diallo,M., Weaver,S.C., Zanotto,P.M.A. and
+            Sall,A.A.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (28-JUN-2013) Microbiology, University of Sao Paulo,
+            Lineu Prestes Ave, Sao Paulo, Sao Paulo 05508-000, Brazil
+COMMENT     ##Assembly-Data-START##
+            Sequencing Technology :: Sanger dideoxy sequencing
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..753
+                     /organism="Zika virus"
+                     /mol_type="genomic RNA"
+                     /strain="ArD165522"
+                     /db_xref="taxon:64320"
+                     /geo_loc_name="Senegal"
+                     /collection_date="2002"
+     CDS             <1..>753
+                     /codon_start=1
+                     /product="envelope protein"
+                     /protein_id="AHL43451.1"
+                     /translation="QPENLEYRIMLSVHGSQHSGMIVNDIGHETDENRAKVEVTPNSP
+                     RAEATLGGFGSLGLDCEPRTGLDFSDLYYLTMNNKHWLVHKEWFHDIPLPWHAGADTG
+                     TPHWNNKEALVEFKDAHAKRQTVVVLGSQEGAVHTALAGALEAEMDGAKGRLFSGHLK
+                     CRLKMDKLRLKGVSYSLCTAAFTFTKVPAETLHGTVTVEVQYAGTDGPCKVPAQMAVD
+                     MQTLTPVGRLITANPVITESTENSRMMLELDPP"
+ORIGIN      
+        1 cagccggaga acttggagta ccggataatg ctatcagtgc atggatccca gcacagtggg
+       61 atgattgtga atgacatagg acatgaaact gacgaaaaca gagcaaaggt cgaggtcaca
+      121 cccaattcac caagagcaga agcaaccttg ggaggttttg gaagcttggg acttgattgt
+      181 gaaccaagga caggccttga cttctcagat ctatattacc tgaccatgaa caataagcat
+      241 tggttggtgc acaaggagtg gtttcatgac atcccattac cttggcatgc tggtgcagac
+      301 actggaactc cacactggaa caacaaagag gcattggtgg agttcaagga cgcccacgcc
+      361 aagaggcaaa ctgttgtggt tctggggagc caagagggag ctgttcacac ggccctcgct
+      421 ggagctttgg aggctgagat ggatggtgca aagggaaggc tattctctgg ccatttgaaa
+      481 tgccgcctaa aaatggacaa gcttaggttg aagggtgtgt catattccct gtgtaccgca
+      541 gcgttcacat ttaccaaggt cccagctgaa acactgcatg gaacagttac agtggaggtg
+      601 cagtatgcag ggacagatgg accctgcaag gtcccagccc agatggcggt agacatgcag
+      661 accctgaccc cagttggaag gctgataacc gccaaccctg tgatcactga aagcactgag
+      721 aattcaagga tgatgttgga actcgaccca cca
+//
+
+LOCUS       KF383022                 753 bp    RNA     linear   VRL 15-MAR-2014
+DEFINITION  Zika virus strain ArD127988 envelope protein gene, partial cds.
+ACCESSION   KF383022
+VERSION     KF383022.1
+KEYWORDS    .
+SOURCE      Zika virus
+  ORGANISM  Zika virus
+            Viruses; Riboviria; Orthornavirae; Kitrinoviricota; Flasuviricetes;
+            Amarillovirales; Flaviviridae; Orthoflavivirus; Euflavivirus;
+            Orthoflavivirus zikaense.
+REFERENCE   1  (bases 1 to 753)
+  AUTHORS   Faye,O., Freire,C.C., Iamarino,A., Faye,O., de Oliveira,J.V.,
+            Diallo,M., Zanotto,P.M. and Sall,A.A.
+  TITLE     Molecular evolution of Zika virus during its emergence in the
+            20(th) century
+  JOURNAL   PLoS Negl Trop Dis 8 (1), E2636 (2014)
+   PUBMED   24421913
+REFERENCE   2  (bases 1 to 753)
+  AUTHORS   Faye,O., Freire,C.C.M., Chen,R., Iamarino,A., Faye,O.,
+            Oliveira,J.V.C., Diallo,M., Weaver,S.C., Zanotto,P.M.A. and
+            Sall,A.A.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (28-JUN-2013) Microbiology, University of Sao Paulo,
+            Lineu Prestes Ave, Sao Paulo, Sao Paulo 05508-000, Brazil
+COMMENT     ##Assembly-Data-START##
+            Sequencing Technology :: Sanger dideoxy sequencing
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..753
+                     /organism="Zika virus"
+                     /mol_type="genomic RNA"
+                     /strain="ArD127988"
+                     /db_xref="taxon:64320"
+                     /geo_loc_name="Senegal"
+                     /collection_date="1997"
+     CDS             <1..>753
+                     /codon_start=1
+                     /product="envelope protein"
+                     /protein_id="AHL43444.1"
+                     /translation="QPENLEYRIMLSVHGSQHSGMIVNDTGHETDENRAKVEVTPNSP
+                     RAEATLGGFGSLGLDCEPRTGLDFSDLYYLTMNNKHWLVHKEWFHDIPLPWHAGADTG
+                     TPHWNNKEALVEFKDAHAKRQTVVVLGSQEGAVHTALAGALEAEMDGAKGRLFSGHLK
+                     CRLKMDKLRLKGVSYSLCTAAFTFTKVPAETLHGTVTVEVQYAGTDGPCKVPAQMAVD
+                     MQTLTPVGRLITANPVITESTENSKMMLELDPP"
+ORIGIN      
+        1 cagccggaga acttggagta ccggataatg ctatcagtgc atggatccca gcacagtggg
+       61 atgattgtga atgacacagg acatgaaact gacgaaaaca gagcaaaggt cgaggtcaca
+      121 cccaattcac caagagcaga agcaaccttg ggaggttttg gaagcttggg acttgactgt
+      181 gaaccaagga caggccttga cttctcagat ctgtattatc tgaccatgaa caacaagcat
+      241 tggttggtgc acaaggagtg gtttcatgac atcccattac cttggcatgc tggtgcagac
+      301 actggaactc cacactggaa caacaaagag gcattggtgg agttcaagga cgcccacgcc
+      361 aagaggcaaa ctgttgtggt tctggggagc caagagggag ctgttcacac ggccctcgct
+      421 ggagctctgg aggctgagat ggatggtgca aagggaaggc tattctctgg ccatttgaaa
+      481 tgccgcctaa aaatggacaa gcttaggttg aagggtgtgt catattccct gtgtactgca
+      541 gcgttcacat ttaccaaggt cccagctgaa acattgcatg gaacagttac agtggaggtg
+      601 cagtatgcag ggacagatgg accttgcaag gtcccagccc agatggcggt ggacatgcag
+      661 actctgaccc cagttggaag gctgataacc gccaaccctg tgatcactga aagtactgag
+      721 aattcaaaga tgatgttgga acttgaccca cca
+//
+
+LOCUS       KF270886                 841 bp    RNA     linear   VRL 04-MAR-2014
+DEFINITION  Zika virus strain CCB-870 envelope glycoprotein gene, partial cds.
+ACCESSION   KF270886
+VERSION     KF270886.1
+KEYWORDS    .
+SOURCE      Zika virus
+  ORGANISM  Zika virus
+            Viruses; Riboviria; Orthornavirae; Kitrinoviricota; Flasuviricetes;
+            Amarillovirales; Flaviviridae; Orthoflavivirus; Euflavivirus;
+            Orthoflavivirus zikaense.
+REFERENCE   1  (bases 1 to 841)
+  AUTHORS   Grard,G., Caron,M., Mombo,I.M., Nkoghe,D., Mboui Ondo,S.,
+            Jiolle,D., Fontenille,D., Paupy,C. and Leroy,E.M.
+  TITLE     Zika Virus in Gabon (Central Africa) - 2007: A New Threat from
+            Aedes albopictus?
+  JOURNAL   PLoS Negl Trop Dis 8 (2), E2681 (2014)
+   PUBMED   24516683
+REFERENCE   2  (bases 1 to 841)
+  AUTHORS   Grard,G., Caron,M. and Leroy,E.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (18-JUN-2013) Unite des Maladies Virales Emergentes,
+            Centre International de Recherches Medicales de Franceville, CIRMF,
+            Franceville BP769, Gabon
+COMMENT     ##Assembly-Data-START##
+            Sequencing Technology :: Sanger dideoxy sequencing
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..841
+                     /organism="Zika virus"
+                     /mol_type="genomic RNA"
+                     /strain="CCB-870"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:64320"
+                     /geo_loc_name="Gabon"
+                     /collection_date="2007"
+     CDS             <1..>841
+                     /codon_start=2
+                     /product="envelope glycoprotein"
+                     /protein_id="AHL16749.1"
+                     /translation="TCSKKMTGKSIQSENLEYQIMLSVHGSQHSGMIVNDTGHETDES
+                     RAKVEVTPNSPRAEATLGGFGSLGLDCEPRTGLDFSDLYYLTMNNKHWLVHKEWFHDI
+                     PLPWHAGADTGTPHWNNKEALVEFKDAHAKRQTVVVLGSQEGAVHTALAGALEAEMDG
+                     AKGRLFSGHLKCRLKMDKLRLKGVSYSLCTAAFTFTKVPAETLHGTVTVEVQYAGTDG
+                     PCKVPAQMAVDMQTLTPVGRLITANPVITESTENSKMMLELDPPFGDSYIVIGVGDKK
+                     ITHH"
+ORIGIN      
+        1 cacgtgctcc aagaaaatga cagggaagag catccagtcg gagaacttgg agtaccagat
+       61 aatgctatca gtgcatggat cccagcacag tgggatgatt gtgaatgaca caggacatga
+      121 aactgacgaa agcagagcaa aagtcgaggt tacacccaat tcaccaagag cagaagcaac
+      181 cttgggaggt tttggaagct tgggacttga ttgtgaacca aggacaggcc ttgacttttc
+      241 agatctgtat tacctgacca tgaataacaa gcattggttg gtgcacaaag agtggtttca
+      301 cgacattcca ttaccttggc atgctggtgc agacactgga actccacact ggaacaataa
+      361 agaggcattg gtggagttca aggacgccca cgctaagagg cagactgttg tggttctggg
+      421 gagccaggaa ggagctgttc acacggctct cgctggagct ctagaggctg agatggatgg
+      481 tgcaaaagga aggctattct ctggccattt gaaatgccgc ctaaaaatgg acaagcttag
+      541 attgaagggt gtgtcatatt ccctgtgtac cgcagcgttc acattcacca aggtcccagc
+      601 tgaaacattg catggaacag tcacagtgga ggtgcagtat gcagggacag atgggccctg
+      661 caaggttcca gcccaaatgg cggtggacat gcagaccctg accccagtcg gaaggctgat
+      721 caccgccaac cccgtgatta ctgaaagcac tgagaattca aagatgatgt tggagctcga
+      781 cccaccattt ggggactctt acattgtcat aggagttggg gacaagaaaa tcacccatca
+      841 c
+//
+
+LOCUS       KF993678               10141 bp    RNA     linear   VRL 06-NOV-2014
+DEFINITION  Zika virus strain PLCal_ZV from Canada polyprotein gene, partial
+            cds.
+ACCESSION   KF993678
+VERSION     KF993678.1
+KEYWORDS    .
+SOURCE      Zika virus
+  ORGANISM  Zika virus
+            Viruses; Riboviria; Orthornavirae; Kitrinoviricota; Flasuviricetes;
+            Amarillovirales; Flaviviridae; Orthoflavivirus; Euflavivirus;
+            Orthoflavivirus zikaense.
+REFERENCE   1  (bases 1 to 10141)
+  AUTHORS   Fonseca,K., Meatherall,B., Zarra,D., Drebot,M., MacDonald,J.,
+            Pabbaraju,K., Wong,S., Webster,P., Lindsay,R. and Tellier,R.
+  TITLE     First case of zika virus infection in a returning canadian traveler
+  JOURNAL   Am. J. Trop. Med. Hyg. 91 (5), 1035-1038 (2014)
+   PUBMED   25294619
+REFERENCE   2  (bases 1 to 10141)
+  AUTHORS   Zarra,D.M., Wong,S., Pabbaraju,K., Fonseca,K. and Tellier,R.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (18-DEC-2013) Molecular Diagnostics, Provincial
+            Laboratory For Public Health, 3030 Hospital Dr. NW, Calgary, AB T2N
+            4W4, Canada
+COMMENT     ##Assembly-Data-START##
+            Sequencing Technology :: Sanger dideoxy sequencing
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..10141
+                     /organism="Zika virus"
+                     /mol_type="genomic RNA"
+                     /strain="PLCal_ZV"
+                     /isolate="From Vero E6 cells"
+                     /isolation_source="urine and nasopharyngeal swab"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:64320"
+                     /geo_loc_name="Canada"
+                     /collection_date="19-Feb-2013"
+     CDS             <1..>10141
+                     /codon_start=1
+                     /product="polyprotein"
+                     /protein_id="AHL37808.1"
+                     /translation="LLGHGPIRMVLAILAFLRFTAIKPSLGLINRWGSVGKKEAMEII
+                     KKFKKDLAAMLRIINARKEKKRRGTDTSVGIVGLLLTTAMAAEVTRRGSAYYMYLDRS
+                     DAGEAISFPTTLGMNKCYIQIMDLGHMCDATMSYECPMLDEGVEPDDVDCWCNTTSTW
+                     VVYGTCHHKKGEARRSRRAVTLPSHSTRKLQTRSQTWLESREYTKHLIRVENWIFRNP
+                     GFALAAAAIAWLLGSSTSQKVIYLVMILLIAPAYSIRCIGVSNRDFVEGMSGGTWVDV
+                     VLEHGGCVTVMAQDKPTVDIELVTTTVSNMAEVRSYCYEASISDMASDSRCPTQGEAY
+                     LDKQSDTQYVCKRTLVDRGWGNGCGLFGKGSLVTCAKFACSKKMTGKSIQPENLEYRI
+                     MLSVHGSQHSGMIVNDTGHETDENRAKVEITPNSPRAEATLGGFGSLGLDCEPRTGLD
+                     FSDLYYLTMNNKHWLVHKEWFHDIPLPWHAGADTGTPHWNNKEALVEFKDAHAKRQTV
+                     VVLGSQEGAVHTALAGALEAEMDGAKGRLSSGHLKCRLKMDKLRLKGVSYSLCTAAFT
+                     FTKIPAETLHGTVTVEVQYAGTDGPCKVPAQMAVDMQTLTPVGRLITANPVITESTEN
+                     SKMMLELDPPFGDSYIVIGVGEKKITHHWHRSGSTIGKAFEATVRGAKRMAVLGDTAW
+                     DFGSVGGALNSLGKGIHQIFGAAFKSLFGGMSWFSQILIGTLLMWLGLNTKNGSISLM
+                     CLALGGVLIFLSTAVSADVGCSVDFSKKETRCGTGVFVYNDVEAWRDRYKYHPDSPRR
+                     LAAAVKQAWEDGICGISSVSRMENIMWRSVEGELNAILEENGVQLTVVVGSVKNPMWR
+                     GPQRLPVPVNELPHGWKAWGKSYFVRAAKTNNSFVVDGDTLKECPLKHRAWNSFLVED
+                     HGFGVFHTSVWLKVREDYSLECDPAVIGTAVKGKEAVHSDLGYWIESEKNDTWRLKRA
+                     HLIEMKTCEWPKSHTLWTDGIEESDLIIPKSLAGPLSHHNTREGYRTQMKGPWHSEEL
+                     EIRFEECPGTKVHVEETCGTRGPSLRSTTASGRVIEEWCCRECTMPPLSFRAKDGCWY
+                     GMEIRPRKEPESNLVRSMVTAGSTDHMDHFSLGVLVILLMVQEGLKKRMTTKIIISTS
+                     MAVLVAMILGGFSMSDLAKLAILMGATFAEMNTGGDVAHLALIAAFKVRPALLVSFIF
+                     RANWTPRESMLLALASCLLQTAISALEGDLMVLINGFALAWLAIRAMVVPRTDNITLA
+                     ILAALTPLARGTLLVAWRAGLATCGGFMLLSLKGKGSVKKNLPFVMALGLTAVRLVDP
+                     INVVGLLLLTRSGKRSWPPSEVLTAVGLICALAGGFAKADIEMAGPMAAVGLLIVSYV
+                     VSGKSVDMYIERAGDITWEKDAEVTGNSPRLDVALDESGDFSLVEDDGPPMREIILKV
+                     VLMTICGMNPIAIPFAAGAWYVYVKTGKRSGALWDVPAPKEVKKGETTDGVYRVMTRR
+                     LLGSTQVGVGVMQEGVFHTMWHVTKGSALRSGEGRLDPYWGDVKQDLVSYCGPWKLDA
+                     AWDGHSEVQLLAVPPGERARNIQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGR
+                     VIGLYGNGVVIKNGSYVSAITQGRREEETPVECFEPSMLKKKQLTVLDLHPGAGKTRR
+                     VLPEIVREAIKTRLRTVILAPTRVVAAEMEEALRGLPVRYMTTAVNVTHSGTEIVDLM
+                     CHATFTSRLLQPIRVPNYNLYIMDEAHFTDPSSIAARGYISTRVEMGEAAAIFMTATP
+                     PGTRDAFPDSNSPIMDTEVEVPERAWSSGFDWVTDHSGKTVWFVPSVRNGNEIAACLT
+                     KAGKRVIQLSRKTFETEFQKTKHQEWDFVVTTDISEMGANFKADRVIDSRRCLKPVIL
+                     DGERVILAGPMPVTHASAAQRRGRIGRNPNKPGDEYLYGGGCAETDEDHAHWLEARML
+                     LDNIYLQDGLIASLYRPEADKVAAIEGEFKLRTEQRKTFVELMKRGDLPVWLAYQVAS
+                     AGITYTDRRWCFDGTTNNTIMEDSVPAEVWTRYGEKRVLKPRWMDARVCSDHAALKSF
+                     KEFAAGKRGAAFGVMEALGTLPGHMTERFQEAIDNLAVLMRAETGSRPYKAAAAQLPE
+                     TLETIMLLGLLGTVSLGIFFVLMRNKGIGKMGFGMVTLGASAWLMWLSEIEPARIACV
+                     LIVVFLLLVVLIPEPEKQRSPQDNQMAIIIMVAVGLLGLITANELGWLERTKSDLSHL
+                     MGRREEGATIGFSMDIDLRPASAWAIYAALTTFITPAVQHAVTTSYNNYSLMAMATQA
+                     GVLFGMGKGMPFYAWDFGVPLLMIGCYSQLTPLTLIVAIILLVAHYMYLIPGLQAAAA
+                     RAAQKRTAAGIMKNPVVDGIVVTDIDTMTIDPQVEKKMGQVLLIAVAVSSAILSRTAW
+                     GWGEAGALITAATSTLWEGSPNKYWNSSTATSLCNIFRGSYLAGASLIYTVTRNAGLV
+                     KRRGGGTGETLGEKWKARLNQMSALEFYSYKKSGITEVCREEARRALKDGVATGGHAV
+                     SRGSAKLRWLVERGYLQPYGKVIDLGCGRGGWSYYAATIRKVQEVKGYTKGGPGHEEP
+                     MLVQSYGWNIVRLKSGVDVFHMAAEPCDTLLCDIGESSSSPEVEEARTLRVLSMVGDW
+                     LEKRPGAFCIKVLCPYTSTMMETLERLQRRYGGGLVRVPLSRNSTHEMYWVSGAKSNT
+                     IKSVSTTSQLLLGRMDGPRRPVKYEEDVNLGSGTRAVVSCAEAPNMKIIGNRIERIRS
+                     EHAETWFFDENHPYRTWAYHGSYEAPTQGSASSLINGVVRLLSKPWDVVTGVTGIAMT
+                     DTTPYGQQRVFKEKVDTRVPDPQEGTRQIMSMVSSWLWKELGKHKRPRVCTKEEFINK
+                     VRSNAALGAIFEEEKEWKTAVEAVNDPRFWALVDKEREHHLRGECQSCVYNMMGKREK
+                     KQGEFGKAKGSRAIWYMWLGARFLEFEALGFLNEDHWMGRENSGGGVEGLGLQRLGYV
+                     LEEMSRIPGGRMYADDTAGWDTRISRFDLENEALITNQMEKGHRALALAIIKYTYQNK
+                     VVKVLRPAEKGKTVMDIISRQDQRGSGQVVTYALNTFTNLVVQLIRNMEAEEVLEMQD
+                     LWLLRRSEKVTNWLQSNGWDRLKRMAVSGDDCVVKPIDDRFAHALRFLNDMGKVRKDT
+                     QEWKPSTGWDNWEEVPFCSHHFNKLHLKDGRSIVVPCRHQDELIGRARVSPGAGWSIR
+                     ETACLAKSYAQMWQLLYFHRRDLRLMANAICSSVPVDWVPTGRTTWSIHGKGEWMTTE
+                     DMLVVWNRVWIEENDHMEDKTPVTKWTDIPYLGKREDLWCGSLIGHRPRTTWAENIKN
+                     TVNMVRRIIGDEEKYMDYLSTQVRYLGEEG"
+ORIGIN      
+        1 ctgctgggtc atgggcccat caggatggtc ttggcgattc tagccttttt gagattcacg
+       61 gcaatcaagc catcactggg tctcatcaat agatggggtt cagtggggaa aaaagaggct
+      121 atggaaataa taaagaagtt caagaaagat ctggctgcca tgctgagaat aatcaatgcc
+      181 aggaaggaga agaagagacg aggcacagac actagtgtcg gaattgttgg cctcctgctg
+      241 accacagcca tggcagcgga ggtcactaga cgtgggagtg catactatat gtacttggac
+      301 agaagcgatg ctggggaggc catatctttt ccaaccacac tggggatgaa taagtgttat
+      361 atacagatca tggatcttgg acacatgtgt gatgccacca tgagctatga atgccctatg
+      421 ctggatgagg gggtagaacc agatgacgtc gattgttggt gcaacacgac gtcaacttgg
+      481 gttgtgtacg gaacctgcca ccacaaaaaa ggtgaagcac ggagatctag aagagctgtg
+      541 acgctcccct cccactccac taggaagctg caaacgcggt cgcagacctg gttggaatca
+      601 agagaataca caaagcactt gattagagtc gaaaattgga tattcaggaa ccctggcttc
+      661 gcgttagcag cagctgccat cgcttggctc ttgggaagct caacgagcca aaaagtcata
+      721 tacttggtca tgatactgct gattgctccg gcatatagca tcaggtgcat aggagtcagc
+      781 aatagggact ttgtggaagg tatgtcaggt gggacttggg ttgatgttgt cttggaacat
+      841 ggaggttgtg tcaccgtaat ggcacaggac aaaccgactg tcgacataga gctggttaca
+      901 acaacagtca gcaacatggc ggaggtaaga tcctactgct atgaggcatc aatatcggac
+      961 atggcttcgg acagccgctg cccaacacaa ggcgaagcct accttgacaa gcaatcagac
+     1021 actcaatatg tctgcaaaag aacgttagtg gacagaggct ggggaaatgg atgtggactt
+     1081 tttggcaaag ggagcctggt gacatgcgcc aagtttgcat gctccaagaa aatgaccggg
+     1141 aagagcatcc agccagagaa tctggagtac cgaataatgc tgtcagttca tggctcccag
+     1201 cacagtggga tgatcgttaa tgacacagga catgaaactg atgagaatag agcgaaggtt
+     1261 gagataacgc ccaattcacc aagagccgaa gccaccctgg gaggttttgg aagcctagga
+     1321 cttgattgtg aaccgaggac aggccttgac ttttcagatt tgtattactt gactatgaat
+     1381 aacaagcact ggttggttca caaggagtgg ttccacgaca ttccattacc ttggcacgct
+     1441 ggggcagaca ccggaactcc acactggaac aacaaagaag cactggtaga attcaaggat
+     1501 gcacatgcca aaaggcaaac tgtcgtggtt ctagggagtc aagagggagc agttcacacg
+     1561 gcccttgctg gagctctgga ggctgagatg gatggtgcaa agggaaggct gtcctctggc
+     1621 cacttgaaat gtcgcctgaa aatggataaa cttagattga agggcgtgtc atactccctg
+     1681 tgtaccgcag cgttcacatt cactaagatc ccggctgaaa cactgcacgg gacagtcaca
+     1741 gtggaggtac agtacgcagg gacagatgga ccttgcaagg ttccagctca gatggcggtg
+     1801 gacatgcaaa ctctgacccc agttgggagg ttgataaccg ctaaccctgt aatcactgaa
+     1861 agcactgaga actctaagat gatgctggaa cttgatccac catttgggga ctcttacatt
+     1921 gtcataggag tcggggagaa gaagatcacc caccactggc acaggagtgg cagcaccatt
+     1981 ggaaaagcat ttgaagccac tgtgagaggt gccaagagaa tggcagtctt gggagacaca
+     2041 gcctgggact ttggatcagt tggaggcgct ctcaactcat tgggcaaggg catccatcaa
+     2101 atttttggag cagctttcaa atcattgttt ggaggaatgt cctggttctc acaaattctc
+     2161 attggaacgt tgctgatgtg gttgggtctg aatacaaaga atggatctat ttcccttatg
+     2221 tgcttggcct tagggggagt gttgatcttc ttatccacag ccgtctctgc tgatgtgggg
+     2281 tgctcggtgg acttctcaaa aaaagaaacg agatgcggca caggggtgtt cgtctataac
+     2341 gacgttgaag cctggagaga caggtacaag taccatcctg actcccctcg tagattggca
+     2401 gcagcagtca agcaagcctg ggaagatggg atctgcggga tctcctctgt ttcaagaatg
+     2461 gaaaacatca tgtggagatc agtagaaggg gagctcaacg caatcctgga agagaatgga
+     2521 gttcaactga cggtcgttgt gggatctgta aaaaacccca tgtggagagg tccacagaga
+     2581 ttgcccgtgc ctgtgaacga gctgccccac ggctggaagg cttggggaaa atcgtacttc
+     2641 gtcagagcag caaagacaaa taacagcttt gtcgtggatg gtgacacact gaaggaatgc
+     2701 ccactcaaac atagagcatg gaacagcttt cttgtggagg atcatgggtt cggggtattt
+     2761 cacactagtg tctggctcaa ggttagagag gattactcat tagagtgtga tccagccgtc
+     2821 attggaacag ctgttaaggg aaaggaggct gtacacagtg atctaggcta ctggattgag
+     2881 agtgagaaga acgacacatg gaggctgaag agggcccacc tgatcgagat gaaaacatgt
+     2941 gaatggccaa agtcccacac attgtggaca gatggaatag aagaaagtga tctgatcata
+     3001 cccaagtctt tagctgggcc actcagccat cacaacacca gagagggtta caggacccaa
+     3061 atgaaagggc catggcacag tgaagagctt gaaattcggt ttgaggaatg cccaggcact
+     3121 aaggtccacg tggaggaaac atgtggaaca agaggaccat ctctgagatc aaccactgca
+     3181 agcggaaggg tgatcgagga atggtgctgc agggagtgca caatgccccc actgtcgttc
+     3241 cgggctaaag atggctgttg gtatggaatg gagataaggc ccaggaaaga accagaaagc
+     3301 aacttagtaa ggtcaatggt gactgcagga tcaactgatc acatggatca cttctccctt
+     3361 ggagtgcttg tgattctgct catggtgcag gaagggctga agaagagaat gaccacaaag
+     3421 atcatcataa gcacatcaat ggcagtgctg gtagctatga tcctgggagg attttcaatg
+     3481 agtgacctgg ctaagcttgc aattttgatg ggtgctacct tcgcggaaat gaacactgga
+     3541 ggagatgtag cacatctggc gctgatagcg gcattcaaag tcagaccagc gttgctggta
+     3601 tctttcatct tcagagctaa ttggacaccc cgtgaaagca tgctgctggc cctggcctcg
+     3661 tgtcttctgc aaactgcgat ctccgccttg gaaggcgacc tgatggttct catcaatggt
+     3721 tttgctttgg cctggttggc aatacgagcg atggttgttc cacgcactga caacatcacc
+     3781 ttggcaatcc tggctgctct gacaccactg gcccggggca cactgcttgt ggcgtggaga
+     3841 gcaggccttg ctacttgtgg ggggttcatg ctcctctctc tgaaggggaa aggcagtgtg
+     3901 aagaagaact taccatttgt catggccctg ggactaaccg ctgtgaggct ggtcgacccc
+     3961 atcaacgtgg tgggactgct gttgctcaca aggagtggga agcggagctg gccccctagt
+     4021 gaagtgctca cagctgttgg cctgatatgc gcattggctg gagggttcgc caaggcggat
+     4081 atagagatgg ctgggcccat ggccgcggtc ggtctgctaa ttgtcagtta cgtggtctca
+     4141 ggaaagagtg tggacatgta cattgaaaga gcaggtgaca tcacgtggga aaaagatgcg
+     4201 gaagtcactg gaaacagtcc ccggctcgat gtggcactag atgagagtgg tgatttctcc
+     4261 ctggtggagg atgatggtcc ccccatgaga gagatcatac tcaaagtggt cctgatgacc
+     4321 atctgtggca tgaacccaat agccataccc tttgcagctg gagcgtggta cgtatatgtg
+     4381 aagactggaa aaaggagtgg tgctctatgg gatgtgcctg ctcccaagga agtaaaaaag
+     4441 ggggagacca cagatggagt gtacagagta atgactcgta gactgctagg ttcaacacaa
+     4501 gttggagtgg gagtcatgca agagggggtc tttcacacta tgtggcacgt cacaaaagga
+     4561 tccgcgctga gaagcggtga agggagactt gatccatact ggggagatgt caagcaggat
+     4621 ctggtgtcat actgtggtcc atggaagcta gatgccgcct gggacggaca cagcgaggtg
+     4681 cagctcttgg ccgtgccccc cggagagaga gcgaggaaca tccagactct gcccggaata
+     4741 tttaagacaa aggatgggga cattggagcg gttgcactgg actacccagc aggaacttca
+     4801 ggatctccaa tcctagacaa gtgtgggaga gtgataggac tctatggcaa tggggtcgtg
+     4861 atcaaaaatg ggagttatgt tagtgccatc acccaaggga ggagggagga agagactcct
+     4921 gttgagtgct tcgagccttc gatgctgaag aagaagcagc taactgtctt agacttgcat
+     4981 cctggagctg ggaaaaccag gagagttctt cctgaaatag tccgtgaagc cataaaaaca
+     5041 agactccgta ctgtgatctt agctccaacc agggttgtcg ctgctgaaat ggaggaagcc
+     5101 cttagagggc ttccagtgcg ttatatgaca acagcagtca atgtcaccca ttctgggaca
+     5161 gaaatcgttg acttaatgtg ccatgccacc ttcacttcac gtctactaca gccaatcaga
+     5221 gtccccaact ataatctgta tattatggat gaggcccact tcacagatcc ctcaagtata
+     5281 gcagcaagag gatacatttc aacaagggtt gagatgggcg aggcggccgc catcttcatg
+     5341 accgccacgc caccaggaac ccgtgacgca ttcccggact ccaactcacc aattatggac
+     5401 accgaagtgg aagtcccaga gagagcctgg agctcaggct ttgattgggt gacggatcat
+     5461 tctggaaaaa cagtttggtt tgttccaagc gtgaggaacg gcaatgagat cgcagcttgt
+     5521 ctgacgaagg ctggaaaacg ggtcatacag ctcagcagaa agacttttga gacagagttc
+     5581 cagaaaacaa aacatcaaga gtgggacttc gtcgtgacaa ctgacatttc agagatgggc
+     5641 gccaacttta aagctgaccg tgtcatagat tccaggagat gcctaaagcc ggtcatactt
+     5701 gatggcgaga gagtcattct ggctggaccc atgcctgtca cacatgccag cgctgcccag
+     5761 aggagggggc gcataggcag gaatcccaat aaacctggag atgagtatct gtatggaggt
+     5821 gggtgcgcag agactgatga agaccatgct cactggcttg aagcaagaat gctccttgac
+     5881 aacatttacc tccaagatgg cctcatagcc tcgctctatc gacctgaggc cgacaaggta
+     5941 gcagctattg agggagagtt caagcttagg acggagcaaa ggaagacctt tgtggaactc
+     6001 atgaaaagag gagatcttcc tgtttggctg gcctatcagg ttgcatctgc cggaattacc
+     6061 tacacagata gaagatggtg ctttgatggc acgaccaaca acaccataat ggaagacagt
+     6121 gtgccggcag aggtgtggac cagatacgga gagaaaagag tgctcaaacc gaggtggatg
+     6181 gacgccagag tttgttcaga tcatgcggcc ctgaagtcat tcaaggagtt tgccgctggg
+     6241 aaaagaggag cggcatttgg agtgatggaa gccctgggaa cactgccagg acacatgaca
+     6301 gagagattcc aggaagccat tgacaacctc gctgtgctca tgcgggcaga gactggaagc
+     6361 aggccttaca aagccgcggc ggcccaattg ccggagaccc tagagaccat tatgcttttg
+     6421 gggttgctgg gaacagtctc gctgggaatc tttttcgtct tgatgcggaa caagggcata
+     6481 gggaagatgg gctttggaat ggtgactctt ggggccagcg catggctcat gtggctctcg
+     6541 gaaattgagc cagccagaat tgcatgtgtc ctcattgttg tgttcctact gctggtggtg
+     6601 ctcatacctg agccagagaa gcaaagatct cctcaggaca accaaatggc aatcatcatc
+     6661 atggtagcag tgggtcttct gggcttgatt actgccaatg aactcggatg gttggaaaga
+     6721 acaaagagtg acctaagcca tctaatggga aggagagagg agggggcaac cataggattc
+     6781 tcaatggaca ttgacctgcg gccagcctca gcttgggcta tctacgctgc tttgacaact
+     6841 ttcattaccc cagccgtcca gcatgcagtg accacttcat acaacaacta ctccttaatg
+     6901 gcgatggcca cgcaagccgg agtgttgttt ggtatgggca aagggatgcc attctacgca
+     6961 tgggactttg gagtcccgct gctaatgata ggttgctact cacaattaac acccctgacc
+     7021 ctaatagtgg ccatcatttt gctcgtggcg cactacatgt acttgatccc agggctgcag
+     7081 gcagcagctg cgcgtgctgc ccagaagaga acggcagctg gcatcatgaa gaaccctgtc
+     7141 gtggatggaa tagtggtgac tgacattgac acaatgacaa ttgaccccca agtggagaaa
+     7201 aagatgggac aggtgctact catagcagta gccgtctcca gcgccatact gtcgcggacc
+     7261 gcctgggggt ggggggaggc tggggccctg atcacagctg caacttccac tttgtgggaa
+     7321 ggctctccga acaagtactg gaactcctct acagccactt cactgtgtaa catttttagg
+     7381 ggaagttact tggctggagc ttctctaatc tacacagtaa caagaaacgc tggcttggtc
+     7441 aagagacgtg ggggtggaac aggagagacc ctgggagaga aatggaaggc ccgcttgaac
+     7501 cagatgtcgg ccctggagtt ctactcctac aaaaagtcag gcatcaccga ggtgtgcaga
+     7561 gaagaggccc gccgcgccct caaggacggt gtggcaacgg gaggccatgc tgtgtcccga
+     7621 ggaagtgcga agctgagatg gttggtggag cggggatacc tgcagcccta tggaaaggtc
+     7681 attgatcttg gatgtggcag agggggctgg agttactacg ccgccaccat ccgcaaagtt
+     7741 caagaggtga aaggatacac aaaaggaggc cctggtcatg aagaacccat gttggtgcaa
+     7801 agctatgggt ggaacatagt ccgtcttaag agtggggtgg acgtctttca tatggcggct
+     7861 gagccgtgtg acacgttgct gtgtgatata ggtgagtcat catctagtcc tgaagtggaa
+     7921 gaagcacgga cgctcagagt cctctccatg gtgggggatt ggcttgaaaa aagaccagga
+     7981 gccttttgta taaaagtgtt gtgcccatac accagcacta tgatggaaac cctggagcga
+     8041 ctgcagcgta ggtatggggg aggactggtc agagtgccac tctcccgcaa ctctacacat
+     8101 gagatgtact gggtctctgg agcgaaaagc aacaccataa aaagtgtgtc caccacgagc
+     8161 cagctcctct tggggcgcat ggacgggccc aggaggccag tgaaatatga ggaggatgtg
+     8221 aatctcggct ctggcacgcg ggctgtggta agctgcgctg aagctcccaa catgaagatc
+     8281 attggtaacc gcattgagag gatccgcagt gagcacgcgg aaacgtggtt ctttgacgag
+     8341 aaccacccat ataggacatg ggcttaccat ggaagctatg aggcccctac acaagggtca
+     8401 gcgtcctctc taataaacgg ggttgtcagg ctcctgtcaa aaccctggga tgtggtgact
+     8461 ggagtcacag gaatagccat gaccgacacc acaccgtatg gtcagcaaag agttttcaag
+     8521 gaaaaagtgg acactagggt gccagacccc caagaaggca ctcgtcagat tatgagcatg
+     8581 gtctcttcct ggttgtggaa agagctaggc aaacacaaac ggccacgagt ctgtaccaaa
+     8641 gaagagttca tcaacaaggt tcgtagcaat gcagcattag gggcaatatt tgaagaggaa
+     8701 aaagagtgga agactgcagt ggaagctgtg aacgatccaa ggttctgggc tctagtggac
+     8761 aaggaaagag agcaccacct gagaggagag tgccagagct gtgtgtacaa catgatggga
+     8821 aaaagagaaa agaaacaagg ggaatttgga aaggccaagg gcagccgcgc catctggtat
+     8881 atgtggctag gggctagatt tctagagttc gaagcccttg gattcttgaa cgaggatcac
+     8941 tggatgggga gagagaactc aggaggtggt gttgaagggc tgggattaca aagactcgga
+     9001 tatgtcctag aagagatgag tcgcatacca ggaggaagga tgtatgcaga tgacactgct
+     9061 ggctgggaca cccgcatcag caggtttgat ctggagaatg aagctctaat caccaaccaa
+     9121 atggagaaag ggcacagggc cttggcattg gccataatca agtacacata ccaaaacaaa
+     9181 gtggtaaagg tccttagacc agctgaaaaa gggaagacag ttatggacat tatttcaaga
+     9241 caagaccaaa gggggagcgg acaagttgtc acctacgctc ttaatacatt taccaaccta
+     9301 gtggtgcagc tcattcggaa tatggaggct gaggaagttc tagagatgca agacttgtgg
+     9361 ctgctgcgga ggtcagagaa agtgaccaac tggttgcaga gcaacggatg ggataggctc
+     9421 aaacgaatgg cagtcagtgg agatgattgc gttgtgaagc caattgatga taggtttgca
+     9481 catgccctca ggttcttgaa tgatatggga aaagttagga aggacacaca agagtggaaa
+     9541 ccctcaactg gatgggacaa ctgggaagaa gttccgtttt gctcccacca cttcaacaag
+     9601 cttcatctca aggacgggag gtccattgtg gttccctgcc gccaccaaga tgaactgatt
+     9661 ggccgggccc gcgtctctcc aggggcggga tggagcatcc gggagactgc ttgcctggca
+     9721 aaatcatatg cgcaaatgtg gcagctcctt tatttccaca gaagggacct ccgactgatg
+     9781 gccaatgcca tttgttcatc tgtgccagtt gactgggttc caactgggag aactacctgg
+     9841 tcaatccatg gaaagggaga atggatgacc actgaagaca tgcttgtggt gtggaacaga
+     9901 gtgtggatcg aggagaacga ccacatggaa gacaagaccc cagtaacgaa atggacagac
+     9961 attccctatt tgggaaaaag ggaagacttg tggtgtggat ctctcatagg gcacagaccg
+    10021 cgcaccacct gggctgagaa catcaaaaac acagtcaaca tggtgcgcag gatcataggt
+    10081 gatgaagaaa agtacatgga ctacctatcc acccaagttc gctacttggg cgaagaaggg
+    10141 t
+//
+
+LOCUS       JN860885               10269 bp    RNA     linear   VRL 19-MAR-2012
+DEFINITION  Zika virus isolate FSS13025 polyprotein gene, partial cds.
+ACCESSION   JN860885
+VERSION     JN860885.1
+KEYWORDS    .
+SOURCE      Zika virus
+  ORGANISM  Zika virus
+            Viruses; Riboviria; Orthornavirae; Kitrinoviricota; Flasuviricetes;
+            Amarillovirales; Flaviviridae; Orthoflavivirus; Euflavivirus;
+            Orthoflavivirus zikaense.
+REFERENCE   1  (bases 1 to 10269)
+  AUTHORS   Haddow,A.D., Schuh,A.J., Yasuda,C.Y., Kasper,M.R., Heang,V.,
+            Huy,R., Guzman,H., Tesh,R.B. and Weaver,S.C.
+  TITLE     Genetic characterization of zika virus strains: geographic
+            expansion of the asian lineage
+  JOURNAL   PLoS Negl Trop Dis 6 (2), E1477 (2012)
+   PUBMED   22389730
+REFERENCE   2  (bases 1 to 10269)
+  AUTHORS   Haddow,A.D. and Schuh,A.J.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (17-OCT-2011) Department of Pathology, University of
+            Texas Medical Branch, 301 University Blvd, Galveston, TX 77555, USA
+FEATURES             Location/Qualifiers
+     source          1..10269
+                     /organism="Zika virus"
+                     /mol_type="genomic RNA"
+                     /isolate="FSS13025"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:64320"
+                     /geo_loc_name="Cambodia"
+                     /collection_date="2010"
+                     /note="Passage History: Vero African green monkey kidney
+                     cells 1 time;
+                     serogroup: Spondweni"
+     CDS             1..>10269
+                     /codon_start=1
+                     /product="polyprotein"
+                     /protein_id="AFD30972.1"
+                     /translation="MKNPKKKSGGFRIVNMLKRGVARVSPFGGLKRLPAGLLLGHGPI
+                     RMVLAILAFLRFTAIKPSLGLINRWGSVGKKEAMEIIKKFKKDLAAMLRIINARKEKK
+                     RRGTDTSVGIVGLLLTTAMAVEVTRRGNAYYMYLDRSDAGEAISFPTTMGMNKCYIQI
+                     MDLGHMCDATMSYECPMLDEGVEPDDVDCWCNTTSTWVVYGTCHHKKGEARRSRRAVT
+                     LPSHSTRKLQTRSQTWLESREYTKHLIRVENWIFRNPGFALAAAAIAWLLGSSTSQKV
+                     IYLVMILLIAPAYSIRCIGVSNRDFVEGMSGGTWVDVVLEHGGCVTVMAQDKPTVDIE
+                     LVTTTVSNMAEVRSYCYEASISDMASDSRCPTQGEAYLDKQSDTQYVCKRTLVDRGWG
+                     NGCGLFGKGSLVTCAKFACSKKMTGKSIQPENLEYRIMLSVHGSQHSGMIVNDTGHET
+                     DENRAKVEITPNSPRAEATLGGFGSLGLDCEPRTGLDFSDLYYLTMNNKHWLVHKEWF
+                     HDIPLPWHAGADTGTPHWNNKEALVEFKDAHAKRQTVVVLGSQEGAVHTALAGALEAE
+                     MDGAKGRLSSGHLKCRLKMDKLRLKGVSYSLCTAAFTFTKIPAETLHGTVTVEVQYAG
+                     TDGPCKVPAQMAVDMQTLTPVGRLITANPVITESTENSKMMLELDPPFGDSYIVIGVG
+                     EKKITHHWHRSGSTIGKAFEATVRGAKRMAVLGDTAWDFGSVGGALNSLGKGIHQIFG
+                     AAFKSLFGGMSWFSQILIGTLLVWLGLNTKNGSISLMCLALGGVLIFLSTAVSADVGC
+                     SVDFSKKETRCGTGVFVYNDVEAWRDRYKYHPDSPRRLAAAVKQAWEDGICGISSVSR
+                     MENIMWRSVEGELNAILEENGVQLTVVVGSVKNPMWRGPQRLPVPVNELPHGWKAWGK
+                     SYFVRAAKTNNSFVVDGDTLKECPLKHRAWNSFLVEDHGFGVFHTSVWLKVREDYSLE
+                     CDPAVIGTAAKGKEAVHSDLGYWIESEKNDTWRLKRAHLIEMKTCEWPKSHTLWTDGI
+                     EESDLIIPKSLAGPLSHHNTREGYRTQMKGPWHSEELEIRFEECPGTKVHVEETCGTR
+                     GPSLRSTTASGRVIEEWCCRECTMPPLSFRAKDGCWYGMEIRPRKEPESNLVRSMVTA
+                     GSTDHMDHFSLGVLVILLMVQEGLKKRMTTKIIISTSMAVLVAMILGGFSMSDLAKLA
+                     ILMGATFAEMNTGGDVAHLALIAAFKVRPALLVSFIFRANWTPRESMLLALASCLLQT
+                     AISALEGDLMVPINGFALAWLAIRAMVVPRTDNITLAILAALTPLARGTLLVAWRAGL
+                     ATCGGFMLLSLKGKGSVKKNLPFVMALGLTAVRLVDPINVVGLLLLTRSGKRSWPPSE
+                     VLTAVGLICALAGGFAKADIEMAGPMAAVGLLIVSYVVSGKSVDMYIERAGDITWEKD
+                     AEVTGNSPRLDVALDESGDFSLVEDDGPPMREIILKVVLMXICGMNPIAIPFAAGAWY
+                     VYVKTGKRSGALWDVPAPKEVKKGETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMW
+                     HVTKGSALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGHSEVQLLAVPPGERARN
+                     IQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAIT
+                     QGRREEETPVECFEPSMLKKKQLTVLDLHPGAGKTRRVLPEIVREAIKTRLRTVILAP
+                     TRVVAAEMEEALRGLPVRYMTTAVNVTHSGTEIVDLMCHATFTSRLLQPIRVPNYNLY
+                     IMDEAHFTDPSSIAARGYISTRVEMGEAAAIFMTATPPGTRDAFPDSNSPIMDTEVEV
+                     PERAWSSGFDWVTDHSGKTVWFVPSVRNGNEIAACLTKAGKRVIQLSRKTFETEFQKT
+                     KHQEWDFVVTTDISEMGANFKADRVIDSRRCLKPVILDGERVILAGPMPVTHASAAQR
+                     RGRIGRNPNKPGDEYLYGGGCAETDEDHAHWLEARMLLDNIYLQDGLIASLYRPEADK
+                     VAAIEGEFKLRTEQRKTFVELMKRGDLPVWLAYQVASAGITYTDRRWCFDGTTNNTIM
+                     EDSVPAEVWTRYGEKRVLKPRWMDARVCSDHAALKSFKEFAAGKRGAAFGVMEALGTL
+                     PGHMTERFQEAIDNLAVLMRAETGSRPYKAAAAQLPETLETIMLLGLLGTVSLGIFFV
+                     LMRNKGIGKMGFGMVTLGASAWLMWLSEIEPARIACVLIVVFLLLVVLIPEPEKQRSP
+                     QDNQMAIIIMVAVGLLGLITANELGWLERTKSDLSHLMGRREEGATIGFSMDIDLRPA
+                     SAWAIYAALTTFITPAVQHAVTTSYNNYSLMAMATQAGVLFGMGKGMPFYAWDFGVPL
+                     LMIGCYSQLTPLTLIVAIILLVAHYMYLIPGLQAAAARAAQKRTAAGIMKNPVVDGIV
+                     VTDIDTMTIDPQVEKKMGQVLLIAVAVSSAILSRTAWGWGEAGALITAATSTLWEGSP
+                     NKYWNSSTATSLCNIFRGSYLAGASLIYTVTRNAGLVKRRGGGTGETLGEKWKARLNQ
+                     MSALEFYSYKKSGITEVCREEARRALKDGVATGGHAVSRGSAKLRWLVERGYLQPYGK
+                     VIDLGCGRGGWSYYAATIRKVQEVKGYTKGGPGHEEPMLVQSYGWNIVRLKSGVDVFH
+                     MAAEPCDTLLCDIGESSSSPEVEEARTLRVLSMVGDWLEKRPGAFCIKVLCPYTSTMM
+                     ETLERLQRRYGGGLVRVPLSRNSTHEMYWVSGAKSNTIKSVSTTSQLLLGRMDGPRRP
+                     VKYEEDVNLGSGTRAVVSCAEAPNMKIIGNRIERIRSEHAETWFFDENHPYRTWAYHG
+                     SYEAPTQGSASSLINGVVRLLSKPWDVVTGVTGIAMTDTTPYGQQRVFKEKVDTRVPD
+                     PQEGTRQVMSMVSSWLWKELGKHKRPRVCTKEEFINKVRSNAALGAIFEEEKEWKTAV
+                     EAVNDPRFWALVDKEREHHLRGECQSCVYNMMGKREKKQGEFGKAKGSRAIWYMWLGA
+                     RFLEFEALGFLNEDHWMGRENSGGGVEGLGLQRLGYVLEEMSRIPGGRMYADDTAGWD
+                     TRISRFDLENEALITNQMEKGHRALALAIIKYTYQNKVVKVLRPAEKGKTVMDIISRQ
+                     DQRGSGQVVTYALNTFTNLVVQLIRNMEAEEVLEMQDLWLLRRSEKVTNWLQSNGWDR
+                     LKRMAVSGDDCVVKPIDDRFAHALRFLNDMGKVRKDTQEWKPSTGWDNWEEVPFCSHH
+                     FNKLHLKDGRSIVVPCRHQDELIGRARVSPGAGWSIRETACLAKSYAQMWQLLYFHRR
+                     DLRLMANAICSSVPVDWVPTGRTTWSIHGKGEWMTTEDMLVVWNRVWIEENDHMEDKT
+                     PVTKWTDIPYLGKREDLWCGSLIGHRPRTTWAENIKNTVNMMRRIIGDEEKYVDYLST
+                     QVRYLGEEGSTPGVL"
+ORIGIN      
+        1 atgaaaaacc caaagaagaa atccggagga ttccggattg tcaatatgct aaaacgcgga
+       61 gtagcccgtg tgagcccctt tgggggcttg aagaggctgc cagccggact tctgctgggt
+      121 catgggccca tcaggatggt cttggcgatt ctagcctttt tgagattcac ggcaatcaag
+      181 ccatcactgg gtctcatcaa tagatggggt tcagtgggga aaaaagaggc tatggaaata
+      241 ataaagaagt ttaagaaaga tctggctgcc atgctgagaa taatcaatgc taggaaggag
+      301 aagaagagac gaggcacaga tactagtgtc ggaattgttg gcctcctgct gaccacagcc
+      361 atggcagtgg aggtcactag acgtgggaat gcatactata tgtacttgga cagaagcgat
+      421 gctggggagg ccatatcttt tccaaccaca atggggatga ataagtgtta tatacagatc
+      481 atggatcttg gacacatgtg tgatgccacc atgagctatg aatgccctat gctggatgag
+      541 ggggtagaac cagatgacgt cgattgttgg tgcaacacga cgtcaacttg ggttgtgtac
+      601 ggaacctgcc accacaaaaa aggtgaagca cggagatcta gaagagctgt gacgctcccc
+      661 tcccattcca ctaggaagct gcaaacgcgg tcgcagacct ggttggaatc aagagaatac
+      721 acaaagcacc tgattagagt cgaaaattgg atattcagga accctggctt cgcgttagca
+      781 gcagctgcca tcgcttggct tttgggaagc tcaacgagcc aaaaagtcat atacttggtc
+      841 atgatactgc tgattgcccc ggcatacagc atcaggtgca taggagtcag caatagggac
+      901 tttgtggaag gtatgtcagg tgggacttgg gttgatgttg tcttggaaca tggaggttgt
+      961 gttaccgtaa tggcacagga caaaccgact gtcgacatag agctggttac aacaacagtc
+     1021 agcaacatgg cggaggtaag atcctactgc tatgaggcat caatatcgga catggcttcg
+     1081 gacagccgct gcccaacaca aggtgaagcc taccttgaca agcaatcaga cactcaatat
+     1141 gtctgcaaaa gaacgttagt ggacagaggc tggggaaatg gatgtggact ttttggcaaa
+     1201 gggagcctgg tgacatgcgc taagtttgct tgctctaaga aaatgaccgg gaagagcatc
+     1261 cagccagaga atctggagta ccggataatg ctgtcagttc atggctccca gcacagtggg
+     1321 atgatcgtta atgatacagg acatgaaact gatgagaata gagcgaaggt tgagataacg
+     1381 cccaattcac caagagccga agccaccctg gggggttttg gaagcctagg acttgattgt
+     1441 gaaccgagga caggccttga cttttcagat ttgtattact tgactatgaa taacaagcac
+     1501 tggttggttc acaaggagtg gttccacgac attccattac cttggcatgc tggggcagac
+     1561 accggaactc cacactggaa caacaaagaa gcactggtag agttcaagga cgcacatgcc
+     1621 aaaaggcaga ctgtcgtggt tctagggagt caagaaggag cagttcacac ggcccttgct
+     1681 ggagctctgg aggctgagat ggatggtgca aagggaaggc tgtcctctgg ccacttgaaa
+     1741 tgtcgcctga aaatggataa acttagattg aagggcgtgt catactcctt gtgtaccgca
+     1801 gcgttcacat tcactaagat cccggctgaa acactgcacg ggacagtcac agtggaggta
+     1861 cagtacgcag ggacagatgg accttgcaag gttccagctc agatggcggt ggacatgcaa
+     1921 actctgaccc cagttgggag gttgataacc gctaaccctg taatcactga aagcactgag
+     1981 aactccaaga tgatgctgga actggatcca ccatttgggg actcttacat tgtcatagga
+     2041 gtcggggaaa agaagatcac ccaccactgg cacaggagtg gcagcaccat tggaaaagca
+     2101 tttgaagcca ctgtgagagg tgccaagaga atggcagtct tgggagacac agcctgggac
+     2161 tttggatcag ttgggggtgc tctcaactca ctgggcaagg gcatccatca aatttttgga
+     2221 gcagctttca aatcattgtt tggaggaatg tcctggttct cacaaattct cattggaacg
+     2281 ttgctggtgt ggttgggtct gaatacaaag aatggatcta tttcccttat gtgcttggcc
+     2341 ttagggggag tgttgatctt cttatccaca gccgtctctg ctgatgtggg gtgctcggtg
+     2401 gacttctcaa agaaggaaac gagatgcggt acaggggtgt tcgtctataa cgacgttgaa
+     2461 gcttggaggg acaggtacaa gtaccatcct gactcccctc gtagattggc agcagcagtc
+     2521 aagcaagcct gggaagatgg gatctgtggg atctcctctg tttcaagaat ggaaaacatc
+     2581 atgtggagat cagtagaagg ggagctcaac gcaatcctgg aagagaatgg agttcaactg
+     2641 acggtcgttg tgggatctgt aaaaaacccc atgtggagag gtccacagag attgcccgtg
+     2701 cctgtgaacg agctgcccca tggctggaag gcttggggga aatcgtactt cgtcagggca
+     2761 gcaaagacaa ataacagctt tgtcgtggat ggtgacacac tgaaggaatg cccactcaaa
+     2821 catagagcat ggaacagctt tcttgtggag gatcatgggt tcggggtatt tcacactagt
+     2881 gtctggctca aggttagaga agattattca ttagagtgtg atccagccgt cattggaaca
+     2941 gccgctaagg gaaaggaggc tgtgcacagt gatctaggct actggattga gagtgagaag
+     3001 aacgacacat ggaggctgaa gagggcccac ctgatcgaga tgaaaacatg tgaatggcca
+     3061 aagtcccaca cattgtggac agatggaata gaagaaagtg atctgatcat acccaagtct
+     3121 ttagctgggc cactcagcca tcacaacacc agagagggct acaggaccca aatgaaaggg
+     3181 ccatggcata gtgaagagct tgaaattcgg tttgaggaat gcccaggcac taaggtccac
+     3241 gtggaggaaa catgtggaac aagaggacca tctctgagat caaccactgc aagcggaagg
+     3301 gtgatcgagg aatggtgctg cagggagtgc acaatgcccc cactgtcgtt ccgggctaaa
+     3361 gatggttgtt ggtatggaat ggagataagg cccaggaaag aaccagaaag taacttagta
+     3421 aggtcaatgg tgactgcagg atcaactgat cacatggatc acttctccct tggagtgctt
+     3481 gtgattctgc tcatggtaca ggaagggcta aagaagagaa tgaccacaaa gatcatcata
+     3541 agcacatcaa tggcagtgct ggtagctatg atcctgggag gattttcaat gagtgacctg
+     3601 gctaagcttg caattttgat gggtgccacc ttcgcggaaa tgaacactgg aggagatgtt
+     3661 gctcatctgg cgctgatagc ggcattcaaa gtcagacctg cgttgctggt atctttcatt
+     3721 ttcagagcta attggacacc ccgtgagagc atgctgctgg ccttggcctc gtgtcttctg
+     3781 caaactgcga tctccgcctt ggaaggcgac ctgatggttc ccatcaatgg ttttgctttg
+     3841 gcctggttgg caatacgagc gatggttgtt ccacgcactg acaacatcac cttggcaatc
+     3901 ctggctgctc tgacaccact ggcccggggc acactgcttg tggcgtggag agcaggcctt
+     3961 gctacttgcg gggggttcat gctcctttct ctgaagggga aaggcagtgt gaagaagaac
+     4021 ttaccatttg tcatggccct gggactaacc gctgtgaggc tggtcgaccc catcaacgtg
+     4081 gtgggactgc tgttgctcac aaggagtggg aagcggagct ggccccctag tgaagtactc
+     4141 acagctgttg gcctgatatg cgcattggct ggagggttcg ccaaggcgga tatagagatg
+     4201 gctgggccca tggccgcggt cggtctgcta attgtcagtt acgtggtctc aggaaagagt
+     4261 gtggacatgt acattgaaag agcaggtgac atcacatggg aaaaagatgc ggaagtcact
+     4321 ggaaacagtc cccggctcga tgtggcacta gatgagagtg gtgatttctc cctagtggag
+     4381 gatgatggtc cccccatgag agagatcata ctcaaagtgg tcctgatgnc catctgtggc
+     4441 atgaacccaa tagccatacc ctttgcagct ggagcgtggt acgtgtatgt gaagactgga
+     4501 aaaaggagtg gtgctctatg ggatgtgcct gctcccaagg aagtaaaaaa gggggagacc
+     4561 acagatggag tgtacagagt aatgactcgt agactgctag gttcaacaca agttggagtg
+     4621 ggagtcatgc aagagggggt cttccacact atgtggcacg tcacaaaagg atccgcgctg
+     4681 agaagcggtg aagggagact tgatccatac tggggagatg tcaagcagga tctggtgtca
+     4741 tactgtggtc catggaagct agatgccgcc tgggacgggc acagcgaggt gcagctcttg
+     4801 gccgtgcccc ccggagagag agcgaggaac atccagactc tgcccggaat atttaagaca
+     4861 aaggatgggg acattggagc agttgcgctg gactacccag caggaacttc aggatctcca
+     4921 atcctagata agtgtgggag agtgatagga ctctatggta atggggtcgt gatcaaaaat
+     4981 gggagttacg ttagtgccat cacccaaggg aggagggagg aagagactcc tgttgagtgc
+     5041 ttcgagcctt cgatgctgaa gaagaagcag ctaactgtct tagacttgca tcctggagct
+     5101 gggaaaacca ggagagttct tcctgaaata gtccgtgaag ccataaaaac aagactccgc
+     5161 actgtgatct tagctccaac cagggttgtc gctgctgaaa tggaggaagc ccttagaggg
+     5221 cttccagtgc gttatatgac aacagcagtc aatgtcaccc attctgggac agaaatcgtt
+     5281 gacttaatgt gccatgccac cttcacttca cgtctactac agccaatcag agtccccaac
+     5341 tataatctgt atattatgga tgaggcccac ttcacagatc cctcaagtat agcagcaaga
+     5401 ggatacattt caacaagggt tgagatgggc gaggcggctg ccatcttcat gactgccacg
+     5461 ccaccaggaa cccgtgacgc attcccggac tccaactcac caattatgga caccgaagtg
+     5521 gaagtcccag agagagcctg gagctcaggc tttgattggg tgacggatca ttctggaaaa
+     5581 acagtttggt ttgttccaag cgtgaggaat ggcaatgaga tcgcagcttg tctgacaaag
+     5641 gctggaaaac gggtcataca gctcagcaga aagacttttg agacagagtt ccagaaaaca
+     5701 aaacatcaag agtgggactt cgtcgtgaca actgacattt cagagatggg cgccaacttt
+     5761 aaagctgacc gtgtcataga ttccaggaga tgcctaaagc cggtcatact tgatggcgag
+     5821 agagtcattc tggctggacc catgcctgtc acacatgcca gcgctgccca gaggaggggg
+     5881 cgcataggca ggaaccccaa caaacctgga gatgagtatc tgtatggagg tgggtgcgca
+     5941 gagactgatg aagaccatgc acactggctt gaagcaagaa tgcttcttga caacatttac
+     6001 ctccaagatg gcctcatagc ctcgctctat cgacctgagg ccgacaaagt agcagctatt
+     6061 gagggagagt tcaagcttag gacggagcaa aggaagacct ttgtggaact catgaaaaga
+     6121 ggagatcttc ctgtttggct ggcctatcag gttgcatctg ccggaataac ctacacagat
+     6181 agaagatggt gctttgatgg cacgaccaac aacaccataa tggaagacag tgtgccggca
+     6241 gaggtgtgga ccagatacgg agagaaaaga gtgctcaaac cgaggtggat ggacgccaga
+     6301 gtttgttcag atcatgcggc cctgaagtca ttcaaagagt ttgccgctgg gaaaagagga
+     6361 gcggcctttg gagtgatgga agccctggga acactgccag gacatatgac agagagattc
+     6421 caggaggcca ttgacaacct cgctgtgctc atgcgggcag agactggaag caggccctac
+     6481 aaagccgcgg cggcccaatt accggagacc ctagagacta tcatgctttt ggggttgctg
+     6541 ggaacagtct cgctgggaat ctttttcgtc ttgatgcgga acaagggcat agggaagatg
+     6601 ggctttggaa tggtgactct tggggccagc gcatggctta tgtggctctc ggaaattgag
+     6661 ccagccagaa ttgcatgtgt cctcattgtt gtgttcctat tgctggtggt gctcatacct
+     6721 gagccagaaa agcaaagatc tccccaggac aaccaaatgg caatcatcat catggtagca
+     6781 gtgggtcttc tgggcttgat taccgccaat gaactcggat ggttggagag aacaaagagt
+     6841 gacctaagcc atctaatggg aaggagagag gagggggcaa cnataggatt ctcaatggac
+     6901 attgacctgc ggccagcctc agcttgggct atctatgctg ctctgacaac tttcattacc
+     6961 ccagccgtcc aacatgcagt gaccacttca tacaacaact actccttaat ggcgatggcc
+     7021 acgcaagctg gagtgttgtt cggtatgggt aaagggatgc cattctatgc atgggacttt
+     7081 ggagtcccgc tgctaatgat aggttgctac tcacaattaa cacccctgac cctaatagtg
+     7141 gccatcattt tgctcgtggc gcactacatg tacttgatcc cagggctgca ggcagcagct
+     7201 gcgcgtgctg cccagaagag aacggcagct ggcatcatga agaaccctgt tgtggatgga
+     7261 atagtggtga ctgacattga cacaatgaca attgaccccc aagtggagaa aaagatggga
+     7321 caggtgctac tcatagcagt agctgtctcc agcgccatac tgtcgcggac cgcctggggg
+     7381 tggggtgagg ctggggccct gatcacagct gcaacttcca ctttgtggga gggctctccg
+     7441 aacaagtact ggaactcctc cacagccacc tcactgtgta acatttttag gggaagctac
+     7501 ttggctggag cttctctaat ctacacagta acaagaaacg ctggcttggt caagagacgt
+     7561 gggggtggaa cgggagagac cctgggagag aaatggaagg cccgcctgaa ccagatgtcg
+     7621 gccctggagt tctactccta caaaaagtca ggcatcaccg aggtgtgcag agaagaggcc
+     7681 cgccgcgccc tcaaggacgg tgtggcaacg ggaggccacg ctgtgtcccg aggaagtgca
+     7741 aagctgagat ggttggtgga gaggggatac ctgcagccct atggaaaggt cattgatctt
+     7801 ggatgtggca gagggggctg gagttactat gccgccacca tccgcaaagt tcaagaagtg
+     7861 aaaggataca caaaaggagg ccctggtcat gaagaaccca tgttggtgca aagctatggg
+     7921 tggaacatag tccgtcttaa gagtggggtg gacgtctttc atatggcggc tgagccgtgt
+     7981 gacacgttgc tgtgtgatat aggtgagtca tcatctagtc ctgaagtgga agaagcacgg
+     8041 acgctcagag tcctctccat ggtgggggat tggcttgaaa aaagaccagg agccttttgt
+     8101 ataaaagtgt tgtgcccata caccagcact atgatggaaa ccctggagcg actgcagcgt
+     8161 aggtatgggg gaggactggt cagagtgcca ctctcccgca actctacaca tgagatgtac
+     8221 tgggtctctg gagcgaaaag caacaccata aaaagtgtgt ccaccacgag ccagctcctt
+     8281 ttggggcgca tggacgggcc caggaggcca gtgaaatatg aagaggatgt gaatctcggc
+     8341 tctggcacgc gggctgtggt aagctgcgct gaagctccca acatgaagat cattggtaac
+     8401 cgcattgaga ggatccgcag tgagcacgcg gaaacgtggt tctttgacga gaaccaccca
+     8461 tataggacat gggcttacca tggaagctac gaggccccca cacaagggtc agcgtcctct
+     8521 ctaataaacg gggttgtcag gctcctgtca aaaccctggg atgtggtgac tggagtcaca
+     8581 ggaatagcca tgaccgacac cacaccgtat ggtcagcaaa gagttttcaa ggaaaaagtg
+     8641 gacactaggg tgccagaccc ccaagaaggc actcgtcagg ttatgagcat ggtctcttcc
+     8701 tggttgtgga aagagttagg caaacacaaa cggccacgag tctgtaccaa agaagagttc
+     8761 atcaacaagg ttcgtagcaa cgcagcatta ggggcaatat ttgaagagga aaaagagtgg
+     8821 aagactgcag tggaagctgt gaacgatcca aggttctggg ctctagtgga caaggaaaga
+     8881 gagcaccacc tgagaggaga gtgccagagc tgtgtgtaca acatgatggg aaaaagagaa
+     8941 aagaaacaag gggaatttgg aaaggccaag ggcagccgcg ccatctggta catgtggcta
+     9001 ggggctagat ttctagagtt cgaagccctt ggattcttga acgaggatca ctggatgggg
+     9061 agagagaatt caggaggtgg tgttgaaggg ctaggattac aaagactcgg atatgtctta
+     9121 gaagagatga gtcgcatacc aggaggaagg atgtatgcag atgatactgc tggctgggac
+     9181 acccgcatca gcaggtttga tctggagaat gaagctctaa tcaccaacca aatggagaaa
+     9241 gggcacaggg ccttggcatt ggccataatc aagtacacat accaaaacaa agtggtaaag
+     9301 gtccttagac cagctgaaaa agggaagaca gttatggaca ttatttcaag acaagaccaa
+     9361 agggggagcg gacaagttgt cacttacgct cttaatacat ttaccaacct agtggtgcag
+     9421 ctcattcgga atatggaggc tgaggaagtt ctagagatgc aagacttgtg gctgctgcgg
+     9481 aggtcagaga aagtgaccaa ctggttgcag agcaatggat gggataggct caaacgaatg
+     9541 gcagtcagtg gagatgattg cgttgtgaaa ccaattgatg ataggtttgc acatgctctc
+     9601 aggttcttga atgatatggg aaaagttagg aaggacacac aagagtggaa gccctcaact
+     9661 ggatgggaca actgggaaga agttccgttt tgctcccacc acttcaacaa gctccatctc
+     9721 aaggacggga ggtccattgt ggttccctgc cgccaccaag atgaactgat tggccgagct
+     9781 cgcgtctcac cgggggcggg atggagcatc cgggagactg cttgcctagc aaaatcatat
+     9841 gcgcaaatgt ggcagctcct ttatttccac agaagggacc tccgactgat ggccaatgcc
+     9901 atttgttcat ctgtgccagt tgactgggtt ccaactggga gaactacctg gtcaatccat
+     9961 ggaaagggag aatggatgac cactgaagac atgcttgtgg tgtggaacag agtgtggatt
+    10021 gaggagaacg accacatgga agacaagacc ccagttacga aatggacaga cattccctat
+    10081 ttgggaaaaa gggaagactt gtggtgtggg tctctcatag ggcacagacc gcgcaccacc
+    10141 tgggctgaga acattaaaaa cacagtcaac atgatgcgta ggatcatagg tgatgaagaa
+    10201 aagtacgtgg actacctatc cacccaagtt cgctacttgg gcgaagaagg gtccacacct
+    10261 ggagtgcta
+//
+
+LOCUS       EU545988               10272 bp    RNA     linear   VRL 30-JUL-2008
+DEFINITION  Zika virus polyprotein gene, complete cds.
+ACCESSION   EU545988
+VERSION     EU545988.1
+KEYWORDS    .
+SOURCE      Zika virus
+  ORGANISM  Zika virus
+            Viruses; Riboviria; Orthornavirae; Kitrinoviricota; Flasuviricetes;
+            Amarillovirales; Flaviviridae; Orthoflavivirus; Euflavivirus;
+            Orthoflavivirus zikaense.
+REFERENCE   1  (bases 1 to 10272)
+  AUTHORS   Lanciotti,R.S., Kosoy,O.L., Laven,J.J., Velez,J.O., Lambert,A.J.,
+            Johnson,A.J., Stanfield,S.M. and Duffy,M.R.
+  TITLE     Genetic and serologic properties of Zika virus associated with an
+            epidemic, Yap State, Micronesia, 2007
+  JOURNAL   Emerging Infect. Dis. 14 (8), 1232-1239 (2008)
+   PUBMED   18680646
+REFERENCE   2  (bases 1 to 10272)
+  AUTHORS   Lanciotti,R.S., Kosoy,O.L., Laven,J.J., Velez,J.O., Lambert,A.J.,
+            Johnson,A.J. and Stanfield,S.M.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (05-MAR-2008) DVBID, ADB, DRS, CDC, 3150 Rampart Road
+            (CSU Foothills Campus), Fort Collins, CO 80521, USA
+FEATURES             Location/Qualifiers
+     source          1..10272
+                     /organism="Zika virus"
+                     /mol_type="genomic RNA"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:64320"
+                     /geo_loc_name="Micronesia, Federated States of"
+                     /collection_date="Jun-2007"
+     CDS             1..10272
+                     /codon_start=1
+                     /product="polyprotein"
+                     /protein_id="ACD75819.1"
+                     /translation="MKNPKEEIRRIRIVNMLKRGVARVSPFGGLKRLPAGLLLGHGPI
+                     RMVLAILAFLRFTAIKPSLGLINRWGSVGKKEAMEIIKKFKKDLAAMLRIINARKEKK
+                     RRGTDTSVGIVGLLLTTAMAVEVTRRGSAYYMYLDRSDAGEAISFPTTLGMNKCYIQI
+                     MDLGHMCDATMSYECPMLDEGVEPDDVDCWCNTTSTWVVYGTCHHKKGEARRSRRAVT
+                     LPSHSTRKLQTRSQTWLESREYTKHLIRVENWIFRNPGFALAAAAIAWLLGSSTSQKV
+                     IYLVMILLIAPAYSIRCIGVSNRDFVEGMSGGTWVDVVLEHGGCVTVMAQDKPAVDIE
+                     LVTTTVSNMAEVRSYCYEASISDMASDSRCPTQGEAYLDKQSDTQYVCKRTLVDRGWG
+                     NGCGLFGKGSLVTCAKFACSKKMTGKSIQPENLEYRIMLSVHGSQHSGMIVNDTGHET
+                     DENRAKVEITPNSPRAEATLGGFGSLGLDCEPRTGLDFSDLYYLTMNNKHWLVHKEWF
+                     HDIPLPWHAGADTGTPHWNNKEALVEFKDAHAKRQTVVVLGSQEGAVHTALAGALEAE
+                     MDGAKGRLSSGHLKCRLKMDKLRLKGVSYSLCTAAFTFTKIPAETLHGTVTVEVQYAG
+                     TDGPCKVPAQMAVDMQTLTPVGRLITANPVITESTENSKMMLELDPPFGDSYIVIGVG
+                     EKKITHHWHRSGSTIGKAFEATVRGAKRMAVLGDTAWDFGSVGGALNSLGKGIHQIFG
+                     AAFKSLFGGMSWFSQILIGTLLVWLGLNTKNGSISLTCLALGGVLIFLSTAVSADVGC
+                     SVDFSKKETRCGTGVFVYNDVDAWRDRYKYHPDSPRRLAAAVKQAWXDGICGISSVSR
+                     MENIMWRSVEGELNAILEENGVQLTVVVGSVKNPMWRGPQRLPVPVNELPHGWKAWGK
+                     SYFVRAAKTNNSFVVDGDTLKECPLKHRAWNSFLVEDHGFGVFHTSVWLKVREDYSLE
+                     CDPAVIGTAAKGKEAVHSDLGYWIESEKNDTWRLKRAHLIEMKTCEWPKSHTLWTDGI
+                     EESDLIIPKSLAGPLSHHNTREGYRTQMKGPWHSEELEIRFEECPGTKVHVEETCGTR
+                     GPSLRSTTASGRVIEEWCCRECTMPPLSFRAKDGCWYGMEIRPRKEPESNLVRSMVTA
+                     GSTDHMDHFSLGVLVILLMVQEGLKKRMTTKIIISTSMAVLVAMILGGFSMSDLAKLA
+                     ILMGATFAEMNTGGDVAHLALIAAFKVRPALLVSFIFRANWTPRESMLLALASCLLQT
+                     AISALEGDLMVLINGFALAWLAIRAMVVPRTDNITLAILTALTPLARGTLLVAWRAGL
+                     ATCGGFMLLSLKGKGSVKKNLPFVMALGLTAVRLVDPINVVGLLLLTRSGKRSWPPSE
+                     VLTAVGLICALAGGFAKADIEMAGPMAAVGLLIVSYVVSGKSVDMYIERAGDITWEKD
+                     AEVTGNSPRLDVALDESGDFSLVEDDGPPMREIILKVVLMTICGMNPIAIPFAAGAWY
+                     VYVKTGKRSGALWDVPAPKEVKKGETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMW
+                     HVTKGSALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGHSEVQLLAVPPGERARN
+                     IQTPPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAIT
+                     QGRREEETPVECFEPSMLKKKQLTVLDLHPGAGKTRRVLPEIVREAIKTRLRTVILAP
+                     TRVVAAEMEEALRGLPVRYMTTAVNVTHSGTEIVDLMCHATFTSRLLQPIRVPNYNLY
+                     IMDEAHFTDPSSIAARGYISTRVEMGEAAAIFMTATPPGTRDAFPDSNSPIMDTEVEV
+                     PERAWSSGFDWVTDHSGKTVWFVPSVRNGNEIAACLTKAGKRVIQLSRKTFETEFLKT
+                     KNQEWDFVVTTDISEMGANFKADRVIDSRRCLKPVILDGERVILAGPMPVTHASAAQR
+                     RGRIGRNPNKPGDEYLYGGGCAETDEDHAHWLEARMLLDNIYLQDGLIASLYRPEADK
+                     VAAIEGEFKLRTEQRKTFVELMKRGDLPVWLAYQVASAGITYTDRKWCFDGTTNNTIM
+                     EDSVPAEVWTRYGEKRVLKPRWMDARVCSDHAALKSFKEFAAGKRGXAFGVMEALGTL
+                     PGHMTERFQEAIDNLAVLMRAETGSRPYEAAAAQLPETLETIMLLGLLGTVSLGIFFV
+                     LMRNKGIGKMGFGMVTLGASAWLMWLSEIEPARIACVLIVVFLLLVVLIPEPEKQRSP
+                     QDNQMAIIIMIAVGLLGLITANELGWLERTKSDLSHLMGRREEGATIGFSMDIDLRPA
+                     SAWAIYAALTTFITPAVQHAVTTSYNNYSLMAMATQAGVLFGMGKGMPFYAWDFGVPL
+                     LMMGCYSQLTPLTLIVAIILLVAHYMYLIPGLQAAAARAAQKRTAAGIMKNPVVDGIV
+                     VTDIDTMTIDHRVEKKMGQVLLIAVAVSSAILSRTAWGWGEAGALITAATSTLWEGSP
+                     NKYWNSSTATSLCNIFRGSYLAGASLIYTVTRNAGLVKRRGGGTGETLGEKWKARLNQ
+                     MSALEFYSYKKSGITEVCREEARRALKDGVATGGHAVSRGSAKLRWLVERGYLQPYGK
+                     VIDLGCGRGGWSYYAATIRKVQEVKGYTKGGPGHEEPMLVQSYGWNIVRLKSGVDVFH
+                     MAAEPCDTLLCDIGESSSSPEVEEARTLRVLSMVGDWLEKRPGAFCIKVLCPYTSTMM
+                     ETLERLQRRYGGGLVRVPLSRNSTHEMYWVSGAKSNTIKSVSTTSQLLLGRMDGPRRP
+                     VKYEEDVNLGSGTRAVVSCAEAPNMKIIGNRIERIRSEHAETWFFDENHPYRTWAYHG
+                     SYEAPTQGSASSLINGVVRLLSKPWDVVTGVTGIAMTDTTPYGQQRVFKEKVDTRVPD
+                     PQEGTRQVMSMVSSWLWKELGKHKRPRVCTKEEFINKVRSNAALGAIFEEEKEWKTAV
+                     EAVNDPRFWALVDKEREHHLRGECQSCVYNMMGKREKKQGEFGKAKGSRAIWYMWLGA
+                     RFLEFEALGFLNEDHWMGRENSGGGVEGLGLQRLGYVLEEMSRIPGGRMYADDTAGWD
+                     TRISRFDLENEALITNQMEKGHRALALAIIKYTYQNKVVKVLRPAEKGKTVMDIISRQ
+                     DQRGSGQVVTYALNTFTNLVVQLIRNMEAEEVLEMQDLWLLRRSEKVTNWLQSNGWDR
+                     LKRMAVSGDDCVVKPIDDRFAHALRFLNDMGKVRKDTQEWKPSTGWDNWEEVPFCSHH
+                     FNKLHLKDGRSIVVPCRHQDELIGRARVSPGAGWSIRETACLAKSYAQMWQLLYFHRR
+                     DLRLMANAICSSVPVDWVPTGRTTWSIHGKGEWMTTEDMLVVWNRVWIEENDHMEDKT
+                     PVTKWTDIPYLGKREDLWCGSLIGHRPRTTWAENIKNTVNMMRRIIGDEEKYMDYLST
+                     QVRYLGEEGSTPGVL"
+ORIGIN      
+        1 atgaaaaacc ccaaagaaga aatccggagg atccggattg tcaatatgct aaaacgcgga
+       61 gtagcccgtg tgagcccctt tgggggcttg aagaggctgc cagccggact tctgctgggt
+      121 catgggccca tcaggatggt cttggcgata ctagcctttt tgagattcac ggcaatcaag
+      181 ccatcactgg gtctcatcaa tagatggggt tcagtgggga aaaaagaggc tatggaaata
+      241 ataaagaagt tcaagaaaga tctggctgcc atgctgagaa taatcaatgc taggaaggag
+      301 aagaagagac gaggcacaga tactagtgtc ggaattgttg gcctcctgct gaccacagcc
+      361 atggcagtgg aggtcactag acgtgggagt gcatactata tgtacttgga cagaagcgat
+      421 gctggggagg ccatatcttt tccaaccaca ctggggatga acaagtgtta catacagatc
+      481 atggatcttg gacacatgtg tgatgccacc atgagctatg aatgccctat gttggatgag
+      541 ggggtagaac cagatgacgt cgattgttgg tgcaacacga catcaacttg ggttgtgtac
+      601 ggaacctgcc accacaaaaa aggtgaagca cggagatcta gaagagctgt gacgctcccc
+      661 tcccattcca ctaggaagct gcaaacgcgg tcgcagacct ggttggaatc aagagaatat
+      721 acaaagcacc tgattagagt cgaaaattgg atattcagga accctggctt cgcgttagca
+      781 gcagctgcca tcgcctggct tttgggaagt tcaacgagcc aaaaagtcat atacttggtc
+      841 atgatactgc tgattgcccc ggcatacagc atcaggtgca taggagtcag caatagggac
+      901 tttgtggaag gtatgtcagg tgggacttgg gttgatgttg tcttggaaca tggaggttgt
+      961 gttaccgtaa tggcacagga caaaccggct gtcgacatag agctggttac aacaacagtc
+     1021 agcaacatgg cggaggtaag atcctattgc tatgaggcat caatatcgga catggcttcg
+     1081 gacagccgct gcccaacaca aggtgaagcc taccttgaca agcagtcaga cactcaatat
+     1141 gtctgcaaaa gaacgttagt ggacagaggc tggggaaatg gatgtggact ttttggcaaa
+     1201 gggagcctgg tgacatgcgc taagtttgca tgctccaaga aaatgaccgg gaagagcatc
+     1261 cagccagaga atctggagta ccggataatg ctgtcagttc atggctccca gcacagtggg
+     1321 atgatcgtta atgacacagg acatgaaact gatgagaata gagcgaaggt tgagataacg
+     1381 cccaattcac caagagctga agccaccctg gggggttttg gaagcctagg acttgattgt
+     1441 gaaccgagga caggccttga cttttcagat ttgtattact tgactatgaa taacaagcac
+     1501 tggttggttc acaaggagtg gttccacgac attccattac cttggcatgc tggggcagac
+     1561 accggaactc cacattggaa caacaaagaa gcattggtag agttcaagga cgcacatgcc
+     1621 aaaaggcaaa ctgtcgtggt tctagggagt caagaaggag cagttcacac ggcccttgct
+     1681 ggagctctgg aggctgagat ggatggtgca aagggaaggc tgtcctctgg ccacttgaaa
+     1741 tgtcgcctga aaatggataa acttagattg aagggcgtgt catactcctt gtgtaccgca
+     1801 gcgttcacat tcaccaagat cccggctgaa acactgcacg ggacagtcac agtggaggta
+     1861 cagtacgcag ggacagatgg accctgcaag gttccagctc agatggcggt ggacatgcaa
+     1921 actctgaccc cagttgggag gctgataacc gctaaccctg taatcactga aagcactgag
+     1981 aactctaaga tgatgctgga acttgatcca ccatttgggg actcttacat tgtcatagga
+     2041 gtcggggaga agaagatcac ccatcactgg cacaggagtg gcagcaccat tggaaaagca
+     2101 tttgaagcca ctgtgagagg tgccaagaga atggcagtct tgggagacac agcctgggat
+     2161 tttggatcag ttggaggtgc tctcaactca ttgggcaagg gcatccatca aatttttgga
+     2221 gcagctttca aatcattgtt tggaggaatg tcctggttct cacaaattct cattggaacg
+     2281 ttgctggtgt ggttgggtct gaatacaaag aatggatcta tttcccttac gtgcttggcc
+     2341 ttagggggag tgttgatctt tttatccaca gccgtctctg ctgatgtggg gtgctcggtg
+     2401 gacttctcaa agaaggaaac gagatgcggt acgggggtgt tcgtctataa cgacgttgat
+     2461 gcctggaggg acaggtacaa gtaccatcct gactcccctc gtagattagc agcagcagtc
+     2521 aagcaagcct gggragatgg gatctgtggg atctcctctg tttcaagaat ggaaaacatc
+     2581 atgtggagat cagtagaagg ggagctcaac gcaatcctgg aagagaatgg agttcaactg
+     2641 acggtcgttg tgggatctgt aaaaaacccc atgtggagag gtccacagag attgcccgtg
+     2701 cctgtgaacg agctgcccca cggctggaag gcttggggga aatcgtactt cgtcagagca
+     2761 gcaaagacaa ataacagctt tgtcgtggat ggtgacacac tgaaggaatg cccactcaaa
+     2821 catagagcat ggaacagctt tcttgtggag gatcatgggt tcggggtatt tcacactagt
+     2881 gtctggctca aggttagaga agattattca ttagagtgtg atccagccgt tattggaaca
+     2941 gctgctaagg gaaaggaggc tgtgcacagt gatctaggct actggattga gagtgagaag
+     3001 aatgacacat ggaggctgaa gagggcccac ctgatcgaga tgaaaacatg tgaatggcca
+     3061 aagtcccaca cattgtggac agatggaata gaagaaagtg atctgatcat acccaagtct
+     3121 ttagctgggc cactcagcca tcacaacacc agagagggct acaggactca aatgaaaggg
+     3181 ccatggcaca gtgaagagct tgaaattcgg tttgaggaat gcccaggcac taaggtccac
+     3241 gtggaggaaa catgtggaac aagaggacca tctctgagat caaccactgc aagcggaagg
+     3301 gtgatcgagg aatggtgctg cagggaatgc acaatgcccc cactgtcgtt ccgggctaaa
+     3361 gatggctgtt ggtatggaat ggagataagg cccaggaaag aaccagaaag taacttagta
+     3421 aggtcaatgg tgactgcagg atcaactgat cacatggatc acttctccct tggagtgctt
+     3481 gtgattctgc tcatggtgca ggaagggctg aagaagagaa tgaccacaaa gatcatcata
+     3541 agcacatcaa tggcagtgct ggtagctatg atcctgggag gattttcaat gagtgacctg
+     3601 gccaagcttg caattttgat gggtgccacc tttgcggaaa tgaacactgg aggagatgta
+     3661 gctcatctgg cgctgatagc ggcattcaaa gtcagacctg cgttgctggt atctttcatc
+     3721 ttcagagcta attggacacc ccgtgagagc atgctgctgg ccctggcttc gtgtcttctg
+     3781 caaactgcga tctccgcctt ggaaggcgac ctgatggttc tcatcaatgg ttttgctttg
+     3841 gcctggttgg caatacgagc gatggttgtt ccacgcactg acaacatcac cttggcaatc
+     3901 ctgactgcgc tgacaccact ggcccggggc acgctgcttg tggcgtggag agcaggcctt
+     3961 gctacttgcg gggggttcat gcttctctct ctgaagggga agggcagtgt gaagaagaac
+     4021 ctaccatttg tcatggcctt gggactcacc gctgtgaggc tggtcgaccc catcaacgtg
+     4081 gtgggactgc tgttgctcac aaggagtggg aagcggagct ggccccctag tgaagtactc
+     4141 acagctgttg gtctgatatg cgcgttggcc ggagggttcg ccaaggcgga tatagagatg
+     4201 gctgggccca tggccgcggt cggtctgcta attgtcagtt acgtggtctc aggaaagagt
+     4261 gtggacatgt acattgaaag agcaggtgac atcacatggg aaaaagatgc ggaagtcact
+     4321 ggaaacagtc cccggctcga tgtggcactg gatgagagtg gtgatttctc cctagtggag
+     4381 gatgatggtc cccccatgag agagatcata ctcaaagtgg tcctgatgac catctgtggc
+     4441 atgaacccaa tagccatacc ctttgcagct ggagcgtggt acgtgtatgt gaagactgga
+     4501 aaaaggagtg gtgctctatg ggatgtgcct gctcccaagg aagtaaaaaa gggggagacc
+     4561 acagatggag tgtacagagt aatgactcgt agactgcttg gttcaacaca agttggagtg
+     4621 ggagtcatgc aagagggggt cttccacact atgtggcacg tcacaaaagg atccgcgctg
+     4681 agaagcggtg aagggagact tgatccatac tggggagatg tcaagcagga tctggtgtca
+     4741 tattgtggtc cgtggaagct agacgccgcc tgggacgggc acagcgaggt gcagctcttg
+     4801 gccgtgcccc ccggagagag agcgaggaac atccagactc cgcccggaat atttaagaca
+     4861 aaggatgggg acattggagc agttgcgttg gactacccag caggaacttc aggatctcca
+     4921 atcctagaca agtgtgggag agtgatagga ctctatggta atggggtcgt gataaaaaat
+     4981 gggagttatg ttagtgccat cacccaaggg aggagggagg aagagactcc tgttgagtgc
+     5041 ttcgagcctt cgatgttgaa gaagaagcag ctaactgtct tagacctgca tcctggagct
+     5101 gggaaaacca ggagagttct tcctgaaata gtccgtgaag ccataaaaac aagactccgt
+     5161 actgtgatct tagctccaac cagggttgtc gctgctgaaa tggaggaagc ccttagaggg
+     5221 cttccagtgc gttatatgac aacagcagtc aatgtcaccc attctgggac agaaattgtt
+     5281 gacttaatgt gccatgccac cttcacttca cgtctactac aaccaatcag agtccccaac
+     5341 tataatctgt atattatgga cgaggcccac ttcacagatc cctcaagtat agcagcaaga
+     5401 ggatacattt caacaagggt tgagatgggc gaggcggccg ccatcttcat gaccgccacc
+     5461 ccaccaggaa cccgtgacgc attcccggac tccaactcac caattatgga caccgaagtg
+     5521 gaagtcccag agagagcctg gagctcaggc tttgattggg tgacggatca ttctggaaaa
+     5581 acagtttggt ttgttccaag cgtgaggaac ggcaatgaga tcgcagcttg tctgacaaag
+     5641 gctggaaaac gggtcataca gctcagcaga aagacttttg agacagagtt cctgaaaaca
+     5701 aaaaatcaag agtgggactt cgtcgtgaca actgacattt cagagatggg cgccaacttt
+     5761 aaagctgacc gtgtcataga ttccaggaga tgcctaaagc cggtcatact tgatggcgag
+     5821 agagtcattc tggctggacc catgcctgtc acacatgcca gcgctgccca gaggaggggg
+     5881 cgcataggca ggaatcccaa caaacctgga gatgagtatc tgtatggagg tgggtgcgca
+     5941 gagactgatg aagaccatgc acactggctt gaagcaagaa tgcttcttga caacatttac
+     6001 ctccaagatg gcctcatagc ctcgctctat cgacctgagg ccgacaaagt agcagctatt
+     6061 gagggagagt tcaagcttag gacggagcaa aggaagacct ttgtggaact catgaaaaga
+     6121 ggagatcttc ctgtttggct ggcctatcag gttgcatctg ccggaataac ctacacagat
+     6181 agaaaatggt gctttgatgg cacgaccaac aacaccataa tggaagacag tgtgccggca
+     6241 gaggtgtgga ccagatacgg agagaaaaga gtgctcaaac caaggtggat ggacgccaga
+     6301 gtttgttcag atcatgcggc cctgaagtca ttcaaagagt ttgccgctgg gaaaagagga
+     6361 gyggcctttg gagtgatgga agccctggga acattgccgg gacacatgac agagagattc
+     6421 caggaagcca ttgacaacct cgctgtgctc atgcgggcag agactggaag caggccttac
+     6481 gaagccgcgg cggcccaatt gccggagacc ttagagacca tcatgctttt ggggttgctg
+     6541 ggaacagtct cgctgggaat ctttttcgtc ttgatgcgga ataagggcat cgggaagatg
+     6601 ggctttggaa tggtgactct tggggccagc gcatggctta tgtggctctc ggaaattgag
+     6661 ccagccagaa ttgcatgtgt cctcattgtt gtgttcctat tgctggtggt gctcatacct
+     6721 gagccagaaa agcaaagatc tccccaggac aaccaaatgg caatcatcat catgatagca
+     6781 gtgggtcttc tgggtttgat taccgccaat gaacttggat ggttggaaag aacaaagagt
+     6841 gacctaagcc atctaatggg aaggagagag gagggggcaa ccataggatt ctcaatggac
+     6901 attgacctgc ggccagcctc agcttgggct atctatgctg ctctgacaac tttcatcacc
+     6961 ccagccgtcc aacatgcggt gaccacttca tacaacaact actccttaat ggcgatggcc
+     7021 acgcaagctg gagtgttgtt tggtatgggt aaagggatgc cattctacgc atgggacttt
+     7081 ggagtcccgc tgctaatgat gggttgctac tcacaattaa cacccctgac cctaatagtg
+     7141 gccatcattt tgctcgtggc gcactacatg tacttgatcc cagggctgca ggcagcagct
+     7201 gcgcgtgctg cccagaagag aacggcagct ggcatcatga agaaccctgt tgtggatgga
+     7261 atagtggtga ctgacattga cacaatgaca attgaccacc gagtggagaa aaagatggga
+     7321 caggtgctac tcatagcagt agccgtctcc agcgccatac tgtcgcggac cgcctggggg
+     7381 tggggggagg ctggggccct gatcacagct gcaacttcca ctttgtggga aggctctccg
+     7441 aacaagtact ggaactcctc cacagccact tcactgtgta acatttttag gggaagttac
+     7501 ttggctggag cttctctaat ctacacagta acaagaaacg ctggcttggt caagagacgt
+     7561 gggggtggaa cgggagagac cctgggagag aaatggaagg cccgcctgaa ccagatgtcg
+     7621 gccctagagt tctactccta caaaaagtca ggcatcaccg aggtgtgcag agaagaggcc
+     7681 cgccgcgccc tcaaggacgg tgtggcaaca ggaggccatg ctgtgtcccg aggaagtgca
+     7741 aagcttagat ggttggtgga gagaggatac ctgcagccct atggaaaggt cattgatctt
+     7801 ggatgtggca gagggggctg gagttactac gccgccacca tccgcaaagt tcaagaagtg
+     7861 aaaggataca caaaaggagg ccctggtcat gaagaaccca tgttggtgca aagctatggg
+     7921 tggaacatag tccgtcttaa gagtggggtg gacgtctttc atatggcggc tgagccgtgt
+     7981 gacactttgc tgtgtgatat aggtgagtca tcatctagtc ctgaagtgga agaagcacgg
+     8041 acgctcagag tcctttccat ggtgggggat tggcttgaaa aaagaccagg agccttttgt
+     8101 ataaaagtgt tgtgcccata caccagcact atgatggaaa ccctggagcg actgcagcgt
+     8161 aggtatgggg gaggactggt cagagtgcca ctctcccgca actctacaca tgagatgtac
+     8221 tgggtctctg gagcgaaaag caacaccata aaaagtgtgt ccaccacgag ccagctcctc
+     8281 ttggggcgca tggacgggcc caggaggcca gtgaaatatg aggaggatgt gaatctcggc
+     8341 tccggcacgc gggctgtggt aagctgcgct gaagctccca acatgaagat cattggtaac
+     8401 cgcattgaga ggatccgcag tgagcacgcg gaaacgtggt tctttgacga gaaccaccca
+     8461 tataggacat gggcttacca tggaagctat gaggccccta cacaagggtc agcgtcctct
+     8521 ctaataaacg gggttgtcag gctcctgtca aaaccctggg atgtggtgac tggagtcaca
+     8581 ggaatagcca tgaccgacac cacaccgtat ggtcagcaaa gagttttcaa ggaaaaagtg
+     8641 gacactaggg tgccagaccc ccaagaaggc actcgtcagg ttatgagcat ggtctcttcc
+     8701 tggttatgga aagagctagg caaacacaaa cggccacgag tctgtaccaa agaagagttc
+     8761 atcaacaagg ttcgtagcaa tgcagcatta ggggcaatat ttgaagagga aaaagagtgg
+     8821 aagactgcag tggaagctgt gaacgatcca aggttctggg ctctagtgga caaggaaaga
+     8881 gagcaccacc tgagaggaga gtgtcagagc tgtgtgtaca acatgatggg aaaaagagaa
+     8941 aagaaacaag gggaatttgg aaaggccaag ggcagccgcg ccatctggta tatgtggcta
+     9001 ggggctagat tcctggagtt cgaagccctt ggattcttga acgaggatca ctggatgggg
+     9061 agagagaatt caggaggtgg tgttgaaggg ctgggattac aaagactcgg atatgtccta
+     9121 gaagagatga gtcgcatacc aggaggaagg atgtatgctg atgacacagc tggctgggac
+     9181 acccgcatca gcaggtttga tctggagaat gaagctctaa tcaccaacca aatggagaaa
+     9241 gggcacaggg ccttggcatt ggccataatc aagtacacat accaaaacaa agtggtaaag
+     9301 gtcctcagac cagctgaaaa agggaagaca gttatggaca ttatttcaag acaagaccaa
+     9361 agggggagcg gacaagttgt cacttacgct cttaatacat tcaccaacct ggtggtgcag
+     9421 ctcattcgga atatggaggc tgaggaagtt ctagagatgc aagacttgtg gctgctgcgg
+     9481 aggtcagaga aagtgaccaa ctggttgcag agcaacggat gggataggct caaacgaatg
+     9541 gcagtcagtg gagatgattg cgttgtgaaa ccaattgatg ataggtttgc acatgccctc
+     9601 aggttcttga atgatatggg aaaagtcagg aaggacacac aagagtggaa accctcaact
+     9661 ggatgggaca attgggaaga agttccgttt tgctcccacc acttcaacaa gctccatctc
+     9721 aaggacggga ggtccattgt ggttccctgc cgccaccaag atgaactgat tggccgagcc
+     9781 cgcgtctcac caggggcggg atggagcatc cgggagactg cttgcctagc aaaatcatat
+     9841 gcgcaaatgt ggcagctcct ttatttccac agaagggacc tccgactgat ggccaatgcc
+     9901 atttgttcat ctgtgccagt tgactgggtt ccaactggga gaactacctg gtcaatccat
+     9961 ggaaagggag aatggatgac cactgaagac atgcttgtgg tgtggaacag agtgtggatt
+    10021 gaggagaacg accacatgga agacaagacc ccagttacga aatggacaga cattccctat
+    10081 ttgggaaaaa gggaagactt gtggtgtgga tctctcatag ggcacagacc gcgcactacc
+    10141 tgggctgaga acatcaaaaa cacagtcaac atgatgcgca ggatcatagg tgatgaagaa
+    10201 aagtacatgg actacctatc cacccaagtt cgctacttgg gtgaagaagg gtccacaccc
+    10261 ggagtgttgt aa
+//
+
+LOCUS       KF270887                 772 bp    RNA     linear   VRL 04-MAR-2014
+DEFINITION  Zika virus strain CCB-870 NS3 protein gene, partial cds.
+ACCESSION   KF270887
+VERSION     KF270887.1
+KEYWORDS    .
+SOURCE      Zika virus
+  ORGANISM  Zika virus
+            Viruses; Riboviria; Orthornavirae; Kitrinoviricota; Flasuviricetes;
+            Amarillovirales; Flaviviridae; Orthoflavivirus; Euflavivirus;
+            Orthoflavivirus zikaense.
+REFERENCE   1  (bases 1 to 772)
+  AUTHORS   Grard,G., Caron,M., Mombo,I.M., Nkoghe,D., Mboui Ondo,S.,
+            Jiolle,D., Fontenille,D., Paupy,C. and Leroy,E.M.
+  TITLE     Zika Virus in Gabon (Central Africa) - 2007: A New Threat from
+            Aedes albopictus?
+  JOURNAL   PLoS Negl Trop Dis 8 (2), E2681 (2014)
+   PUBMED   24516683
+REFERENCE   2  (bases 1 to 772)
+  AUTHORS   Grard,G., Caron,M. and Leroy,E.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (18-JUN-2013) Unite des Maladies Virales Emergentes,
+            Centre International de Recherches Medicales de Franceville, CIRMF,
+            Franceville BP769, Gabon
+COMMENT     ##Assembly-Data-START##
+            Sequencing Technology :: Sanger dideoxy sequencing
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..772
+                     /organism="Zika virus"
+                     /mol_type="genomic RNA"
+                     /strain="CCB-870"
+                     /host="Homo sapiens"
+                     /db_xref="taxon:64320"
+                     /geo_loc_name="Gabon"
+                     /collection_date="2007"
+     CDS             <1..>772
+                     /note="viral protease and helicase"
+                     /codon_start=2
+                     /product="NS3 protein"
+                     /protein_id="AHL16750.1"
+                     /translation="NGVVIKNGSYVSAITQGKREEETPVECFEPSMLRKKQLTVLDLH
+                     PGAGKTRRVLPEIVREAIKKRLRTVILAPTRVVAAEMEEALRGLPVRYMTTAVNVTHS
+                     GTEIVDLMCHATFTSRLLQPIRVPNYNLYIMDEAHFTDPSSIAARGYISTRVEMGEAA
+                     AIFMTATPPGTRDAFPDSNSPIMDTEVEVPERAWSSGFDWVTDHSGKTIWFVPSVRNG
+                     NEIAACLTKAGKRVIQLSRKTFETEFQKTKNQEWDFVIT"
+ORIGIN      
+        1 caatggagtt gtgatcaaga atgggagcta tgttagtgcc ataacccagg gaaaaaggga
+       61 ggaggagact ccggttgagt gctttgaacc ctcaatgctg aggaagaagc agctaacagt
+      121 cttggatctg catccaggag ccgggaaaac caggagggtt cttcctgaaa tagtccgtga
+      181 agccataaag aagagactcc gcacagtgat cttagcacca accagggttg ttgctgctga
+      241 gatggaggaa gccctgagag gacttccggt gcgttacatg acaacagcag tcaacgtcac
+      301 ccattctggg acagagatcg tggatttgat gtgccatgcc accttcacct cacgcctact
+      361 acaacccatc agagtcccca attacaacct ttatatcatg gatgaggctc atttcacaga
+      421 tccttcaagc atagctgcaa gaggatatat atcaacaagg gttgaaatgg gcgaggcagc
+      481 tgctatcttc atgaccgcta caccaccagg aacccgcgac gcgtttccag attccaactc
+      541 accaatcatg gacacagaag tggaagtccc agagagggcc tggagctcag gctttgactg
+      601 ggtgacggac cattctggaa aaacaatttg gtttgttcca agcgtgagga atggaaatga
+      661 aatcgcagcc tgtctgacaa aggcgggaaa gcgggttata cagctcagca ggaaaacttt
+      721 tgagacagag tttcagaaga caaaaaatca agagtgggac tttgtcataa ca
+//
+
+LOCUS       KF383106                 708 bp    RNA     linear   VRL 15-MAR-2014
+DEFINITION  Zika virus strain ArA27443 nonstructural protein 5 gene, partial
+            cds.
+ACCESSION   KF383106
+VERSION     KF383106.1
+KEYWORDS    .
+SOURCE      Zika virus
+  ORGANISM  Zika virus
+            Viruses; Riboviria; Orthornavirae; Kitrinoviricota; Flasuviricetes;
+            Amarillovirales; Flaviviridae; Orthoflavivirus; Euflavivirus;
+            Orthoflavivirus zikaense.
+REFERENCE   1  (bases 1 to 708)
+  AUTHORS   Faye,O., Freire,C.C., Iamarino,A., Faye,O., de Oliveira,J.V.,
+            Diallo,M., Zanotto,P.M. and Sall,A.A.
+  TITLE     Molecular evolution of Zika virus during its emergence in the
+            20(th) century
+  JOURNAL   PLoS Negl Trop Dis 8 (1), E2636 (2014)
+   PUBMED   24421913
+REFERENCE   2  (bases 1 to 708)
+  AUTHORS   Faye,O., Freire,C.C.M., Chen,R., Iamarino,A., Faye,O.,
+            Oliveira,J.V.C., Diallo,M., Weaver,S.C., Zanotto,P.M.A. and
+            Sall,A.A.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (28-JUN-2013) Microbiology, University of Sao Paulo,
+            Lineu Prestes Ave, Sao Paulo, Sao Paulo 05508-000, Brazil
+COMMENT     ##Assembly-Data-START##
+            Sequencing Technology :: Sanger dideoxy sequencing
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..708
+                     /organism="Zika virus"
+                     /mol_type="genomic RNA"
+                     /strain="ArA27443"
+                     /db_xref="taxon:64320"
+                     /geo_loc_name="Cote d'Ivoire"
+                     /collection_date="1990"
+     CDS             <1..>708
+                     /note="NS5"
+                     /codon_start=1
+                     /product="nonstructural protein 5"
+                     /protein_id="AHL43491.1"
+                     /translation="RFLEFEALGFLNEDHWMGRENSGGGVEGLGLQRLGYILEEMNRA
+                     PGGKMYADDTAGWDTRISKFDLENEALITNQMEEGHRALALAVIKYTYQNKVVKVLRP
+                     AEGGKTVMDIISRQDQRGSGQVVTYALNTFTNLVVQLIRSMEAEEVLEMHDLWLLRKP
+                     EKVTRWLQSNGWDRLKRMAVSGDDCVVKPIDDRFAHALRFLNDMGKVRKDTQEWKPST
+                     GWSNWEEVPFCSHHFNKL"
+ORIGIN      
+        1 agatttttgg agtttgaagc tcttggattc ttgaacgagg accactggat gggaagagaa
+       61 aactcaggag gtggcgttga agggctagga ctgcaaaggc ttggatatat cctagaagaa
+      121 atgaaccggg caccaggagg aaagatgtat gcagatgaca ccgctggctg ggacacccgc
+      181 attagcaagt ttgatctgga gaatgaagcc ctgattacta accagatgga agaagggcat
+      241 agagctctgg cgttggccgt gattaaatac acataccaaa acaaagtggt gaaggttctc
+      301 agaccagctg aaggagggaa aacagtcatg gacatcatct caagacaaga ccaaagaggg
+      361 agcggacaag ttgttactta tgctctcaac acattcacca acctggtggt gcagctcatc
+      421 cggagcatgg aggctgagga agtgctagag atgcatgatc tatggttgtt gaggaagcca
+      481 gagaaagtga ccagatggtt gcagagtaat ggatgggaca gactcaaacg gatggcagtc
+      541 agtggagatg actgcgttgt gaagccaatt gatgataggt ttgcacatgc cctcaggttc
+      601 ttgaatgaca tgggaaaggt taggaaagac acacaggaat ggaaaccctc gactggatgg
+      661 agcaattggg aagaggtccc gttctgttct caccacttca acaagctg
+//
+
+LOCUS       KF383114                 708 bp    RNA     linear   VRL 15-MAR-2014
+DEFINITION  Zika virus strain AnD30332 nonstructural protein 5 gene, partial
+            cds.
+ACCESSION   KF383114
+VERSION     KF383114.1
+KEYWORDS    .
+SOURCE      Zika virus
+  ORGANISM  Zika virus
+            Viruses; Riboviria; Orthornavirae; Kitrinoviricota; Flasuviricetes;
+            Amarillovirales; Flaviviridae; Orthoflavivirus; Euflavivirus;
+            Orthoflavivirus zikaense.
+REFERENCE   1  (bases 1 to 708)
+  AUTHORS   Faye,O., Freire,C.C., Iamarino,A., Faye,O., de Oliveira,J.V.,
+            Diallo,M., Zanotto,P.M. and Sall,A.A.
+  TITLE     Molecular evolution of Zika virus during its emergence in the
+            20(th) century
+  JOURNAL   PLoS Negl Trop Dis 8 (1), E2636 (2014)
+   PUBMED   24421913
+REFERENCE   2  (bases 1 to 708)
+  AUTHORS   Faye,O., Freire,C.C.M., Chen,R., Iamarino,A., Faye,O.,
+            Oliveira,J.V.C., Diallo,M., Weaver,S.C., Zanotto,P.M.A. and
+            Sall,A.A.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (28-JUN-2013) Microbiology, University of Sao Paulo,
+            Lineu Prestes Ave, Sao Paulo, Sao Paulo 05508-000, Brazil
+COMMENT     ##Assembly-Data-START##
+            Sequencing Technology :: Sanger dideoxy sequencing
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..708
+                     /organism="Zika virus"
+                     /mol_type="genomic RNA"
+                     /strain="AnD30332"
+                     /db_xref="taxon:64320"
+                     /geo_loc_name="Senegal"
+                     /collection_date="1979"
+     CDS             <1..>708
+                     /note="NS5"
+                     /codon_start=1
+                     /product="nonstructural protein 5"
+                     /protein_id="AHL43499.1"
+                     /translation="RFLEFEALGFLNEDHWMGRENSGGGVEGLGLQRLGYILEEMNRA
+                     PGGKMYADDTAGWDTRISKFDLENEALITNQMEEEHRALALAVIKYTYQNKVVKVLRP
+                     AEGGKTVMDIISRQDQRGSGQVVTYALNTFTNLVVQLIRNMEAEEVLEMHDLWLLRKP
+                     EKVTRWLQSNGWDRLKRMAVSGDDCVVKPIDDRFAHALRFLNDMGKVRKDTQEWKPST
+                     GWSNWEEVPFCSHHFNKL"
+ORIGIN      
+        1 agatttttgg agtttgaagc tcttggattc ttgaacgagg accattggat ggggagagaa
+       61 aactcaggag gtggcgttga agggctagga ctgcaaaggc ttggatatat cctagaagaa
+      121 atgaaccggg caccaggagg aaagatgtat gcagatgaca ccgctggctg ggacacccgc
+      181 attagcaagt ttgatctaga gaatgaagcc ctgatcacta accagatgga agaagagcac
+      241 agagctctgg cgttggccgt gattaaatac acataccaaa acaaagtggt gaaggttctc
+      301 agaccagctg aaggagggaa aacagtcatg gacatcatct caagacaaga ccagagaggg
+      361 agcggacaag ttgttactta tgctctcaac acattcacca acctggtggt gcagcttatc
+      421 cggaacatgg aggctgagga agtgctagag atgcatgatc tgtggttgtt gaggaagcca
+      481 gagaaagtga ccagatggtt gcagagcaat ggatgggaca gactcaaacg gatggcagtt
+      541 agtggagatg actgcgttgt aaagccaatt gatgataggt ttgcacatgc cctcaggttc
+      601 ttgaatgaca tgggaaaggt taggaaagac acacaggaat ggaaaccctc gactggatgg
+      661 agcaattggg aagaggtccc gttctgttct caccacttca acaagctg
+//
+
+LOCUS       KF383085                 708 bp    RNA     linear   VRL 15-MAR-2014
+DEFINITION  Zika virus strain ArD9957 nonstructural protein 5 gene, partial
+            cds.
+ACCESSION   KF383085
+VERSION     KF383085.1
+KEYWORDS    .
+SOURCE      Zika virus
+  ORGANISM  Zika virus
+            Viruses; Riboviria; Orthornavirae; Kitrinoviricota; Flasuviricetes;
+            Amarillovirales; Flaviviridae; Orthoflavivirus; Euflavivirus;
+            Orthoflavivirus zikaense.
+REFERENCE   1  (bases 1 to 708)
+  AUTHORS   Faye,O., Freire,C.C., Iamarino,A., Faye,O., de Oliveira,J.V.,
+            Diallo,M., Zanotto,P.M. and Sall,A.A.
+  TITLE     Molecular evolution of Zika virus during its emergence in the
+            20(th) century
+  JOURNAL   PLoS Negl Trop Dis 8 (1), E2636 (2014)
+   PUBMED   24421913
+REFERENCE   2  (bases 1 to 708)
+  AUTHORS   Faye,O., Freire,C.C.M., Chen,R., Iamarino,A., Faye,O.,
+            Oliveira,J.V.C., Diallo,M., Weaver,S.C., Zanotto,P.M.A. and
+            Sall,A.A.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (28-JUN-2013) Microbiology, University of Sao Paulo,
+            Lineu Prestes Ave, Sao Paulo, Sao Paulo 05508-000, Brazil
+COMMENT     ##Assembly-Data-START##
+            Sequencing Technology :: Sanger dideoxy sequencing
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..708
+                     /organism="Zika virus"
+                     /mol_type="genomic RNA"
+                     /strain="ArD9957"
+                     /db_xref="taxon:64320"
+                     /geo_loc_name="Senegal"
+                     /collection_date="1969"
+     CDS             <1..>708
+                     /note="NS5"
+                     /codon_start=1
+                     /product="nonstructural protein 5"
+                     /protein_id="AHL43470.1"
+                     /translation="RFLEFEALGFLNEDHWMGRENSGGGVEGLGLQRLGYILEEMNRA
+                     PGGKMYADDTAGWDTRISKFDLENEALITNQMEEGHRALALAVIKYTYQNKVVKVLRP
+                     AEGGKTVMDIISRQDQRGSGQVVTYALNTFTNLVVQLIRNMEAEEVLEMHDLWLLRKP
+                     EKVTRWLQSNGWDRLKRMAVSGDDCVVKPIDDRFAHALRFLNDMGKVRKDTQEWKPST
+                     GWNNWEEVPFCSHHFNKL"
+ORIGIN      
+        1 agatttttgg agtttgaagc tcttggattc ttgaacgagg accactggat gggaagagaa
+       61 aactcaggag gtggcgttga agggctagga ctgcaaaggc ttggatatat cctagaagaa
+      121 atgaaccggg caccaggagg aaagatgtat gcagatgaca ccgctggctg ggacacccgc
+      181 attagcaagt ttgatctaga gaatgaagcc ctgatcacta accagatgga agaagggcac
+      241 agagctctgg cgttggccgt gattaaatac acataccaaa acaaagtggt gaaggttctc
+      301 agaccagctg aaggagggaa aacagtcatg gacatcatct caagacaaga ccagagaggg
+      361 agcggacaag ttgttactta tgctctcaac acattcacca acctggtggt gcagcttatc
+      421 cggaacatgg aggctgagga agtgctagag atgcatgatc tgtggttgtt gaggaagcca
+      481 gagaaagtga ccagatggtt gcagagcaat ggatgggaca gactcaaacg gatggcagtt
+      541 agtggagatg actgcgttgt aaagccaatt gatgataggt ttgcacatgc cctcaggttc
+      601 ttgaatgaca tgggaaaggt taggaaagac acacaggaat ggaaaccctc gactggatgg
+      661 aacaattggg aagaggtccc gttctgttct caccacttca acaagctg
+//
+
+LOCUS       KF383086                 708 bp    RNA     linear   VRL 15-MAR-2014
+DEFINITION  Zika virus strain ArA975 nonstructural protein 5 gene, partial cds.
+ACCESSION   KF383086
+VERSION     KF383086.1
+KEYWORDS    .
+SOURCE      Zika virus
+  ORGANISM  Zika virus
+            Viruses; Riboviria; Orthornavirae; Kitrinoviricota; Flasuviricetes;
+            Amarillovirales; Flaviviridae; Orthoflavivirus; Euflavivirus;
+            Orthoflavivirus zikaense.
+REFERENCE   1  (bases 1 to 708)
+  AUTHORS   Faye,O., Freire,C.C., Iamarino,A., Faye,O., de Oliveira,J.V.,
+            Diallo,M., Zanotto,P.M. and Sall,A.A.
+  TITLE     Molecular evolution of Zika virus during its emergence in the
+            20(th) century
+  JOURNAL   PLoS Negl Trop Dis 8 (1), E2636 (2014)
+   PUBMED   24421913
+REFERENCE   2  (bases 1 to 708)
+  AUTHORS   Faye,O., Freire,C.C.M., Chen,R., Iamarino,A., Faye,O.,
+            Oliveira,J.V.C., Diallo,M., Weaver,S.C., Zanotto,P.M.A. and
+            Sall,A.A.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (28-JUN-2013) Microbiology, University of Sao Paulo,
+            Lineu Prestes Ave, Sao Paulo, Sao Paulo 05508-000, Brazil
+COMMENT     ##Assembly-Data-START##
+            Sequencing Technology :: Sanger dideoxy sequencing
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..708
+                     /organism="Zika virus"
+                     /mol_type="genomic RNA"
+                     /strain="ArA975"
+                     /db_xref="taxon:64320"
+                     /geo_loc_name="Cote d'Ivoire"
+                     /collection_date="1999"
+     CDS             <1..>708
+                     /note="NS5"
+                     /codon_start=1
+                     /product="nonstructural protein 5"
+                     /protein_id="AHL43471.1"
+                     /translation="RFLEFEALGFLNEDHWMGRENSGGGVEGLGLQRLGYILEEMNRA
+                     PGGKMYADDTAGWDTRISKFDLENEALITNQMEEGHRTLALAVIKYTYQNKVVKVLRP
+                     AEGGKTVMDIISRQDQRGSGQVVTYALNTFTNLVVQLIRNMEAEEVLEMQDLWLLRKP
+                     EKVTRWLQSNGWDRLKRMAVSGDDCVVKPIDDRFAHALRFLNDMGKVRKDTQEWKPST
+                     GWSNWEEVPFCSHHFNKL"
+ORIGIN      
+        1 agattcttgg agtttgaagc ccttggattc ttgaacgagg accattggat gggaagagaa
+       61 aactcaggag gtggagtcga agggttagga ttgcaaagac ttggatacat tctagaagaa
+      121 atgaatcggg caccaggagg aaagatgtac gcagatgaca ctgctggctg ggacacccgc
+      181 attagtaagt ttgatctgga gaatgaagct ttgattacca accaaatgga ggaagggcac
+      241 agaactctgg cgttggccgt gattaaatac acataccaaa acaaagtggt gaaggtcctc
+      301 agaccagctg aaggaggaaa aacagttatg gacatcattt caagacaaga ccagagaggg
+      361 agtggacaag ttgtcactta tgctctcaac acattcacca acttggtggt gcagcttatc
+      421 cggaacatgg aagctgagga agtgttagag atgcaagact tatggctgtt gaggaagcca
+      481 gagaaagtga ccagatggtt gcagagcaat ggatgggata gactcaaacg aatggcggtc
+      541 agtggagatg actgcgttgt gaagccaatc gatgataggt ttgcacatgc cctcaggttc
+      601 ttgaatgaca tgggaaaagt taggaaagac acacaggagt ggaaaccctc aactggatgg
+      661 agcaattggg aagaggttcc cttctgctcc caccacttca acaagctg
+//
+
+LOCUS       KF268948               10788 bp    RNA     linear   VRL 21-DEC-2015
+DEFINITION  Zika virus isolate ARB13565 polyprotein gene, complete cds.
+ACCESSION   KF268948
+VERSION     KF268948.1
+KEYWORDS    .
+SOURCE      Zika virus
+  ORGANISM  Zika virus
+            Viruses; Riboviria; Orthornavirae; Kitrinoviricota; Flasuviricetes;
+            Amarillovirales; Flaviviridae; Orthoflavivirus; Euflavivirus;
+            Orthoflavivirus zikaense.
+REFERENCE   1  (bases 1 to 10788)
+  AUTHORS   Berthet,N., Nakoune,E., Kamgang,B., Selekon,B.,
+            Descorps-Declere,S., Gessain,A., Manuguerra,J.C. and Kazanji,M.
+  TITLE     Molecular characterization of three Zika flaviviruses obtained from
+            sylvatic mosquitoes in the Central African Republic
+  JOURNAL   Vector Borne Zoonotic Dis. 14 (12), 862-865 (2014)
+   PUBMED   25514122
+REFERENCE   2  (bases 1 to 10788)
+  AUTHORS   Berthet,N., Nakoune,E., Selekon,B., Descorps-Declere,S.,
+            Gessain,A., Manuguerra,J.-C. and Kazanji,M.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (19-JUN-2013) Department of Virology, Institut Pasteur,
+            28 rue du docteur Roux, Paris, IDF 75724, France
+COMMENT     ##Assembly-Data-START##
+            Assembly Method       :: CAP3 v. v1
+            Sequencing Technology :: Illumina
+            ##Assembly-Data-END##
+FEATURES             Location/Qualifiers
+     source          1..10788
+                     /organism="Zika virus"
+                     /mol_type="genomic RNA"
+                     /isolate="ARB13565"
+                     /host="Aedes africanus"
+                     /db_xref="taxon:64320"
+                     /geo_loc_name="Central African Republic"
+                     /collection_date="1976"
+     CDS             107..10375
+                     /codon_start=1
+                     /product="polyprotein"
+                     /protein_id="AHF49783.1"
+                     /translation="MKNPKKKSGGFRIVNMLKRGVARVNPLGGLKRLPAGLLLGHGPI
+                     RMVLAILAFLRFTAIKPSLGLINRWGSVGKKEAMEIIKKFKKDLAAMLRIINARKERK
+                     RRGADTSIGIIGLLLTTAMAAEITRRGSAYYMYLDRSDAGKAISFATNLGVNKCHVQI
+                     MDLGHMCDATMSYECPMLDEGVEPDDVDCWCNTTSTWVVYGTCHHKKGEARRSRRAVT
+                     LPSHSTRKLQTRSQTWLESREYTKHLIKVENWIFRNPGFALAAVAIAWLLGSSTSQKV
+                     IYLVMILLIAPAYSIRCIGVSNRDFVEGMSGGTWVDVVLEHGGCVTVMAQDKPTVDIE
+                     LVTTTVSNMAEVRSYCYEASISDMASDSRCPTQGEAYLDKQSDTQYVCKRTLVDRGWG
+                     NGCGLFGKGSLVTCAKFTCSKKMTGKSIQPENLEYRIMLSVHGSQHSGMIVNDIGHET
+                     DENRAKVEVTPNSPRAEATLGGFGSLGLDCEPRTGLDFSDLYYLTMNNKHWLVHKEWF
+                     HDIPLPWHAGADTGTPHWNNKEALVEFKDAHAKRQTVVVLGSQEGAVHTALAGALEAE
+                     MDGAKGRLFSGHLKCRLKMDKLRLKGVSYSLCTAAFTFTKVPAETLHGTVTVEVQYAG
+                     TDGPCKVPAQMAVDMQTLTPVGRLITANPVITESTENSKMMLELDPPFGDSYIVIGVG
+                     DKKITHHWHRSGSTIGKAFEATVRGAKRMAVLGDTAWDFGSVGGVFNSLGKGVHQIFG
+                     AAFKSLFGGMSWFSQILIGTLLVWLGLNTKNGSISLTCLALGGVMIFLSTAVSADVGC
+                     SVDFSKRETRCGTGVFVYNDVEAWRDRYKYHPDSPRRLAAAVKQAWEEGICGISSVSR
+                     MENIMWKSVEGELNAILEENGVQLTVVVGSVKNPMWRGPQRLPVPVNELPHGWKAWGK
+                     SYFVRAAKTNNSFVVDGDTLKECPLKHRAWNSFLVEDHGFGVFHTSVWLKVREDYSLE
+                     CDPAVIGTAVKGKEAAHSDLGYWIESEKNDTWRLKRAHLIEMKTCEWPKSHTLWTDGV
+                     EESDLIIPKSLAGPLSHHNTREGYRTQAKGPWHSEELEIRFEECPGTKVHVEETCGTR
+                     GPSLRSTTASGRVIEEWCCRECTMPPLSFRAKDGCWYGMEIRPRKEPESNLVRSMVTA
+                     GSTDHMDHFSLGVLVILLMVQEGLKKRMTTKIIMSTSMAVLVAMILGGFLMSDLAKLV
+                     ILMGATFAEMNTGGDVAHLALVAAFKVRPALLVSFIFRANWTPRESMLLALASCLLQT
+                     AISALEGDLMVLVNGFALAWLAIRAMAVPRTDNIALAILAALTPLARGTLLVAWRAGL
+                     ATCGGFMLLSLKGKGSVKKNLPFVMALGLTAVRIVDPINVVGLLLLTRSGKRSWPPSE
+                     VLTAVGLICALAGGFAKADIEMAGPMAAVGLLIVSYVVSGKSVDMYIERAGDITWEKD
+                     AEVTGNSPRLDVALDESGDFSLVEEDGPPMREIILKVVLMAICGMNPIAIPFAAGAWY
+                     VYVKTGKRSGALWDVPAPKEVKKGETTDGVYRVMTRRLLGSTQVGVGVMQEGVFHTMW
+                     HVTKGAALRSGEGRLDPYWGDVKQDLVSYCGPWKLDAAWDGLSEVQLLAVPPGERARN
+                     IQTLPGIFKTKDGDIGAVALDYPAGTSGSPILDKCGRVIGLYGNGVVIKNGSYVSAIT
+                     QGKREEETPVECFEPSMLKKKQLTVLDLHPGAGKTRRVLPEIVREAIKKRLRTVILAP
+                     TRVVAAEMEEALRGLPVRYMTTAVNVTHSGTEIVDLMCHATFTSRLLQPIRVPNYNLY
+                     IMDEAHFTDPSSIAARGYISTRVEMGEAAAIFMTATPPGTRDAFPDSNSPIMDTEVEV
+                     PERAWSSGFDWVTDHSGKTVWFVPSVRNGNEIAACLTKAGKRVIQLSRKTFETEFQKT
+                     KNQEWDFVITTDISEMGANFKADRVIDSRRCLKPVILDGERVILAGPMPVTHASAAQR
+                     RGRIGRNPNKPGDEYMYGGGCAETDEDHAHWLEARMLLDNIYLQDGLIASLYRPEADK
+                     VAAIEGEFKLRTEQRKTFVELMKRGDLPVWLAYQVASAGITYTDRRWCFDGTTNNTIM
+                     EDSVPAEVWTKYGEKRVLKPRWMDARVCSDHAALKSFKEFAAGKRGVALGVMEALGTL
+                     PGHMTERFQEAIDNLAVLMRAETGSRPYKAAAAQLPETLETIMLLGLLGTVSLGIFFV
+                     LMRNKGIGKMGFGMVTLGASAWLMWLSEIEPARIACVLIVVFLLLVVLIPEPEKQRSP
+                     QDNQMAIIIMVAVGLLGLITANELGWLERTKNDIAHLMGRREEGVTMGFSMDIDLRPA
+                     SAWAIYAALTTLITPAVQHAVTTSYNNYSLMAMATQAGVLFGMGKGMPFYAWDFGVPL
+                     LMMGCYSQLTPLTLIVAIILLVAHYMYLIPGLQAAAARAAQKRTAAGIMKNPVVDGIV
+                     VTDIDTMTIDPQVEKKMGQVLLIAVAISSAVLLRTAWGWGEAGALITAATSTLWEGSP
+                     NKYWNSSTATSLCNIFRGSYLAGASLIYTVTRNAGLVKRRGGGTGETLGEKWKARLNQ
+                     MSALEFYSYKKSGITEVCREEARRALKDGVATGGHAVSRGSAKLRWLVERGYLQPHGK
+                     VVDLGCGRGGWSYYAATIRKVQEVKGYTKGGPGHEEPMLVQSYGWNIVRLKSGVDVFH
+                     MAAEPCDTLLCDIGESSSSPEVEETRTLRVLSMVGDWLEKRPGAFCIKVLCPYTSTMM
+                     ETMERLQRRYGGGLVRVPLSRNSTHEMYWVSGAKSNVIKSVSTTSQLLLGRMDGPRRP
+                     VKYEEDVNLGSGTRAVASCAEAPNMKVIGKRIERIRSEHAETWFFDENHPYRTWAYHG
+                     SYEAPTQGSASSLVNGVVRLLSKPWDVVTGVTGIAMTDTTPYGQQRVFKEKVDTRVPD
+                     PQEGTRQAMNMVSSWLWKELGKRKRPRVCTKEEFINKVRSNAALGAIFEEEKEWKTAV
+                     EAVNDPRFWALVDKEREHHLRGECHSCVYNMMGKREKKQGEFGKAKGSRAIWYMWLGA
+                     RFLEFEALGFLNEDHWMGRENSGGGVEGLGLQRLGYILEEMNRAPGGKMYADDTAGWD
+                     TRISKFDLENEALITNQMEEGHRALALAVIKYTKNKVVKVLRPAEGGKTVMDIISRQD
+                     QRGSGQVVTYALNTFTNLVVQLIRNMEAEEVLEMQDLWLLRKPEKVTRWLQCNGWDRL
+                     KRMAVSGDDCVVKPIDDRFAHALRFLNDMGKVRKDTQEWKPSTGWSNWEEVPFCSHHF
+                     NKLHLKDGRSIVVPCRHQDELIGRARVSPGAGWSIRETACLAKSYAQMWQLLYFHRRD
+                     LRLMANAICSAVPVDWVPTGRTTWSIHGKGEWMTTEDMLMVWNRVWIEENDHMEDKTP
+                     VTKWTDIPYLGKREDLWCGSLIGHRPRTTWAENIKDTVNMVRRIIGDEEKYMDYLSTQ
+                     VRYLGEEGSTPGVL"
+ORIGIN      
+        1 agttgttgat ctgtgtgaat cagactgcga cagttcgagt ttgaagcgag agctaacaac
+       61 agtatcaaca ggtttaattt ggatttggaa gcgagagttt ctggtcatga aaaacccaaa
+      121 gaagaaatcc ggaggattcc ggattgtcaa tatgctaaaa cgcggagtag cccgtgtaaa
+      181 ccccttggga ggtttgaaga ggctgccagc cggacttctg ctgggtcatg gacccatcag
+      241 aatggttttg gcaatactag cctttttgag atttacagca atcaagccat cactgggcct
+      301 catcaacaga tggggttctg tggggaaaaa agaggctatg gaaataataa agaagtttaa
+      361 gaaagatctt gctgccatgt tgagaataat caatgctagg aaggagagga agagacgtgg
+      421 tgcagacacc agcatcggaa tcattggtct cctgctgact acagccatgg cagcggagat
+      481 taccagacgt ggaagtgcat actacatgta cttggacagg agcgatgctg ggaaggccat
+      541 ctcctttgct accaacttgg gagttaacaa atgccatgta cagatcatgg atctcgggca
+      601 catgtgtgac gccaccatga gttatgagtg ccctatgttg gacgagggag tggaaccaga
+      661 tgatgtcgat tgctggtgca acacgacatc aacttgggtt gtgtacggaa cctgtcatca
+      721 caaaaaaggt gaagcacggc gatctagaag agctgtgacg ctcccttctc actctacaag
+      781 gaagttgcaa acgcggtcgc agacctggtt agaatcaaga gaatacacga agcacctgat
+      841 caaggttgaa aactggatat ttaggaaccc cgggtttgcg ctcgcagctg ttgccattgc
+      901 ctggcttttg ggaagctcga cgagccaaaa agtcatatac ttggttatga tactgctgat
+      961 tgccccggca tacagcatca ggtgcattgg agtcagcaat agagacttcg tggaaggcat
+     1021 gtcaggtggg acctgggttg atgtcgtctt ggaacatgga ggttgcgtca ccgttatggc
+     1081 acaggacaag ccaacagttg acatagagtt ggtcacgaca acggttagta acatggccga
+     1141 ggtaagatcc tactgttatg aggcatcaat atcagacatg gcttcggaca gtcgctgccc
+     1201 aacacaaggt gaagcctacc ttgataagca atcagacacc caatatgtgt gcaaaagaac
+     1261 attggtggac agaggttggg gaaatgggtg tggacttttt ggcaaaggga gcctggtgac
+     1321 atgtgccaag ttcacgtgtt ccaagaagat gactgggaag agcattcagc cggagaatct
+     1381 ggagtatcga ataatgctat cagtgcatgg ctcccagcac agcgggatga ttgttaatga
+     1441 cataggacat gaaactgacg aaaacagagc gaaagtcgag gtcacgccca attcaccaag
+     1501 agcagaagca accttgggag gctttggaag cttaggactt gattgtgaac caaggacagg
+     1561 cctggacttt tcagatttgt actacttgac catgaacaac aagcactggt tggtgcacaa
+     1621 agagtggttt catgacatcc cattgccttg gcatgctggg gcagataccg gaactccaca
+     1681 ctggaacaac aaggaggcat tggtagagtt caaagatgcc cacgccaaga ggcaaaccgt
+     1741 cgttgttcta gggagccagg aaggagccgt tcacacggct cttgctggag ctctggaggc
+     1801 tgagatggat ggtgcaaaag gaaggctgtt ctccggccat ttgaaatgcc gcttaaaaat
+     1861 ggacaagctt agattgaagg gcgtgtcata ttccttgtgc accgcagcgt tcacatttac
+     1921 caaggtccca gctgaaacat tgcatggaac agttacagtg gaggtgcagt atgcagggac
+     1981 agatggaccc tgcaaggtcc cagcccagat ggcggtggac atgcagaccc tgaccccagt
+     2041 cgggaggctg ataaccgcca accctgtgat tactgaaagc actgagaatt caaagatgat
+     2101 gttggagctc gacccaccat ttggggattc ttacattgtc ataggagttg gggacaagaa
+     2161 aatcacccat cactggcata ggagtggtag caccatcgga aaagcatttg aggccactgt
+     2221 gagaggtgcc aagagaatgg cagttctggg ggatacagcc tgggacttcg gatcagtcgg
+     2281 gggcgtgttc aactcattgg gcaagggtgt tcaccagatt tttggagcag ctttcaaatc
+     2341 actgtttgga ggaatgtcct ggttctcaca gatcctcata ggcacgctgc tggtgtggtt
+     2401 gggtttgaac acaaagaatg gatccatctc cctcacatgc ttggccctgg ggggagtgat
+     2461 gatcttcctc tccacggctg tctctgctga cgtggggtgc tcggtggact tctcaaaaag
+     2521 agaaacgaga tgtggcacgg gggtgttcgt ctacaatgat gttgaagcct ggagggacag
+     2581 gtacaagtac catcctgact ccccccgcag attggcagca gcagtcaagc aggcttggga
+     2641 agaggggatt tgtgggatct cctccgtttc aagaatggaa aacatcatgt ggaaatcagt
+     2701 ggaaggggag ctcaatgcta tcttagagga gaatggagtt caactgacag ttgttgtagg
+     2761 atctgtaaaa aaccccatgt ggagaggccc acaaagattg ccagtgcctg tgaatgagct
+     2821 gccccatggc tggaaagcct gggggaaatc atattttgtc agagcggcaa agaccaacaa
+     2881 cagttttgtt gtcgatggtg acacactgaa ggaatgtccg ctcaaacaca gagcatggaa
+     2941 tagtttcctt gtggaggatc atgggtttgg ggtcttccac accagtgttt ggctcaaggt
+     3001 tagagaagac tactcactag aatgtgaccc agccgtcata ggaacagctg ttaagggaaa
+     3061 ggaggccgcc cacagtgacc tgggctactg gattgaaagt gaaaagaatg acacatggag
+     3121 gctgaagagg gcccatctga ttgagatgaa aacatgtgag tggccaaagt ctcacactct
+     3181 gtggacagat ggagtagaag aaagtgatct gatcatacct aaatctttag ctggtccact
+     3241 cagccaccac aacactagag agggttacag aactcaagca aaagggccat ggcatagtga
+     3301 agagcttgaa atccggtttg aggaatgtcc aggcaccaag gttcacgtgg aggagacatg
+     3361 cggaactaga ggaccatctc tgagatcaac cactgcaagt ggaagggtca ttgaggaatg
+     3421 gtgctgtaga gaatgcacaa tgcccccact atcgtttcga gcaaaagacg gctgctggta
+     3481 tggaatggag ataaggccca ggaaagaacc agagagcaac ttagtgaggt caatggtgac
+     3541 agcgggatca accgatcaca tggaccactt ctctcttgga gtgcttgtga ttctactcat
+     3601 ggtgcaggaa gggctgaaga agagaatgac cacaaagatc attatgagca catcaatggc
+     3661 agtgctggtg gccatgatcc tgggaggatt tttaatgagt gacttggcta agcttgtgat
+     3721 cctgatgggt gccaccttcg cagaaatgaa cactggagga gatgtggctc acttggcatt
+     3781 ggttgcggca tttaaagtca gaccagcctt gctggtctcc tttattttca gagctaattg
+     3841 gacacctcgt gagagcatgc tgctagccct ggcttcgtgt cttttgcaaa ctgcaatctc
+     3901 tgctctcgaa ggtgacttga tggtcctcgt caatggattt gctttggcct ggttggcaat
+     3961 acgagcaatg gccgtgccac gcactgacaa cattgctctg gcaatcctgg ctgctctgac
+     4021 accactagcc cgaggtacac tgctcgtggc atggagagcg ggcctcgcta cttgtggagg
+     4081 gtttatgctc ctctccctga aagggaaagg tagtgtgaag aagaacctgc catttgtcat
+     4141 ggccttggga ttgactgctg tgaggatagt agaccccatt aatgtggtgg gactactgtt
+     4201 actcacaagg agtgggaagc ggagctggcc ccctagtgaa gtgcttacag ctgttggcct
+     4261 gatatgtgca ctggccggag gctttgccaa ggcagacatt gagatggctg ggcccatggc
+     4321 tgcagtaggc ttgctgattg tcagttatgt ggtctcagga aagagtgtgg atatgtacat
+     4381 tgaaagagca ggtgacatca catgggaaaa ggacgcggaa gttactggaa atagtcctcg
+     4441 gcttgacgtg gcactagatg agagtggtga tttctctctg gtggaggaag atggtccacc
+     4501 catgagagag atcatactca aggtggtcct gatggccatc tgtggcatga acccaatagc
+     4561 catacccttt gctgcaggag cgtggtatgt gtatgtgaag actggaaaaa ggagtggtgc
+     4621 cctctgggat gtgcccgctc ccaaagaagt gaaaaaagga gagaccacag atggggtata
+     4681 cagagtgatg acccgcagac tgctgggttc aacacaggtt ggagtgggag tcatgcaaga
+     4741 gggagtcttc cacaccatgt ggcacgtcac aaaaggagct gcactgagga gcggtgaagg
+     4801 gagacttgat ccatactggg gggatgtcaa gcaggactta gtgtcatact gtgggccttg
+     4861 gaagttggat gcagcttggg atggacttag tgaggtgcag ctcttggcag taccccccgg
+     4921 agagagggcc agaaacattc agactctgcc tggaatattc aagacaaagg atggggacat
+     4981 cggagcagtc gctctggact accccgcagg aacttcagga tccccgatcc tagacaaatg
+     5041 cggaagagtg ataggacttt atggcaatgg ggttgtgatc aagaatggaa gctatgttag
+     5101 tgccataacc cagggaaaga gggaggagga gactccggtt gaatgtttcg aaccctcgat
+     5161 gctgaagaag aagcagctaa ctgtcctgga tctgcatcca ggagccggaa agactaggag
+     5221 agttcttcct gaaatagtcc gtgaagccat aaaaaagaga ctccgcacag tgattttggc
+     5281 tccaaccagg gttgtcgctg ctgagatgga ggaagccttg agaggacttc cggtgcgtta
+     5341 catgacaaca gcagttaacg tcacccactc tgggacagaa atcgttgatt tgatgtgcca
+     5401 tgccaccttc acctcacgcc tattacaacc catcagagtc cctaattaca atctctacat
+     5461 catggatgaa gcccatttca cagacccctc aagtatagct gcaagaggat acatatcaac
+     5521 aagggttgaa atgggcgagg cggctgccat cttcatgaca gccacgccac caggaacccg
+     5581 agatgcattt ccagactcca actcaccaat catggacaca gaagtggaag tcccagagag
+     5641 agcctggagc tcaggctttg attgggtgac agaccattct gggaaaacag tttggttcgt
+     5701 tccaagtgtg agaaatggaa atgaaatcgc agcctgtctg acaaaggctg gaaagcgggt
+     5761 catacaactc agcaggaaga cttttgagac agagtttcag aaaacaaaaa atcaagagtg
+     5821 ggactttgtc ataacaactg acatctcaga gatgggcgcg aatttcaaag ctgaccgggt
+     5881 catagactct aggagatgcc taaagccagt catacttgat ggtgagagag tcatcttggc
+     5941 tgggcccatg cctgtcacgc atgctagtgc tgctcaaagg agagggcgta taggcaggaa
+     6001 ccctaacaaa cctggagatg agtacatgta tggaggtgga tgtgcagaga ccgatgaaga
+     6061 ccatgcacac tggcttgaag caagaatgct tcttgacaac atctacctcc aggatggcct
+     6121 catagcctcg ctctaccggc ctgaggccga taaggtagct gccattgagg gagagttcaa
+     6181 gctgaggaca gagcaaagga aaacctttgt ggaacttatg aagagaggag accttcccgt
+     6241 ttggctagcc tatcaggttg catctgccgg aataacttac acagacagaa gatggtgctt
+     6301 tgatggcaca accaacaaca ccataatgga agatagtgta ccagcagaag tgtggacaaa
+     6361 atatggagag aagagagtgc tcaaaccaag atggatggat gcgagggtct gttccgatca
+     6421 tgctgccctg aagtcgttca aagaatttgc tgccgggaaa agaggagtgg ctttaggagt
+     6481 aatggaggcc ctgggaacat tgccaggaca catgacagag aggtttcagg aggccattga
+     6541 caatctcgct gtgctcatgc gagcagagac tggaagcagg ccttacaagg cagcggcagc
+     6601 ccaactgccg gagaccctag agaccatcat gctcttaggc ttgttgggaa cagtttcgtt
+     6661 ggggatcttc tttgtcttga tgcggaacaa gggcatcggg aagatgggtt ttggaatggt
+     6721 aactcttggg gccagtgcat ggctcatgtg gctttcggaa attgaaccag ccagaattgc
+     6781 atgtgtcctc attgttgtgt tcttgttact ggtggtactc atacccgagc cagagaagca
+     6841 aagatctccc caggacaacc agatggcaat catcatcatg gtggcagtgg gccttctggg
+     6901 tttgataact gcaaacgaac ttggatggct ggaaagaaca aaaaatgaca tagctcatct
+     6961 aatgggaagg agagaagaag gagtaactat gggattctca atggacatcg atttgcggcc
+     7021 agcctccgcc tgggctatct atgccgcact gacaactctc atcaccccag ccgtccaaca
+     7081 cgcggtaacc acttcataca acaactactc cctaatggcg atggccacac aagctggagt
+     7141 gctatttggc atgggcaaag ggatgccatt ttatgcatgg gactttggag tcccgctgct
+     7201 aatgatgggt tgctactcac aattaacacc cctaaccttg atagtggcta tcattctgct
+     7261 tgtggcacac tatatgtact tgatcccagg cctacaggca gcagcagcgc gtgctgccca
+     7321 gaagagaaca gcagctggca tcatgaagaa tcccgttgtg gatggaatag tggtaactga
+     7381 cattgacaca atgacaattg acccccaagt ggagaagaag atgggacaag tgttacttat
+     7441 agcagtagcc atctccagtg ctgtgctgct gcggactgct tggggatggg gggaggctgg
+     7501 agctctgatt actgcagcaa cctccacctt gtgggaaggt tctccaaaca aatactggaa
+     7561 ctcctctaca gccacctcac tgtgcaacat cttcagagga agttacctgg caggcgcttc
+     7621 tcttatttat acagtgacaa gaaatgctgg cctagtcaag agacgtggag gtggaacggg
+     7681 agagactcta ggagagaagt ggaaagctcg cctgaatcag atgtcggccc tggagttcta
+     7741 ctcttacaaa aagtcaggca tcactgaagt gtgtagagag gaggctcgcc gcgccctcaa
+     7801 ggatggagtg gccacaggag gacatgctgt atcccgggga agcgcaaagc tcagatggct
+     7861 ggtggagaga ggatacctgc aaccccatgg aaaggttgtt gacctcggat gtggcagagg
+     7921 gggttggagc tattatgccg ccaccatccg gaaagtgcag gaggtgaaag gatacacaaa
+     7981 gggaggtccc ggtcatgaag aacccatgct ggtgcaaagc tatgggtgga acatcgttcg
+     8041 tctcaagagt ggagtggacg tcttccacat ggcggccgag ccgtgtgata ccttgctgtg
+     8101 tgacataggt gagtcatcat ctagtcctga agtggaagag acgcgaacac tccgagtgct
+     8161 ctctatggtg ggggactggc ttgagaaaag accgggggcc ttctgtataa aggtgctgtg
+     8221 tccatacacc agcactatga tggagaccat ggagcgcctg caacgtaggt atgggggagg
+     8281 attagtcaga gtgccattgt ctcgcaactc cacacatgag atgtattggg tctctggagc
+     8341 aaaaagtaac gtcataaaaa gtgtgtccac cacaagtcag ctcctcctgg gacgcatgga
+     8401 tggtcccagg aggccagtga aatatgagga agatgtgaac ctcggctcgg gcacacgagc
+     8461 tgtggcaagc tgtgctgaag ctcccaacat gaaggtcatt ggcaagcgca ttgagagaat
+     8521 ccgcagtgaa catgcagaaa catggttctt tgatgaaaac catccataca ggacatgggc
+     8581 ctaccatggg agctacgaag cccccacaca agggtcagca tcttccctcg tgaatggggt
+     8641 tgttagactc ctgtcaaagc cctgggatgt agtgactgga gttacaggaa tagctatgac
+     8701 tgatacaaca ccatacggcc aacaaagagt cttcaaagaa aaagtggaca ccagggtgcc
+     8761 agatccccaa gaaggcactc gccaggcaat gaacatggtc tcttcctggc tgtggaagga
+     8821 gttggggaaa cgcaagcggc cacgtgtctg caccaaagaa gagttcatca acaaggtgcg
+     8881 cagcaatgca gcactgggag caatatttga agaggaaaaa gaatggaaga cggccgtgga
+     8941 ggctgtgaat gatccaaggt tttgggctct agtggacaag gaaagagaac atcacctgag
+     9001 aggagagtgt catagctgtg tgtacaacat gatgggaaaa agagagaaga agcaaggaga
+     9061 attcggaaaa gcaaaaggca gccgcgccat ctggtacatg tggttgggag ccagattctt
+     9121 ggagtttgaa gcccttggat tcttgaatga ggaccattgg atgggaagag aaaactcagg
+     9181 aggtggtgtc gaagggctag gactgcaaag acttggatac attctagaag aaatgaatcg
+     9241 ggcaccagga ggaaagatgt atgcagatga caccgctggc tgggacaccc gcattagtaa
+     9301 gtttgatctg gagaatgaag ccttaattac caaccaaatg gaggaagggc acagagctct
+     9361 ggcgttggct gtgattaagt acacaaaaaa caaagtggtg aaggtcctca gaccagctga
+     9421 aggagggaaa acagttatgg acatcatttc aagacaggac cagagaggga gtggacaagt
+     9481 tgtcacctat gctctcaaca catttaccaa cttagtggtg cagcttatcc ggaatatgga
+     9541 ggctgaggaa gtgttagaga tgcaagactt atggctgttg aggaagccag agaaagtgac
+     9601 cagatggttg cagtgcaatg gatgggacag actcaaacga atggcagtca gtggagatga
+     9661 ctgcgttgtg aagccaattg atgataggtt tgcgcatgcc ctcaggttct taaatgacat
+     9721 gggaaaagtt aggaaagaca cacaggaatg gaaaccctcg actggatgga gcaattggga
+     9781 agaagtcccg ttctgctccc accatttcaa caagctgcac ctcaaggatg gtagatccat
+     9841 tgtggtccct tgccgccacc aagatgaatt gattggccga gcccgtgtat caccaggggc
+     9901 aggatggagc attcgggaga ctgcctgtct agcaaaatca tatgcacaga tgtggcagct
+     9961 tctttacttc cacagaagag accttcgact gatggccaat gctatttgtt cggctgtgcc
+    10021 agttgactgg gtaccaaccg ggagaaccac ctggtcaatc cacggaaagg gagaatggat
+    10081 gactactgag gacatgctca tggtgtggaa tagagtgtgg attgaggaga acgaccatat
+    10141 ggaggacaag actcctgtga caaagtggac agacatcccc tatctgggaa aaagggagga
+    10201 cttatggtgt ggatccctta tagggcacag gccccgcacc acttgggctg agaacatcaa
+    10261 agacacagtc aacatggtgc gcaggatcat aggtgatgaa gaaaaataca tggactactt
+    10321 atccacccag gtccgctact tgggtgagga agggtccaca cctggagtgt tgtaagcacc
+    10381 aatttcagtg ttgtcaggcc tgctagccag ccacagtttg gggaaagctg tgcagcctgt
+    10441 agccccccca ggagaagctg ggaaaccaag ctcatagtca ggccgagaac gccatggcac
+    10501 ggaagaagcc atgctgcctg tgagcccctc agaggacact gagttaaaaa accccacgcg
+    10561 cttggaagcg caggatggga aaagaaggtg gcgaccttcc ccacccttta atctggggcc
+    10621 tgaactggag actagctgtg aatctccagc agagggacta gtggttagag gagacccccc
+    10681 ggaaaacgca aaacagcata ttgacgctgg gaaagaccag agactccatg agtttccacc
+    10741 acgctggccg ccaggcacag atcgccgaac agcggcggcc agtgtggg
+//
+

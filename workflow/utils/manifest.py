@@ -587,7 +587,20 @@ class ExecutionManifest:
         Chamado no encerramento, inclusive quando a execução falhou: saber qual
         comando estava rodando é metade do diagnóstico.
         """
-        for ferramenta, dados in tool_runs.execucoes().items():
+        self.absorver_registros(tool_runs.execucoes(), tool_runs.metodos(),
+                                tool_runs.selecoes_modelo())
+
+    def absorver_registros(self, execucoes: Dict, metodos: List[Dict],
+                           selecoes: List[Dict]) -> None:
+        """
+        Incorpora registros no formato de `tool_runs`, vindos de qualquer fonte.
+
+        `drain_tool_runs` os lê do módulo; a consolidação do workflow granular
+        os lê dos fragmentos de proveniência, um por atividade (cada uma roda
+        num processo, e o registro de `tool_runs` não atravessa processos).
+        """
+        for ferramenta, dados in execucoes.items():
+            dados = dict(dados)
             chamadas = dados.pop("runs", [])
             for chamada in chamadas:
                 extras_da_chamada = {k: v for k, v in chamada.items()
@@ -600,10 +613,10 @@ class ExecutionManifest:
                 if extras_da_chamada:
                     self._tools_effective[ferramenta]["runs"][-1].update(extras_da_chamada)
 
-        for registro in tool_runs.metodos():
+        for registro in metodos:
             self.register_method_state(**registro)
 
-        for selecao in tool_runs.selecoes_modelo():
+        for selecao in selecoes:
             self.register_model_selection(selecao)
 
     def register_model_selection(self, selecao: Dict) -> None:

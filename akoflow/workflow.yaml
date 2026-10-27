@@ -1,0 +1,849 @@
+# workflow.yaml do AkôFlow para o Zika-21 granular (meta G4b).
+# Formato do workflow.yaml REAL de UFFeScience/akoflow-examples @ d890c3171e36 ·
+#   machine-learning/infrastructure-selection/workflow.yaml; `spec.dataDependencies` vem de
+#   scientific-workflows/montage-050 (mesmo commit) e de akoflow docs/docs/internal/workflow-spec.md @aeea81c.
+# Gerado do esboço da G4a (docs/akoflow/workflow-zika21.esboco.yaml); os subcomandos existem em
+#   BioComp_UFF/workflow/akoflow.py, e o teste test_akoflow_yaml.py confere cada linha de comando
+#   contra o parser da CLI.
+# SUPOSIÇÃO (a equipe do AkôFlow define): runtime, image, namespace e todo memoryLimit (nada foi medido).
+# cpuLimit = threads da ferramenta no config (alinhar=num_threads, raxml=raxml_threads, resto=1).
+# Caminhos /app/...: dentro da imagem (akoflow/Dockerfile); fora dela, `rodar_local.py --app-dir akoflow`.
+name: phylotreeminer-zika21-granular
+spec:
+  activities:
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - preparar
+          - --config
+          - /app/config/zika21.json
+          - --entrada
+          - /app/data/Zika479_Test_large
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      memoryLimit: 512Mi  # SUPOSIÇÃO (valor não medido)
+      name: preparar-entrada
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - alinhar
+          - --config
+          - out/outputs/config_backup.json
+          - --alinhador
+          - mafft
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "4"
+      dependsOn:
+        - preparar-entrada
+      memoryLimit: 2Gi  # SUPOSIÇÃO (valor não medido)
+      name: alinhar-mafft
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - alinhar
+          - --config
+          - out/outputs/config_backup.json
+          - --alinhador
+          - mafft_iterative
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "4"
+      dependsOn:
+        - preparar-entrada
+      memoryLimit: 2Gi  # SUPOSIÇÃO (valor não medido)
+      name: alinhar-mafft-iterative
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - inferir
+          - --config
+          - out/outputs/config_backup.json
+          - --alinhador
+          - mafft
+          - --metodo
+          - fasttree
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - alinhar-mafft
+      memoryLimit: 2Gi  # SUPOSIÇÃO (valor não medido)
+      name: arvore-mafft-fasttree
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - inferir
+          - --config
+          - out/outputs/config_backup.json
+          - --alinhador
+          - mafft_iterative
+          - --metodo
+          - fasttree
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - alinhar-mafft-iterative
+      memoryLimit: 2Gi  # SUPOSIÇÃO (valor não medido)
+      name: arvore-mafft-iterative-fasttree
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - inferir
+          - --config
+          - out/outputs/config_backup.json
+          - --alinhador
+          - mafft_iterative
+          - --metodo
+          - nj_distance
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - alinhar-mafft-iterative
+      memoryLimit: 2Gi  # SUPOSIÇÃO (valor não medido)
+      name: arvore-mafft-iterative-nj-distance
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - inferir
+          - --config
+          - out/outputs/config_backup.json
+          - --alinhador
+          - mafft_iterative
+          - --metodo
+          - nj_parsimony
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - alinhar-mafft-iterative
+      memoryLimit: 2Gi  # SUPOSIÇÃO (valor não medido)
+      name: arvore-mafft-iterative-nj-parsimony
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - inferir
+          - --config
+          - out/outputs/config_backup.json
+          - --alinhador
+          - mafft_iterative
+          - --metodo
+          - upgma_distance
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - alinhar-mafft-iterative
+      memoryLimit: 2Gi  # SUPOSIÇÃO (valor não medido)
+      name: arvore-mafft-iterative-upgma-distance
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - inferir
+          - --config
+          - out/outputs/config_backup.json
+          - --alinhador
+          - mafft_iterative
+          - --metodo
+          - upgma_parsimony
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - alinhar-mafft-iterative
+      memoryLimit: 2Gi  # SUPOSIÇÃO (valor não medido)
+      name: arvore-mafft-iterative-upgma-parsimony
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - inferir
+          - --config
+          - out/outputs/config_backup.json
+          - --alinhador
+          - mafft
+          - --metodo
+          - nj_distance
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - alinhar-mafft
+      memoryLimit: 2Gi  # SUPOSIÇÃO (valor não medido)
+      name: arvore-mafft-nj-distance
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - inferir
+          - --config
+          - out/outputs/config_backup.json
+          - --alinhador
+          - mafft
+          - --metodo
+          - nj_parsimony
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - alinhar-mafft
+      memoryLimit: 2Gi  # SUPOSIÇÃO (valor não medido)
+      name: arvore-mafft-nj-parsimony
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - inferir
+          - --config
+          - out/outputs/config_backup.json
+          - --alinhador
+          - mafft
+          - --metodo
+          - upgma_distance
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - alinhar-mafft
+      memoryLimit: 2Gi  # SUPOSIÇÃO (valor não medido)
+      name: arvore-mafft-upgma-distance
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - inferir
+          - --config
+          - out/outputs/config_backup.json
+          - --alinhador
+          - mafft
+          - --metodo
+          - upgma_parsimony
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - alinhar-mafft
+      memoryLimit: 2Gi  # SUPOSIÇÃO (valor não medido)
+      name: arvore-mafft-upgma-parsimony
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - baixar-metadados
+          - --config
+          - out/outputs/config_backup.json
+          - --acessos
+          - out/entrada/acessos.txt
+          - --gb-congelado
+          - /app/data/Zika479_Test_large/raw_data_sequences.gb
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - preparar-entrada
+      memoryLimit: 512Mi  # SUPOSIÇÃO (valor não medido)
+      name: baixar-metadados
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - selecionar-modelo
+          - --config
+          - out/outputs/config_backup.json
+          - --alinhador
+          - mafft
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - alinhar-mafft
+      memoryLimit: 1Gi  # SUPOSIÇÃO (valor não medido)
+      name: modelo-mafft
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - inferir
+          - --config
+          - out/outputs/config_backup.json
+          - --alinhador
+          - mafft
+          - --metodo
+          - iqtree
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - alinhar-mafft
+        - modelo-mafft
+      memoryLimit: 2Gi  # SUPOSIÇÃO (valor não medido)
+      name: arvore-mafft-iqtree
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - inferir
+          - --config
+          - out/outputs/config_backup.json
+          - --alinhador
+          - mafft
+          - --metodo
+          - raxml
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "4"
+      dependsOn:
+        - alinhar-mafft
+        - modelo-mafft
+      memoryLimit: 2Gi  # SUPOSIÇÃO (valor não medido)
+      name: arvore-mafft-raxml
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - selecionar-modelo
+          - --config
+          - out/outputs/config_backup.json
+          - --alinhador
+          - mafft_iterative
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - alinhar-mafft-iterative
+      memoryLimit: 1Gi  # SUPOSIÇÃO (valor não medido)
+      name: modelo-mafft-iterative
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - inferir
+          - --config
+          - out/outputs/config_backup.json
+          - --alinhador
+          - mafft_iterative
+          - --metodo
+          - iqtree
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - alinhar-mafft-iterative
+        - modelo-mafft-iterative
+      memoryLimit: 2Gi  # SUPOSIÇÃO (valor não medido)
+      name: arvore-mafft-iterative-iqtree
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - inferir
+          - --config
+          - out/outputs/config_backup.json
+          - --alinhador
+          - mafft_iterative
+          - --metodo
+          - raxml
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "4"
+      dependsOn:
+        - alinhar-mafft-iterative
+        - modelo-mafft-iterative
+      memoryLimit: 2Gi  # SUPOSIÇÃO (valor não medido)
+      name: arvore-mafft-iterative-raxml
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - heatmap-rf
+          - --config
+          - out/outputs/config_backup.json
+          - --stem
+          - dataset_final
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - arvore-mafft-fasttree
+        - arvore-mafft-iqtree
+        - arvore-mafft-iterative-fasttree
+        - arvore-mafft-iterative-iqtree
+        - arvore-mafft-iterative-nj-distance
+        - arvore-mafft-iterative-nj-parsimony
+        - arvore-mafft-iterative-raxml
+        - arvore-mafft-iterative-upgma-distance
+        - arvore-mafft-iterative-upgma-parsimony
+        - arvore-mafft-nj-distance
+        - arvore-mafft-nj-parsimony
+        - arvore-mafft-raxml
+        - arvore-mafft-upgma-distance
+        - arvore-mafft-upgma-parsimony
+      memoryLimit: 1Gi  # SUPOSIÇÃO (valor não medido)
+      name: heatmap-rf
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - subarvores
+          - --config
+          - out/outputs/config_backup.json
+          - --arvore
+          - out/Trees/tree_dataset_final_mafft_fasttree.nexus
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - arvore-mafft-fasttree
+        - baixar-metadados
+      memoryLimit: 1Gi  # SUPOSIÇÃO (valor não medido)
+      name: subarvores-mafft-fasttree
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - subarvores
+          - --config
+          - out/outputs/config_backup.json
+          - --arvore
+          - out/Trees/tree_dataset_final_mafft_iqtree.nexus
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - arvore-mafft-iqtree
+        - baixar-metadados
+      memoryLimit: 1Gi  # SUPOSIÇÃO (valor não medido)
+      name: subarvores-mafft-iqtree
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - subarvores
+          - --config
+          - out/outputs/config_backup.json
+          - --arvore
+          - out/Trees/tree_dataset_final_mafft_iterative_fasttree.nexus
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - arvore-mafft-iterative-fasttree
+        - baixar-metadados
+      memoryLimit: 1Gi  # SUPOSIÇÃO (valor não medido)
+      name: subarvores-mafft-iterative-fasttree
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - subarvores
+          - --config
+          - out/outputs/config_backup.json
+          - --arvore
+          - out/Trees/tree_dataset_final_mafft_iterative_iqtree.nexus
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - arvore-mafft-iterative-iqtree
+        - baixar-metadados
+      memoryLimit: 1Gi  # SUPOSIÇÃO (valor não medido)
+      name: subarvores-mafft-iterative-iqtree
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - subarvores
+          - --config
+          - out/outputs/config_backup.json
+          - --arvore
+          - out/Trees/tree_dataset_final_mafft_iterative_nj_distance.nexus
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - arvore-mafft-iterative-nj-distance
+        - baixar-metadados
+      memoryLimit: 1Gi  # SUPOSIÇÃO (valor não medido)
+      name: subarvores-mafft-iterative-nj-distance
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - subarvores
+          - --config
+          - out/outputs/config_backup.json
+          - --arvore
+          - out/Trees/tree_dataset_final_mafft_iterative_nj_parsimony.nexus
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - arvore-mafft-iterative-nj-parsimony
+        - baixar-metadados
+      memoryLimit: 1Gi  # SUPOSIÇÃO (valor não medido)
+      name: subarvores-mafft-iterative-nj-parsimony
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - subarvores
+          - --config
+          - out/outputs/config_backup.json
+          - --arvore
+          - out/Trees/tree_dataset_final_mafft_iterative_raxml.nexus
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - arvore-mafft-iterative-raxml
+        - baixar-metadados
+      memoryLimit: 1Gi  # SUPOSIÇÃO (valor não medido)
+      name: subarvores-mafft-iterative-raxml
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - subarvores
+          - --config
+          - out/outputs/config_backup.json
+          - --arvore
+          - out/Trees/tree_dataset_final_mafft_iterative_upgma_distance.nexus
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - arvore-mafft-iterative-upgma-distance
+        - baixar-metadados
+      memoryLimit: 1Gi  # SUPOSIÇÃO (valor não medido)
+      name: subarvores-mafft-iterative-upgma-distance
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - subarvores
+          - --config
+          - out/outputs/config_backup.json
+          - --arvore
+          - out/Trees/tree_dataset_final_mafft_iterative_upgma_parsimony.nexus
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - arvore-mafft-iterative-upgma-parsimony
+        - baixar-metadados
+      memoryLimit: 1Gi  # SUPOSIÇÃO (valor não medido)
+      name: subarvores-mafft-iterative-upgma-parsimony
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - subarvores
+          - --config
+          - out/outputs/config_backup.json
+          - --arvore
+          - out/Trees/tree_dataset_final_mafft_nj_distance.nexus
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - arvore-mafft-nj-distance
+        - baixar-metadados
+      memoryLimit: 1Gi  # SUPOSIÇÃO (valor não medido)
+      name: subarvores-mafft-nj-distance
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - subarvores
+          - --config
+          - out/outputs/config_backup.json
+          - --arvore
+          - out/Trees/tree_dataset_final_mafft_nj_parsimony.nexus
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - arvore-mafft-nj-parsimony
+        - baixar-metadados
+      memoryLimit: 1Gi  # SUPOSIÇÃO (valor não medido)
+      name: subarvores-mafft-nj-parsimony
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - subarvores
+          - --config
+          - out/outputs/config_backup.json
+          - --arvore
+          - out/Trees/tree_dataset_final_mafft_raxml.nexus
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - arvore-mafft-raxml
+        - baixar-metadados
+      memoryLimit: 1Gi  # SUPOSIÇÃO (valor não medido)
+      name: subarvores-mafft-raxml
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - subarvores
+          - --config
+          - out/outputs/config_backup.json
+          - --arvore
+          - out/Trees/tree_dataset_final_mafft_upgma_distance.nexus
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - arvore-mafft-upgma-distance
+        - baixar-metadados
+      memoryLimit: 1Gi  # SUPOSIÇÃO (valor não medido)
+      name: subarvores-mafft-upgma-distance
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - subarvores
+          - --config
+          - out/outputs/config_backup.json
+          - --arvore
+          - out/Trees/tree_dataset_final_mafft_upgma_parsimony.nexus
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - arvore-mafft-upgma-parsimony
+        - baixar-metadados
+      memoryLimit: 1Gi  # SUPOSIÇÃO (valor não medido)
+      name: subarvores-mafft-upgma-parsimony
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - minerar
+          - --config
+          - out/outputs/config_backup.json
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - subarvores-mafft-fasttree
+        - subarvores-mafft-iqtree
+        - subarvores-mafft-iterative-fasttree
+        - subarvores-mafft-iterative-iqtree
+        - subarvores-mafft-iterative-nj-distance
+        - subarvores-mafft-iterative-nj-parsimony
+        - subarvores-mafft-iterative-raxml
+        - subarvores-mafft-iterative-upgma-distance
+        - subarvores-mafft-iterative-upgma-parsimony
+        - subarvores-mafft-nj-distance
+        - subarvores-mafft-nj-parsimony
+        - subarvores-mafft-raxml
+        - subarvores-mafft-upgma-distance
+        - subarvores-mafft-upgma-parsimony
+      memoryLimit: 2Gi  # SUPOSIÇÃO (valor não medido)
+      name: minerar-fpmax
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - gerar-cql
+          - --config
+          - out/outputs/config_backup.json
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - minerar-fpmax
+      memoryLimit: 1Gi  # SUPOSIÇÃO (valor não medido)
+      name: gerar-cql
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - graficos-suporte
+          - --config
+          - out/outputs/config_backup.json
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - minerar-fpmax
+      memoryLimit: 1Gi  # SUPOSIÇÃO (valor não medido)
+      name: graficos-suporte
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+    - command:
+        arguments:
+          - -m
+          - workflow.akoflow
+          - consolidar
+          - --config
+          - out/outputs/config_backup.json
+          - --out
+          - out
+        entrypoint: python
+      cpuLimit: "1"
+      dependsOn:
+        - gerar-cql
+        - graficos-suporte
+        - heatmap-rf
+      memoryLimit: 1Gi  # SUPOSIÇÃO (valor não medido)
+      name: consolidar-manifesto
+      runtime: phylotreeminer-local  # SUPOSIÇÃO (id definido no environment.yaml da equipe)
+  dataDependencies:  # campo do exemplo montage-050 (mesmo commit), ausente no infrastructure-selection
+    - consumerActivity: arvore-mafft-fasttree
+      logicalName: tmp/dataset_final_mafft.aln
+      producerActivity: alinhar-mafft
+      sizeBytes: 220915  # medido: tamanho do .aln no projeto de referência
+    - consumerActivity: arvore-mafft-iqtree
+      logicalName: tmp/dataset_final_mafft.aln
+      producerActivity: alinhar-mafft
+      sizeBytes: 220915  # medido: tamanho do .aln no projeto de referência
+    - consumerActivity: arvore-mafft-iterative-fasttree
+      logicalName: tmp/dataset_final_mafft_iterative.aln
+      producerActivity: alinhar-mafft-iterative
+      sizeBytes: 220915  # medido: tamanho do .aln no projeto de referência
+    - consumerActivity: arvore-mafft-iterative-iqtree
+      logicalName: tmp/dataset_final_mafft_iterative.aln
+      producerActivity: alinhar-mafft-iterative
+      sizeBytes: 220915  # medido: tamanho do .aln no projeto de referência
+    - consumerActivity: arvore-mafft-iterative-nj-distance
+      logicalName: tmp/dataset_final_mafft_iterative.aln
+      producerActivity: alinhar-mafft-iterative
+      sizeBytes: 220915  # medido: tamanho do .aln no projeto de referência
+    - consumerActivity: arvore-mafft-iterative-nj-parsimony
+      logicalName: tmp/dataset_final_mafft_iterative.aln
+      producerActivity: alinhar-mafft-iterative
+      sizeBytes: 220915  # medido: tamanho do .aln no projeto de referência
+    - consumerActivity: arvore-mafft-iterative-raxml
+      logicalName: tmp/dataset_final_mafft_iterative.aln
+      producerActivity: alinhar-mafft-iterative
+      sizeBytes: 220915  # medido: tamanho do .aln no projeto de referência
+    - consumerActivity: arvore-mafft-iterative-upgma-distance
+      logicalName: tmp/dataset_final_mafft_iterative.aln
+      producerActivity: alinhar-mafft-iterative
+      sizeBytes: 220915  # medido: tamanho do .aln no projeto de referência
+    - consumerActivity: arvore-mafft-iterative-upgma-parsimony
+      logicalName: tmp/dataset_final_mafft_iterative.aln
+      producerActivity: alinhar-mafft-iterative
+      sizeBytes: 220915  # medido: tamanho do .aln no projeto de referência
+    - consumerActivity: arvore-mafft-nj-distance
+      logicalName: tmp/dataset_final_mafft.aln
+      producerActivity: alinhar-mafft
+      sizeBytes: 220915  # medido: tamanho do .aln no projeto de referência
+    - consumerActivity: arvore-mafft-nj-parsimony
+      logicalName: tmp/dataset_final_mafft.aln
+      producerActivity: alinhar-mafft
+      sizeBytes: 220915  # medido: tamanho do .aln no projeto de referência
+    - consumerActivity: arvore-mafft-raxml
+      logicalName: tmp/dataset_final_mafft.aln
+      producerActivity: alinhar-mafft
+      sizeBytes: 220915  # medido: tamanho do .aln no projeto de referência
+    - consumerActivity: arvore-mafft-upgma-distance
+      logicalName: tmp/dataset_final_mafft.aln
+      producerActivity: alinhar-mafft
+      sizeBytes: 220915  # medido: tamanho do .aln no projeto de referência
+    - consumerActivity: arvore-mafft-upgma-parsimony
+      logicalName: tmp/dataset_final_mafft.aln
+      producerActivity: alinhar-mafft
+      sizeBytes: 220915  # medido: tamanho do .aln no projeto de referência
+    - consumerActivity: modelo-mafft
+      logicalName: tmp/dataset_final_mafft.aln
+      producerActivity: alinhar-mafft
+      sizeBytes: 220915  # medido: tamanho do .aln no projeto de referência
+    - consumerActivity: modelo-mafft-iterative
+      logicalName: tmp/dataset_final_mafft_iterative.aln
+      producerActivity: alinhar-mafft-iterative
+      sizeBytes: 220915  # medido: tamanho do .aln no projeto de referência
+  image: ghcr.io/SUPOSICAO/phylotreeminer-workflow:29833ff  # SUPOSIÇÃO: registro e tag a definir com a equipe
+  namespace: phylotreeminer  # SUPOSIÇÃO: o exemplo usa 'showcase'
+

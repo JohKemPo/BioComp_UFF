@@ -1,0 +1,37 @@
+{
+    "log_file": true,
+    "project_name": "Zika_21seq_akoflow",
+    "output_log": "out",
+    "tree_config": {
+        "mode": "advanced",
+        "ignore_mode": [
+            "mrbayes"
+        ],
+        "construct_tree_method": "distance",
+        "align_method": "mafft",
+        "num_threads": 4,
+        "random_seed": 12345,
+        "raxml_threads": 4,
+        "iqtree_threads": 4,
+        "input_path": "out/entrada",
+        "output_path": "out",
+        "output_format": "nexus",
+        "on_method_failure": "continue"
+    },
+    "subtree_config": {
+        "construct_tree_method": "distance",
+        "input_path": "out/Trees",
+        "output_path": "out",
+        "input_format": "nexus",
+        "output_format": "nexus",
+        "resume_infos": true,
+        "save_metadata": true,
+        "subtree_miner": true,
+        "subtree_miner_configs": {
+            "mode": "OFST",
+            "save_fpmax": true,
+            "output_path": "out",
+            "support_fpmax": "auto"
+        }
+    }
+}
