@@ -13,7 +13,7 @@ from typing import Dict, List, Any, Optional, Tuple
 
 Matrix = List[List[Any]]
 
-import hashlib, os, time
+import hashlib, io, os, time
 
 # D5 — a identidade de clado usada em produção é a canônica, definida uma única
 # vez em `workflow.stability.clade_identity`. As funções `legacy_*` deste módulo
@@ -540,6 +540,36 @@ def calculate_tree_hash(data: Tree, is_terminal: bool = False, gbk_file: str = N
         'metadata': metadata
     }
     
+_arquivos_iniciados = set()
+
+
+def _ordenar_por_acesso(texto, ids):
+    """
+    Reordena os registros GenBank de um lote na ordem dos acessos pedidos.
+
+    O efetch não garante a ordem da resposta; sem isso o arquivo muda de
+    uma execução para outra. Acesso que não casa com nenhum pedido vai ao fim,
+    na ordem em que chegou.
+    """
+    chave = lambda acesso: acesso.split(".")[0]
+    ordem = {}
+    for pos, acesso in enumerate(ids):
+        ordem.setdefault(chave(acesso), pos)
+
+    registros = []
+    for bloco in texto.split("//\n"):
+        if not bloco.strip():
+            continue
+        registro = bloco.strip("\n") + "\n//\n"
+        try:
+            acesso = SeqIO.read(io.StringIO(registro), "genbank").id
+        except Exception:
+            acesso = ""
+        registros.append((ordem.get(chave(acesso), len(ids)), len(registros), registro))
+
+    return "".join(registro for _, _, registro in sorted(registros))
+
+
 def download_sequences(self, queries, output_file, log, batch_size: int = 10):
     """
     Passo 1: Baixa sequências do GenBank usando o Biopython.
@@ -559,8 +589,12 @@ def download_sequences(self, queries, output_file, log, batch_size: int = 10):
         ncbi_api_key = os.getenv("NCBI_API_KEY")
         if ncbi_api_key:
             Entrez.api_key = ncbi_api_key
-        with open(output_file, "w") as f:
+        # O builder chama esta função uma vez por árvore; só a primeira chamada de cada processo zera o arquivo.
+        caminho = os.path.abspath(output_file)
+        if caminho not in _arquivos_iniciados:
+            with open(output_file, "w") as f:
                 f.write('')
+            _arquivos_iniciados.add(caminho)
                 
                 
         id_list = [q.name for q in queries if q.name]
@@ -589,7 +623,7 @@ def download_sequences(self, queries, output_file, log, batch_size: int = 10):
                     if data:
                         log.info(f"         Resultados salvos com sucesso!")
                         with open(output_file, "a") as f:
-                            f.write(data)
+                            f.write(_ordenar_por_acesso(data, batch_ids))
                         break
                     else:
                         log.error(f"        Dados vazios!")
