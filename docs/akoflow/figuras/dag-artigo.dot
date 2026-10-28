@@ -1,0 +1,103 @@
+// DAG do dataflow do AkôFlow para impressão em artigo (170 mm de largura).
+// Texto visível em inglês (manuscrito FGCS); identificadores do workflow ficam como no YAML.
+// Fonte: docs/akoflow/03-dataflow.md §1 (família de atividades) e §2 (Zika-21).
+// Números, todos de docs/akoflow/ (não inventados). Os da legenda da figura
+// vêm das linhas indicadas; o pico 8/6 é do escalonamento ASAP (dag.py).
+//   - Zika-21: 14 pipelines de inferência (2 alinhadores x 7 métodos) e
+//     10 árvores (02-desenho-granular.md §4.2 e 03-dataflow.md §2).
+//   - VARV-52: 10 pipelines de inferência (02-desenho-granular.md §4.2).
+//   - Largura máxima (anticadeia) do DAG do modelo: 15 no Zika-21 e 11 no
+//     VARV-52; pico de ativações simultâneas no escalonamento ASAP: 8 e 6
+//     (02-desenho-granular.md §4.2, saída de dag.py).
+//   - Medido no Zika-21 r6: 40 ativações completas, paralelismo máximo 8 e
+//     médio 3,15, makespan 409,5 s (08-teste-local-akoflow.md §4).
+//   - VARV-6 r3: paralelismo máximo 7 e médio 2,03 (08-teste-local-akoflow.md §4).
+// Nota: o modelo do 02 conta 39 ativações no Zika-21; o run medido tem 40.
+// A divergência não é desta figura e fica para o relatório.
+digraph dag {
+  graph [
+    rankdir=TB, bgcolor=white, pad=0.06, nodesep=0.22, ranksep=0.24,
+    fontname="Liberation Sans", fontsize=9.5, fontcolor="#0b0b0b",
+    newrank=true, splines=true,
+    labelloc=b, labeljust=l,
+    label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1">
+      <TR><TD ALIGN="LEFT"><B>DAG parallelism</B></TD></TR>
+      <TR><TD ALIGN="LEFT">Modelled, Zika-21 and VARV-52: DAG width 15 and 11; peak simultaneous activations (ASAP) 8 and 6.</TD></TR>
+      <TR><TD ALIGN="LEFT">Measured, Zika-21 run r6 (40 activations): peak 8, mean 3.15.</TD></TR>
+      <TR><TD ALIGN="LEFT">Measured, VARV-6 run r3 (40 activations): peak 7, mean 2.03.</TD></TR>
+    </TABLE>>
+  ];
+  node [
+    shape=box, style="rounded,filled", fillcolor="#ffffff", color="#52514e",
+    penwidth=0.7, fontname="Liberation Sans", fontsize=9.5, fontcolor="#0b0b0b",
+    margin="0.07,0.035"
+  ];
+  edge [
+    color="#52514e", penwidth=0.7, arrowsize=0.45,
+    fontname="Liberation Sans", fontsize=9.5, fontcolor="#52514e"
+  ];
+
+  subgraph cluster_in {
+    label=<<B>1 · Narrowing</B>: prepare the input>;
+    labelloc=t; labeljust=l; style="rounded"; color="#c3c2b7"; penwidth=0.6;
+    fontcolor="#52514e";
+    entrada [label=<<B>Input</B><BR/>FASTA and config.json>, fillcolor="#f4f4f1"];
+    prep    [label=<<B>preparar-entrada</B><BR/>validates and deduplicates (D23)>];
+  }
+
+  meta [label=<<B>baixar-metadados</B><BR/>NCBI Entrez or frozen .gb>,
+        color="#2a78d6", fontcolor="#0b0b0b", penwidth=1.2];
+
+  subgraph cluster_aln {
+    label=<<B>2 · Fan-out</B>: alignment>;
+    labelloc=b; labeljust=r; style="rounded"; color="#c3c2b7"; penwidth=0.6; fontcolor="#52514e";
+    aln [label=<<B>alinhar  ×A</B><BR/>A = 2 aligners (MAFFT)>];
+    mod [label=<<B>modelo  ×A</B><BR/>ModelFinder, BIC criterion>];
+  }
+
+  subgraph cluster_inf {
+    label=<<B>3 · Second fan-out</B>>;
+    labelloc=t; labeljust=l; style="rounded"; color="#c3c2b7"; penwidth=0.6; fontcolor="#52514e";
+    inf [label=<<B>inferir  ×A·M</B><BR/>Zika-21: 14 pipelines · VARV-52: 10>, penwidth=1.1];
+    sub [label=<<B>subarvores  ×tree</B><BR/>one per tree>];
+    hm  [label=<<B>heatmap-rf</B><BR/>RF between all trees>];
+    dat [label=<<B>datar  ×A·M</B> (optional)<BR/>LSD2, per tree>,
+         style="rounded,filled,dashed", color="#7a7872", fontcolor="#52514e"];
+    est [label=<<B>estabilidade</B> (optional)<BR/>outside the monolith>,
+         style="rounded,filled,dashed", color="#7a7872", fontcolor="#52514e"];
+  }
+
+  subgraph cluster_fim {
+    label=<<B>4 · Fan-in</B>: mining and manifest>;
+    labelloc=t; labeljust=l; style="rounded"; color="#c3c2b7"; penwidth=0.6; fontcolor="#52514e";
+    min [label=<<B>minerar-fpmax</B><BR/>OFST, automatic support>, penwidth=1.1];
+    cql [label=<<B>gerar-cql</B>>];
+    gr  [label=<<B>graficos-suporte</B>>];
+    con [label=<<B>consolidar-manifesto</B><BR/>manifest and provenance>, penwidth=1.1];
+  }
+
+  // Dependências de dado
+  entrada -> prep;
+  prep -> meta [color="#2a78d6", fontcolor="#2a78d6", penwidth=1.0];
+  prep -> aln;
+  aln -> mod;
+  aln -> inf;
+  mod -> inf;
+  inf -> sub;
+  meta -> sub [color="#2a78d6", penwidth=1.0];
+  inf -> hm;
+  inf -> dat [style=dashed, color="#7a7872"];
+  inf -> est [style=dashed, color="#7a7872"];
+  sub -> min;
+  min -> cql;
+  min -> gr;
+  cql -> con;
+  gr -> con;
+  hm -> con;
+  dat -> con [style=dashed, color="#7a7872"];
+  est -> con [style=dashed, color="#7a7872"];
+
+  { rank=same; meta; aln; }
+  { rank=same; dat; est; }
+  { rank=same; cql; gr; }
+}

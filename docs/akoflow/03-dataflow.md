@@ -822,3 +822,13 @@ if __name__ == "__main__" and len(sys.argv) > 2:
     if sys.argv[2] == "--yaml": print(yaml_esboco(sys.argv[1]))
     if sys.argv[2] == "--mermaid": print(mermaid_expandido(sys.argv[1]))
 ```
+
+## Figuras
+
+As duas figuras deste documento estão renderizadas em `docs/akoflow/figuras/`: `dataflow-geral.pdf/.png` e `dataflow-zika21.pdf/.png` (PDF vetorial, PNG de 300 dpi, 170 mm de largura). Para regerar: `bash docs/akoflow/figuras/gerar_figuras.sh`, que precisa de Node.js com npm, do pacote `@mermaid-js/mermaid-cli@12.0.0` (o script o instala em `/tmp/mmdc-ptm` se faltar), de ghostscript e de poppler-utils.
+
+O script usa a mesma fonte Mermaid com `flowchart TD` (a versão LR fica com 4864 px de largura no caso geral) e confere no SVG a contagem de nós e arestas contra a origem: geral 31 nós e 38 arestas; Zika-21 81 nós e 126 arestas.
+
+Limite medido: no tamanho final de 170 mm, o texto do diagrama geral fica entre 3,8 e 8,3 pt (a maioria a 3,8 pt), e o do Zika-21 em 0,7 pt. Nenhuma das duas atinge o mínimo de 7 pt. Para publicação, é preciso quebrar o diagrama em painéis, decisão que ainda não foi tomada.
+
+**Figura de impressão.** `dag-artigo.pdf` e `.png` (fonte `dag-artigo.dot`, Graphviz) mostram a forma do DAG, com os títulos em inglês como no manuscrito FGCS: *Narrowing* (afunilamento), *Fan-out* (abertura no alinhamento), *Second fan-out* (segunda abertura na inferência), ramo paralelo dos metadados, *Fan-in* (fechamento na mineração e no manifesto), e as atividades opcionais em traço tracejado. A legenda separa o modelo (Zika-21 e VARV-52) da medição (Zika-21 r6 e VARV-6 r3). Esta é a figura para o artigo, com 170 mm de largura, 220 mm de altura e texto de 7,7 pt ou mais (medido no PDF por `pdftotext -bbox`; 8,1 pt pelo tamanho de origem). As duas figuras acima são a versão detalhada, para consulta e material suplementar.
