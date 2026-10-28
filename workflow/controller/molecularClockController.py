@@ -25,6 +25,9 @@ Entrada que o controlador lê do `tree_config` (via `getattr`, sem schema, como
 ``molecular_clock_threads`` : int, padrão ``1``
     **Não** herda `iqtree_threads`: com mais de uma thread o ponto estimado
     muda entre corridas (medido; ver `workflow.molecular_clock.datacao`).
+``molecular_clock_curadoria`` : str, opcional
+    CSV de curadoria de datas; ausente = desligada. Só preenche o
+    `collection_date` vazio do GenBank; origem, caminho e SHA-256 vão ao `protocolo`.
 ``random_seed`` : int — o mesmo do resto do pipeline, repassado em ``-seed``.
 ``align_method`` : str — só desempata a escolha da árvore principal.
 
@@ -166,6 +169,7 @@ class MolecularClockController:
             "threads": int(getattr(self, 'molecular_clock_threads', 1)),
             "semente": reproducibility_settings(cfg)["random_seed"],
             "ano_pontual": False,
+            "curadoria": getattr(self, 'molecular_clock_curadoria', None) or None,
         }
 
     def _arvores_candidatas(self) -> List[str]:
@@ -227,8 +231,10 @@ class MolecularClockController:
 
         resumo["ferramentas"]["iqtree"] = _versao_iqtree(binario)
         crus = datacao.extrair_collection_date(self.gb)
+        curadoria = self._ler_curadoria(resumo, crus, params)
         for nome in datavel:
-            resumo["por_arvore"][nome] = self._datar(nome, binario, crus, grupo_externo, params)
+            resumo["por_arvore"][nome] = self._datar(nome, binario, crus, grupo_externo, params,
+                                                     curadoria)
             if resumo["ferramentas"].get("lsd2") is None:
                 rel = resumo["por_arvore"][nome].get("_relatorio_lsd")
                 if rel:
@@ -240,6 +246,34 @@ class MolecularClockController:
         return self._gravar(resumo)
 
     # ------------------------------------------------------------------ #
+    def _ler_curadoria(self, resumo: Dict, crus: Dict, params: Dict) -> Dict:
+        """
+        Liga a curadoria de datas (opcional) e a declara no `protocolo`. CSV
+        ausente ou malformado não derruba a etapa: ela roda só com o GenBank,
+        como sem a opção, e o `protocolo` diz que a curadoria foi pedida e não
+        pôde ser usada.
+
+        Return
+        ------
+        dict
+            ``datas`` de `ler_curadoria_datas`; vazio quando desligada ou indisponível.
+        """
+        cur = resumo["protocolo"]["curadoria"]
+        if not params["curadoria"]:
+            cur["estado"] = "desligada"
+            return {}
+        try:
+            lida = datacao.ler_curadoria_datas(params["curadoria"])
+        except (OSError, ValueError) as exc:
+            logging.warning(f"Relógio molecular: curadoria indisponível, só GenBank: {exc}")
+            cur.update(estado="indisponivel", motivo=str(exc))
+            return {}
+        cur.update(estado="aplicada", sha256=lida["sha256"], linhas_lidas=lida["linhas_lidas"],
+                   linhas_candidatas=len(lida["datas"]), linhas_ignoradas=lida["ignoradas"],
+                   registros_no_gb=len(crus),
+                   registros_do_gb_sem_collection_date=sum(1 for v in crus.values() if v is None))
+        return lida["datas"]
+
     def _esqueleto(self, params: Dict, grupo_externo: List[str]) -> Dict:
         return {
             "versao_do_contrato": VERSAO_DO_CONTRATO,
@@ -284,6 +318,12 @@ class MolecularClockController:
                 "semente": params["semente"],
                 "keep_ident": True,
                 "convencao_ano_so": "intervalo YYYY:YYYY+1",
+                "fonte_das_datas": ("collection_date do GenBank"
+                                    if not params["curadoria"] else
+                                    "collection_date do GenBank; a curadoria preenche só o que "
+                                    "o GenBank deixou vazio, nunca sobrescreve"),
+                "curadoria": {"ligada": bool(params["curadoria"]),
+                              "csv": params["curadoria"], "sha256": None, "estado": "nao_avaliada"},
                 "minimo_de_pontas_datadas": "max(3, 10% das pontas do grupo interno)",
                 "portao_de_sinal_temporal": ("inclinação raiz-ponta > 0 no grupo interno, "
                                              "raiz na aresta do grupo externo"),
@@ -307,7 +347,7 @@ class MolecularClockController:
         return rel
 
     def _datar(self, nome: str, binario: str, crus: Dict, grupo_externo: List[str],
-               params: Dict) -> Dict:
+               params: Dict, curadoria: Optional[Dict] = None) -> Dict:
         """Data uma árvore. Toda saída é um dict com `estado`; nada levanta."""
         rotulo = PipelineLabel.parse(nome, prefix="tree_")
         stem = os.path.splitext(nome)[0]
@@ -340,8 +380,9 @@ class MolecularClockController:
 
             nwk = f"{prefixo}.entrada.nwk"
             rotulos = datacao.escrever_entrada(arv, datacao.ler_rotulos_do_alinhamento(aln), nwk)
+            crus, curadas = datacao.aplicar_curadoria(crus, curadoria or {}, rotulos.values())
             datas = datacao.escrever_arquivo_datas(crus, rotulos, f"{prefixo}.datas.txt",
-                                                   interno, params["ano_pontual"])
+                                                   interno, params["ano_pontual"], curadas)
             decimais = datas.pop("_decimais")
             rel["datas"] = datas
 
@@ -505,6 +546,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--model", default=None)
     ap.add_argument("--ci", type=int, default=None)
     ap.add_argument("--threads", type=int, default=None)
+    ap.add_argument("--curadoria", default=None, metavar="CSV",
+                    help="liga a curadoria de datas: preenche só o collection_date que o GenBank "
+                         "deixou vazio (desligada por padrão)")
     ap.add_argument("--blfix", action="store_true", help="não reotimizar comprimentos de ramo")
     a = ap.parse_args(argv)
 
@@ -517,7 +561,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     if a.outgroup_file or a.outgroup:
         cfg["molecular_clock_outgroup"] = a.outgroup_file or a.outgroup
     for chave, valor in (("molecular_clock_tree", a.tree), ("molecular_clock_model", a.model),
-                         ("molecular_clock_ci", a.ci), ("molecular_clock_threads", a.threads)):
+                         ("molecular_clock_ci", a.ci), ("molecular_clock_threads", a.threads),
+                         ("molecular_clock_curadoria", a.curadoria)):
         if valor is not None:
             cfg[chave] = valor
     if a.blfix:

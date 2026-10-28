@@ -27,7 +27,9 @@ documento 16):
 
 from __future__ import annotations
 
+import csv
 import datetime as _dt
+import hashlib
 import os
 import re
 import subprocess
@@ -43,6 +45,8 @@ from workflow.stability.clade_identity import (
 __all__ = [
     "MESES",
     "extrair_collection_date",
+    "ler_curadoria_datas",
+    "aplicar_curadoria",
     "converter_data",
     "data_decimal",
     "data_anotada_para_decimal",
@@ -94,6 +98,134 @@ def extrair_collection_date(gb_path: str) -> Dict[str, Optional[str]]:
         saida[acc.group(1)] = cd.group(1).strip() if cd else None
     return saida
 
+
+COLUNAS_CURADORIA = ("acesso", "data_coleta", "precisao_data", "origem", "conflito_com_genbank")
+
+
+def ler_curadoria_datas(csv_path: str) -> Dict:
+    """
+    Lê a tabela de curadoria (``varv_curadoria_pais_data.csv``) só no que a
+    datação consome: acesso, data, precisão e conflito.
+
+    O casamento é pelo acesso **sem versão** (D13: IQ-TREE e RAxML truncam o
+    rótulo). Linha entra como candidata só se tem `data_coleta` reconhecida,
+    `precisao_data` coerente com o formato da data e `conflito_com_genbank`
+    vazio ou ``nao``; qualquer outra vira ignorada **com o motivo** — ambíguo
+    nunca vira número (regra 5 do CLAUDE.md). Colunas além das usadas são
+    toleradas.
+
+    Return
+    ------
+    dict
+        ``datas`` (acesso sem versão -> ``{data, precisao, origem}``),
+        ``ignoradas`` (``[{acesso, motivo}]``), ``linhas_lidas`` e ``sha256``
+        do arquivo exatamente como lido.
+
+    Raises
+    ------
+    FileNotFoundError
+        CSV ausente.
+    ValueError
+        CSV sem as colunas necessárias ou ilegível.
+    """
+    with open(csv_path, "rb") as fh:
+        bruto = fh.read()
+    sha = hashlib.sha256(bruto).hexdigest()
+    try:
+        leitor = csv.DictReader(bruto.decode("utf-8").splitlines())
+        cabecalho = set(leitor.fieldnames or ())
+        linhas = list(leitor)
+    except (UnicodeDecodeError, csv.Error) as exc:
+        raise ValueError(f"CSV de curadoria ilegível ({csv_path}): {exc}") from exc
+    faltam = [c for c in COLUNAS_CURADORIA if c not in cabecalho]
+    if faltam:
+        raise ValueError(f"CSV de curadoria sem a(s) coluna(s) {faltam}: {csv_path}")
+    if any(None in l or None in l.values() for l in linhas):
+        raise ValueError(f"CSV de curadoria malformado (linha com número de campos "
+                         f"diferente do cabeçalho): {csv_path}")
+
+    candidatas: Dict[str, List[Dict]] = {}
+    ignoradas: List[Dict] = []
+    for l in linhas:
+        acc = (l["acesso"] or "").strip()
+        if not acc:
+            ignoradas.append({"acesso": None, "motivo": "linha sem acesso"})
+            continue
+        chave = strip_accession_version(acc)
+        conflito = (l["conflito_com_genbank"] or "").strip()
+        data = (l["data_coleta"] or "").strip()
+        if conflito not in ("", "nao"):
+            ignoradas.append({"acesso": acc, "motivo": f"conflito_com_genbank={conflito}"})
+            continue
+        if not data:
+            ignoradas.append({"acesso": acc, "motivo": "data_coleta vazia"})
+            continue
+        try:
+            _, prec = converter_data(data)
+        except ValueError:
+            ignoradas.append({"acesso": acc, "motivo": f"data_coleta não reconhecida: {data!r}"})
+            continue
+        declarada = (l["precisao_data"] or "").strip()
+        if declarada and declarada != prec:
+            ignoradas.append({"acesso": acc, "motivo": (
+                f"precisao_data={declarada!r} incoerente com data_coleta={data!r} ({prec})")})
+            continue
+        candidatas.setdefault(chave, []).append(
+            {"data": data, "precisao": prec, "origem": (l["origem"] or "").strip(), "acesso": acc})
+
+    datas: Dict[str, Dict] = {}
+    for chave, regs in candidatas.items():
+        if len({r["data"] for r in regs}) > 1:
+            ignoradas.extend({"acesso": r["acesso"],
+                              "motivo": "acesso duplicado com datas divergentes"} for r in regs)
+            continue
+        r = regs[0]
+        datas[chave] = {"data": r["data"], "precisao": r["precisao"], "origem": r["origem"]}
+    return {"datas": datas, "ignoradas": ignoradas, "linhas_lidas": len(linhas), "sha256": sha}
+
+
+def aplicar_curadoria(crus: Dict[str, Optional[str]], curadoria: Dict[str, Dict],
+                      acessos: Iterable[str] = ()
+                      ) -> Tuple[Dict[str, Optional[str]], Dict[str, Dict]]:
+    """
+    Preenche com a curadoria **só** o `collection_date` que o GenBank deixou
+    vazio; valor do GenBank nunca é tocado.
+
+    "Vazio" inclui o acesso sem registro no .gb (`acessos` presentes na
+    árvore e ausentes de `crus`): o .gb do pipeline pode vir truncado (VARV-52
+    tem 3 registros em 52 pontas), e sem registro também não há campo
+    estruturado a preservar.
+
+    Parameters
+    ----------
+    crus : dict
+        Saída de `extrair_collection_date` (não é alterada).
+    curadoria : dict
+        ``datas`` de `ler_curadoria_datas`.
+    acessos : iterable of str
+        Rótulos das pontas da árvore.
+
+    Return
+    ------
+    tuple
+        ``(crus_novo, preenchidas)``; `preenchidas` é ``acesso -> {data,
+        precisao, origem, sem_registro_genbank}`` para o que veio da curadoria.
+    """
+    novo = dict(crus)
+    preenchidas: Dict[str, Dict] = {}
+    for k, v in crus.items():
+        if v is None:
+            c = curadoria.get(strip_accession_version(k))
+            if c is not None:
+                novo[k] = c["data"]
+                preenchidas[k] = {**c, "sem_registro_genbank": False}
+    com_registro = {strip_accession_version(k) for k in crus}
+    for a in acessos:
+        n = strip_accession_version(a)
+        if n not in com_registro and n in curadoria:
+            novo[a] = curadoria[n]["data"]
+            preenchidas[a] = {**curadoria[n], "sem_registro_genbank": True}
+    return novo, preenchidas
 
 def converter_data(crua: str, ano_pontual: bool = False) -> Tuple[str, str]:
     """
@@ -309,7 +441,8 @@ def escrever_entrada(arv, rotulos_aln: List[str], destino_nwk: str) -> Dict[str,
 
 def escrever_arquivo_datas(crus: Dict[str, Optional[str]], rotulos: Dict[str, str],
                            destino: str, grupo_interno: FrozenSet[str],
-                           ano_pontual: bool = False) -> Dict:
+                           ano_pontual: bool = False,
+                           curadas: Optional[Dict[str, Dict]] = None) -> Dict:
     """
     Escreve ``rótulo<TAB>data`` para toda ponta da árvore que tem data.
 
@@ -326,12 +459,17 @@ def escrever_arquivo_datas(crus: Dict[str, Optional[str]], rotulos: Dict[str, st
         ``acesso normalizado -> rótulo`` das pontas da árvore.
     grupo_interno : frozenset
         Acessos normalizados do grupo interno.
+    curadas : dict, optional
+        ``acesso.version -> {data, precisao, origem}`` das datas que vieram da
+        curadoria (`aplicar_curadoria`); as demais são do GenBank.
     """
+    curadas_n = {strip_accession_version(k): v for k, v in (curadas or {}).items()}
     crus_n = {strip_accession_version(k): v for k, v in crus.items()}
     linhas: List[str] = []
     prec = {"dia": 0, "mes": 0, "ano": 0}
     sem_data, sem_registro, nao_reconhecidas = [], [], []
     decimais: Dict[str, float] = {}
+    por_curadoria: Dict[str, Dict] = {}
     for norm, rot in sorted(rotulos.items()):
         if norm not in crus_n:
             sem_registro.append(rot)
@@ -348,12 +486,19 @@ def escrever_arquivo_datas(crus: Dict[str, Optional[str]], rotulos: Dict[str, st
         prec[p] += 1
         linhas.append(f"{rot}\t{conv}")
         decimais[norm] = data_decimal(conv)
+        if norm in curadas_n:
+            por_curadoria[rot] = {"data": valor, "precisao": p,
+                                  "origem_na_curadoria": curadas_n[norm]["origem"],
+                                  "sem_registro_genbank": curadas_n[norm].get("sem_registro_genbank")}
     with open(destino, "w") as fh:
         fh.write("\n".join(linhas) + "\n")
     return {
         "pontas_datadas": len(linhas),
         "pontas_datadas_no_grupo_interno": sum(1 for n in decimais if n in grupo_interno),
         "precisao": prec,
+        "origem_das_datas": {"genbank_estruturado": len(linhas) - len(por_curadoria),
+                             "curadoria": len(por_curadoria)},
+        "pontas_datadas_por_curadoria": por_curadoria,
         "sem_collection_date": sem_data,
         "sem_registro_genbank": sem_registro,
         "collection_date_nao_reconhecido": nao_reconhecidas,
