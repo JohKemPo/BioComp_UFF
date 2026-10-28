@@ -101,8 +101,13 @@ def extrair_collection_date(gb_path: str) -> Dict[str, Optional[str]]:
 
 COLUNAS_CURADORIA = ("acesso", "data_coleta", "precisao_data", "origem", "conflito_com_genbank")
 
+# Origens que datam. `genbank_strain_texto` (data lida do texto da cepa) fica de fora:
+# não é fonte primária, e o plano 16 §6.4 proíbe datar com ela.
+ORIGENS_CONFIAVEIS_CURADORIA = ("genbank_estruturado", "curadoria_esposito2006",
+                                "genbank_estruturado+curadoria_esposito2006")
 
-def ler_curadoria_datas(csv_path: str) -> Dict:
+
+def ler_curadoria_datas(csv_path: str, origens_confiaveis=ORIGENS_CONFIAVEIS_CURADORIA) -> Dict:
     """
     Lê a tabela de curadoria (``varv_curadoria_pais_data.csv``) só no que a
     datação consome: acesso, data, precisão e conflito.
@@ -110,9 +115,17 @@ def ler_curadoria_datas(csv_path: str) -> Dict:
     O casamento é pelo acesso **sem versão** (D13: IQ-TREE e RAxML truncam o
     rótulo). Linha entra como candidata só se tem `data_coleta` reconhecida,
     `precisao_data` coerente com o formato da data e `conflito_com_genbank`
-    vazio ou ``nao``; qualquer outra vira ignorada **com o motivo** — ambíguo
-    nunca vira número (regra 5 do CLAUDE.md). Colunas além das usadas são
-    toleradas.
+    vazio ou ``nao``, e `origem` numa das ``origens_confiaveis``; qualquer outra
+    vira ignorada **com o motivo** — ambíguo nunca vira número (regra 5 do
+    CLAUDE.md). Colunas além das usadas são toleradas.
+
+    Parameters
+    ----------
+    csv_path : str
+        Caminho do CSV de curadoria.
+    origens_confiaveis : iterable de str
+        Valores de `origem` aceitos para datar. Padrão: `ORIGENS_CONFIAVEIS_CURADORIA`.
+        Uma fonte primária nova entra por aqui, sem mudar o código.
 
     Return
     ------
@@ -144,6 +157,10 @@ def ler_curadoria_datas(csv_path: str) -> Dict:
         raise ValueError(f"CSV de curadoria malformado (linha com número de campos "
                          f"diferente do cabeçalho): {csv_path}")
 
+    if isinstance(origens_confiaveis, str):
+        origens_confiaveis = (origens_confiaveis,)
+    origens_confiaveis = frozenset(origens_confiaveis)
+
     candidatas: Dict[str, List[Dict]] = {}
     ignoradas: List[Dict] = []
     for l in linhas:
@@ -154,6 +171,10 @@ def ler_curadoria_datas(csv_path: str) -> Dict:
         chave = strip_accession_version(acc)
         conflito = (l["conflito_com_genbank"] or "").strip()
         data = (l["data_coleta"] or "").strip()
+        origem = (l["origem"] or "").strip()
+        if origem not in origens_confiaveis:
+            ignoradas.append({"acesso": acc, "motivo": f"origem não confiável para datar: {origem!r}"})
+            continue
         if conflito not in ("", "nao"):
             ignoradas.append({"acesso": acc, "motivo": f"conflito_com_genbank={conflito}"})
             continue
@@ -171,7 +192,7 @@ def ler_curadoria_datas(csv_path: str) -> Dict:
                 f"precisao_data={declarada!r} incoerente com data_coleta={data!r} ({prec})")})
             continue
         candidatas.setdefault(chave, []).append(
-            {"data": data, "precisao": prec, "origem": (l["origem"] or "").strip(), "acesso": acc})
+            {"data": data, "precisao": prec, "origem": origem, "acesso": acc})
 
     datas: Dict[str, Dict] = {}
     for chave, regs in candidatas.items():

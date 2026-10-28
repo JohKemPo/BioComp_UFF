@@ -170,6 +170,7 @@ class MolecularClockController:
             "semente": reproducibility_settings(cfg)["random_seed"],
             "ano_pontual": False,
             "curadoria": getattr(self, 'molecular_clock_curadoria', None) or None,
+            "curadoria_origens": getattr(self, 'molecular_clock_curadoria_origens', None) or None,
         }
 
     def _arvores_candidatas(self) -> List[str]:
@@ -262,8 +263,10 @@ class MolecularClockController:
         if not params["curadoria"]:
             cur["estado"] = "desligada"
             return {}
+        origens = params["curadoria_origens"] or datacao.ORIGENS_CONFIAVEIS_CURADORIA
+        cur["origens_confiaveis"] = sorted(origens)
         try:
-            lida = datacao.ler_curadoria_datas(params["curadoria"])
+            lida = datacao.ler_curadoria_datas(params["curadoria"], origens_confiaveis=origens)
         except (OSError, ValueError) as exc:
             logging.warning(f"Relógio molecular: curadoria indisponível, só GenBank: {exc}")
             cur.update(estado="indisponivel", motivo=str(exc))
@@ -549,6 +552,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--curadoria", default=None, metavar="CSV",
                     help="liga a curadoria de datas: preenche só o collection_date que o GenBank "
                          "deixou vazio (desligada por padrão)")
+    ap.add_argument("--curadoria-origens", default=None, metavar="ORIGENS",
+                    help="origens de `origem` aceitas para datar, separadas por vírgula "
+                         "(padrão: genbank_estruturado,curadoria_esposito2006,"
+                         "genbank_estruturado+curadoria_esposito2006)")
     ap.add_argument("--blfix", action="store_true", help="não reotimizar comprimentos de ramo")
     a = ap.parse_args(argv)
 
@@ -565,6 +572,9 @@ def main(argv: Optional[List[str]] = None) -> int:
                          ("molecular_clock_curadoria", a.curadoria)):
         if valor is not None:
             cfg[chave] = valor
+    if a.curadoria_origens is not None:
+        cfg["molecular_clock_curadoria_origens"] = [o.strip() for o in a.curadoria_origens.split(",")
+                                                    if o.strip()]
     if a.blfix:
         cfg["molecular_clock_reoptimize_branches"] = False
 
