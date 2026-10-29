@@ -17,14 +17,15 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import subprocess
 import tempfile
 import unittest
 
 from workflow.utils import tool_runs
 from workflow.utils.external_tools import CANDIDATOS
 from workflow.utils.manifest import (ExecutionManifest, MANIFEST_FILENAME,
-                                     anexar_execucao_isolada, file_digest,
-                                     tool_versions)
+                                     _git_state, anexar_execucao_isolada,
+                                     file_digest, tool_versions)
 
 
 class TestDigest(unittest.TestCase):
@@ -353,6 +354,55 @@ class TestManifesto(unittest.TestCase):
             texto = handle.read()
         json.loads(texto)   # não levanta
         self.assertIn('"manifest_version": 2', texto)
+
+
+class TestEstadoGit(unittest.TestCase):
+    """`dirty` distingue árvore limpa (`False`) de estado desconhecido (`None`).
+
+    Até 2026-10-29 a saída vazia do `git status --porcelain` virava `None`, e
+    nenhuma execução conseguia gravar `dirty: false` — o portão do IN-09 era
+    inatingível. E um diretório fora de repositório saía `dirty: true`, porque
+    a mensagem de erro do git contava como mudança.
+    """
+
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.dir, ignore_errors=True)
+
+    def _git(self, *args):
+        subprocess.run(["git", "-C", self.dir, *args], check=True,
+                       capture_output=True, stdin=subprocess.DEVNULL)
+
+    def _repositorio_com_um_commit(self):
+        self._git("init", "-q")
+        with open(os.path.join(self.dir, "a.txt"), "w") as handle:
+            handle.write("a\n")
+        self._git("add", "a.txt")
+        self._git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "a")
+
+    def test_arvore_limpa_e_false_nao_none(self):
+        self._repositorio_com_um_commit()
+        estado = _git_state(self.dir)
+        self.assertIs(estado["dirty"], False)
+        self.assertIsNotNone(estado["commit"])
+
+    def test_arvore_suja_e_true(self):
+        self._repositorio_com_um_commit()
+        with open(os.path.join(self.dir, "a.txt"), "a") as handle:
+            handle.write("b\n")
+        self.assertIs(_git_state(self.dir)["dirty"], True)
+
+    def test_arquivo_novo_nao_rastreado_e_true(self):
+        self._repositorio_com_um_commit()
+        with open(os.path.join(self.dir, "novo.txt"), "w") as handle:
+            handle.write("n\n")
+        self.assertIs(_git_state(self.dir)["dirty"], True)
+
+    def test_diretorio_fora_de_repositorio_e_none_nao_true(self):
+        # Regra 5: indefinido não é número nem booleano.
+        self.assertIsNone(_git_state(self.dir)["dirty"])
 
 
 class TestAnexarExecucaoIsolada(unittest.TestCase):

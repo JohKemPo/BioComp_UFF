@@ -300,18 +300,33 @@ def anexar_remineracao(out_dir: str, motivo: str, entradas: Dict[str, Optional[s
 
 
 def _git(repo: str, *args: str) -> Optional[str]:
-    saida = _executar(["git", "-C", repo, *args]).strip()
-    return saida or None
+    """
+    Stdout do git, ou `None` se o comando falhou.
+
+    Não usa `_executar`: ele junta stderr ao stdout, e a mensagem de erro de um
+    diretório fora de repositório virava `commit` e `dirty: true` (IN-09).
+    """
+    try:
+        resultado = subprocess.run(["git", "-C", repo, *args], capture_output=True,
+                                   text=True, stdin=subprocess.DEVNULL,
+                                   timeout=10, check=False)
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+        return None
+    if resultado.returncode != 0:
+        return None
+    return resultado.stdout.strip()
 
 
 def _git_state(repo: str) -> Dict[str, Optional[object]]:
     """Commit, ramo e se havia mudança não commitada no momento da execução."""
     if not os.path.isdir(repo):
         return {"commit": None, "branch": None, "dirty": None}
+    # Saída vazia é árvore limpa (`False`); só a falha do comando é `None`.
+    # Antes as duas viravam `None`, e `dirty: false` era inatingível (IN-09).
     sujo = _git(repo, "status", "--porcelain")
     return {
-        "commit": _git(repo, "rev-parse", "HEAD"),
-        "branch": _git(repo, "rev-parse", "--abbrev-ref", "HEAD"),
+        "commit": _git(repo, "rev-parse", "HEAD") or None,
+        "branch": _git(repo, "rev-parse", "--abbrev-ref", "HEAD") or None,
         "dirty": bool(sujo) if sujo is not None else None,
     }
 
