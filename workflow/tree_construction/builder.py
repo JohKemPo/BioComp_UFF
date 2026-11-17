@@ -372,9 +372,9 @@ class TreeBuilder:
         Raises
         ------
         workflow.tree_construction.distancia_p.SemSitioComparavel
-            Se algum par do alinhamento não tiver nenhum sítio em que ambas
-            as sequências tenham base determinada — regra 5 do projeto,
-            "não aplicável" não vira `0.0` nem `1.0`.
+            Se algum par do alinhamento tiver sobreposição de sítios com base
+            abaixo de ``max(100, 0,5 × bases da mais curta)`` (U4, DM-10), ou
+            nula — regra 5 do projeto, "não aplicável" não vira `0.0` nem `1.0`.
         """
         return matriz_distancia_p(alignment)
     

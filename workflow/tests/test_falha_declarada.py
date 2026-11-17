@@ -33,7 +33,10 @@ from workflow.utils import tool_runs
 from workflow.utils.manifest import ExecutionManifest
 
 NEWICK = "((t1:0.1,t2:0.1):0.1,(t3:0.1,t4:0.1):0.1);"
-ALINHAMENTO = ">t1\nACGTACGTAA\n>t2\nACGTACGTAG\n>t3\nACGAACGTTA\n>t4\nACGAACGTTG\n"
+#: 120 colunas: abaixo de 100 sítios comparáveis a p-distância é indefinida (U4).
+ALINHAMENTO = "".join(f">{n}\n{s * 12}\n" for n, s in
+                      [("t1", "ACGTACGTAA"), ("t2", "ACGTACGTAG"),
+                       ("t3", "ACGAACGTTA"), ("t4", "ACGAACGTTG")])
 
 #: Caminho absoluto com nome de usuário, como o `FileNotFoundError` real do
 #: `require_tool` cita. Não pode chegar ao manifesto (D15).

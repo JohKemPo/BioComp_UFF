@@ -32,15 +32,20 @@ Este módulo dá duas coisas ao `builder.py`, sem tocar o Biopython instalado:
    caso: uma coluna só de `-`/`n` é igual ao seu primeiro caractere em toda
    posição).
 
-Ambas seguem a regra 5 do projeto: um par sem nenhum sítio comparável (as
-duas sequências não têm nenhuma posição em que ambas tenham base) não vira
-`1.0` como se fosse a distância máxima medida — levanta `SemSitioComparavel`,
-porque "sem dado" não é o mesmo número que "totalmente diferente".
+Ambas seguem a regra 5 do projeto: um par sem sítios comparáveis suficientes
+não vira `1.0` nem `0` como se fosse uma distância medida — levanta
+`SemSitioComparavel`, porque "sem dado" não é o mesmo número que "totalmente
+diferente". "Suficientes" é a regra U4 (DM-10): sobreposição
+``>= max(100, 0,5 × bases da mais curta do par)``, em que "bases" são as
+colunas fora de `-` e `n` (o mesmo conjunto que define sítio comparável, o
+que mantém a razão em [0, 1]). Sobreposição zero continua indefinida.
 
 Isso acontece com dado real, não só em teste: um conjunto que mistura
 fragmentos de genes diferentes (em `Zika479_Test_large`, um fragmento de NS3
-contra quatro de NS5) não tem sítio homólogo entre esses pares. A p-distância
-é indefinida ali, e NJ/UPGMA sobre o alinhamento inteiro também (DEC-152).
+contra quatro de NS5) não tem sítio homólogo entre esses pares, e no
+`Zika_21seq_validacao` o MAFFT iterativo sobrepõe NS3 a NS5 em ~10 colunas.
+A p-distância é indefinida ali, e NJ/UPGMA sobre o alinhamento inteiro também
+(DEC-152).
 """
 
 from __future__ import annotations
@@ -86,10 +91,22 @@ LETRAS_SEM_INFORMACAO = frozenset({"-", "n"})
 #: em `SemSitioComparavel.pares`.
 _PARES_NA_MENSAGEM = 5
 
+#: U4 / DM-10 (`docs/science/19-protocolo-reexecucao-baselines.md` §3.1): um par
+#: só tem p-distância se os sítios comparáveis forem
+#: ``>= max(PISO_SITIOS, FRACAO_MINIMA * (comprimento sem lacuna da mais curta))``.
+FRACAO_MINIMA = 0.5
+PISO_SITIOS = 100
+
+
+def limiar_sitios(n1: int, n2: int, fracao_minima: float = FRACAO_MINIMA,
+                  piso_sitios: int = PISO_SITIOS) -> float:
+    """Mínimo de sítios comparáveis de um par cujas sequências têm `n1` e `n2` bases."""
+    return max(piso_sitios, fracao_minima * min(n1, n2))
+
 
 class SemSitioComparavel(ValueError):
     """
-    Nenhum sítio em que as duas sequências de um par têm base determinada.
+    Par sem sítios comparáveis suficientes (nenhum, ou abaixo do limiar de U4).
 
     Attributes
     ----------
@@ -103,18 +120,20 @@ class SemSitioComparavel(ValueError):
         self.pares = list(pares)
 
     @classmethod
-    def para_pares(cls, pares: Sequence[Tuple[str, str]],
-                   n_sequencias: int) -> "SemSitioComparavel":
+    def para_pares(cls, pares: Sequence[Tuple[str, str]], n_sequencias: int,
+                   fracao_minima: float = FRACAO_MINIMA,
+                   piso_sitios: int = PISO_SITIOS) -> "SemSitioComparavel":
         nomeados = "; ".join(f"{a} × {b}" for a, b in pares[:_PARES_NA_MENSAGEM])
         resto = len(pares) - _PARES_NA_MENSAGEM
         if resto > 0:
             nomeados += f"; e mais {resto}"
         envolvidos = len({t for par in pares for t in par})
         return cls(
-            f"{len(pares)} par(es) sem nenhum sítio em que as duas sequências têm "
-            f"base determinada ({envolvidos} de {n_sequencias} sequências envolvidas) "
+            f"{len(pares)} par(es) sem sítios comparáveis suficientes (mínimo "
+            f"max({piso_sitios}, {fracao_minima} × bases da mais curta); "
+            f"{envolvidos} de {n_sequencias} sequências envolvidas) "
             f"— p-distância indefinida, NJ/UPGMA não se calculam sobre este "
-            f"alinhamento (D28): {nomeados}. Com on_method_failure='continue' o "
+            f"alinhamento (D28, DM-10): {nomeados}. Com on_method_failure='continue' o "
             f"método fica tentado_e_falhou e os demais seguem.",
             pares,
         )
@@ -124,13 +143,25 @@ def _normalizar(seq) -> str:
     return str(seq).lower()
 
 
-def pares_sem_sitio_comparavel(alignment) -> List[Tuple[str, str]]:
+def pares_sem_sitio_comparavel(
+    alignment, fracao_minima: float = FRACAO_MINIMA, piso_sitios: int = PISO_SITIOS
+) -> List[Tuple[str, str]]:
     """
-    Pares do alinhamento sem nenhum sítio em que ambas têm base determinada.
+    Pares do alinhamento com p-distância indefinida (U4).
 
     Mesmo critério de `p_distancia_par` (fora de `LETRAS_SEM_INFORMACAO`),
     calculado de uma vez para todos os pares: sobreposição = M·Mᵀ, onde
-    M[i, c] = 1 se a sequência i tem base na coluna c.
+    M[i, c] = 1 se a sequência i tem base na coluna c. O par é indefinido se
+    a sobreposição é 0 ou menor que `limiar_sitios`; o comprimento da
+    sequência é o número de colunas com base (o mesmo conjunto que conta
+    como comparável, `n`/`-` fora).
+
+    Parameters
+    ----------
+    fracao_minima : float
+        Fração do comprimento da mais curta do par exigida como sobreposição.
+    piso_sitios : int
+        Piso absoluto de sítios comparáveis.
 
     Return
     ------
@@ -151,12 +182,16 @@ def pares_sem_sitio_comparavel(alignment) -> List[Tuple[str, str]]:
         for r in alignment
     ]).astype(np.float32)
     sobreposicao = tem_base @ tem_base.T
+    n_bases = np.diag(sobreposicao)
     return [(nomes[i], nomes[j])
             for i in range(len(nomes)) for j in range(i)
-            if sobreposicao[i, j] == 0]
+            if sobreposicao[i, j] == 0
+            or sobreposicao[i, j] < limiar_sitios(n_bases[i], n_bases[j],
+                                                  fracao_minima, piso_sitios)]
 
 
-def p_distancia_par(seq1, seq2) -> Tuple[float, int]:
+def p_distancia_par(seq1, seq2, fracao_minima: float = FRACAO_MINIMA,
+                    piso_sitios: int = PISO_SITIOS) -> Tuple[float, int]:
     """
     p-distância entre duas sequências alinhadas, nos sítios em que ambas
     têm base determinada (fora de `LETRAS_SEM_INFORMACAO`).
@@ -165,30 +200,35 @@ def p_distancia_par(seq1, seq2) -> Tuple[float, int]:
     ------
     (distancia, n_sitios_comparaveis) : Tuple[float, int]
         `distancia` é a fração de sítios comparáveis que diferem. Levanta
-        `SemSitioComparavel` se `n_sitios_comparaveis == 0` — a regra 5 do
-        projeto proíbe devolver um número (`0.0` ou `1.0`) onde a métrica é
-        indefinida.
+        `SemSitioComparavel` se `n_sitios_comparaveis` é 0 ou menor que
+        `limiar_sitios` — a regra 5 do projeto proíbe devolver um número
+        (`0.0` ou `1.0`) onde a métrica é indefinida.
     """
     s1, s2 = _normalizar(seq1), _normalizar(seq2)
     if len(s1) != len(s2):
         raise ValueError(f"Sequências de comprimento diferente: {len(s1)} != {len(s2)}")
     comparaveis = 0
     diferentes = 0
+    bases1 = bases2 = 0
     for c1, c2 in zip(s1, s2):
+        bases1 += c1 not in LETRAS_SEM_INFORMACAO
+        bases2 += c2 not in LETRAS_SEM_INFORMACAO
         if c1 in LETRAS_SEM_INFORMACAO or c2 in LETRAS_SEM_INFORMACAO:
             continue
         comparaveis += 1
         if c1 != c2:
             diferentes += 1
-    if comparaveis == 0:
+    limiar = limiar_sitios(bases1, bases2, fracao_minima, piso_sitios)
+    if comparaveis == 0 or comparaveis < limiar:
         raise SemSitioComparavel(
-            "nenhum sítio em que as duas sequências têm base determinada — "
-            "p-distância indefinida para este par (D28)"
+            f"{comparaveis} sítio(s) comparável(is), abaixo do mínimo {limiar:g} "
+            f"— p-distância indefinida para este par (D28, DM-10)"
         )
     return diferentes / comparaveis, comparaveis
 
 
-def matriz_distancia_p(alignment) -> DistanceMatrix:
+def matriz_distancia_p(alignment, fracao_minima: float = FRACAO_MINIMA,
+                       piso_sitios: int = PISO_SITIOS) -> DistanceMatrix:
     """
     Matriz de distâncias compatível com `Bio.Phylo.TreeConstruction`
     (mesma interface que `DistanceCalculator.get_distance` devolve), usando
@@ -202,18 +242,20 @@ def matriz_distancia_p(alignment) -> DistanceMatrix:
     Raises
     ------
     SemSitioComparavel
-        Se algum par do alinhamento não tiver nenhum sítio comparável —
-        não silenciado como distância máxima. Levantada antes de calcular
+        Se algum par do alinhamento tiver sobreposição abaixo do limiar de U4
+        (ou nula) — não silenciado como distância máxima. Levantada antes de calcular
         qualquer distância, com **todos** os pares em `.pares`.
     """
-    sem_sitio = pares_sem_sitio_comparavel(alignment)
+    sem_sitio = pares_sem_sitio_comparavel(alignment, fracao_minima, piso_sitios)
     if sem_sitio:
-        raise SemSitioComparavel.para_pares(sem_sitio, len(alignment))
+        raise SemSitioComparavel.para_pares(sem_sitio, len(alignment),
+                                            fracao_minima, piso_sitios)
     nomes = [r.id for r in alignment]
     dm = DistanceMatrix(nomes)
     for i in range(len(alignment)):
         for j in range(i):
-            dist, _n = p_distancia_par(alignment[i].seq, alignment[j].seq)
+            dist, _n = p_distancia_par(alignment[i].seq, alignment[j].seq,
+                                       fracao_minima, piso_sitios)
             dm[nomes[i], nomes[j]] = dist
     return dm
 

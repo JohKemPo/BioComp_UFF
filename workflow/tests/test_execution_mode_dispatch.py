@@ -31,11 +31,12 @@ from workflow.controller.treeBuilderController import (MODOS_BASICOS,
                                                         TreeBuilderController)
 from workflow.utils import external_tools, tool_runs
 
-_FASTA = (
-    ">a\nACGTACGTACGTACGTACGTACGTACGT\n"
-    ">b\nACGTACGTACGTACGTACGTACGTACGA\n"
-    ">c\nACGTACGTACGTACGTACGTACGTACTA\n"
-)
+#: 140 colunas: abaixo de 100 sítios comparáveis a p-distância é indefinida (U4).
+_FASTA = "".join(f">{n}\n{s * 5}\n" for n, s in [
+    ("a", "ACGTACGTACGTACGTACGTACGTACGT"),
+    ("b", "ACGTACGTACGTACGTACGTACGTACGA"),
+    ("c", "ACGTACGTACGTACGTACGTACGTACTA"),
+])
 
 
 @unittest.skipUnless(external_tools.resolve_tool("mafft"), "requer MAFFT instalado")
