@@ -355,6 +355,133 @@ def _environment() -> Dict[str, object]:
     }
 
 
+_FONTE_MAFFT_THREADS = "https://mafft.cbrc.jp/alignment/software/multithreading.html"
+
+
+def _valor_opcao(comando: List[str], *opcoes: str) -> Optional[str]:
+    """Valor que segue a primeira das `opcoes` presente no comando, ou None."""
+    for i, token in enumerate(comando[:-1]):
+        if token in opcoes:
+            return comando[i + 1]
+    return None
+
+
+def _inteiro(texto: Optional[str]) -> Optional[int]:
+    try:
+        return int(texto) if texto is not None else None
+    except ValueError:
+        return None
+
+
+def _estrategia_mafft(comando: List[str]) -> str:
+    """Argumentos de estratégia de um comando MAFFT: sem ``--thread``/``--threadit``
+    (paralelismo, não estratégia), sem o executável e sem o arquivo de entrada."""
+    pular = False
+    argumentos = []
+    for token in comando[1:-1]:
+        if pular:
+            pular = False
+        elif token in ("--thread", "--threadit"):
+            pular = True
+        else:
+            argumentos.append(token)
+    return " ".join(argumentos)
+
+
+def etapas_nao_deterministicas(tools_invoked: Optional[Dict]) -> List[Dict]:
+    """
+    Etapas desta execução cujo resultado pode mudar entre execuções idênticas.
+
+    A decisão sai do **comando registrado**, não de uma tabela de nomes. Hoje
+    só o MAFFT: refinamento iterativo (``--maxiterate`` inteiro > 0) com mais
+    de uma thread (``--thread`` ≠ 1), sem ``--threadit 0``. O manifesto declara
+    o fato; não o corrige.
+
+    Parameters
+    ----------
+    tools_invoked : dict or None
+        ``ferramenta -> {"runs": [{"command": [...], "saida": ...}, ...]}``.
+
+    Returns
+    -------
+    list of dict
+        Um item por execução afetada; lista vazia quando nada se aplica.
+    """
+    itens: List[Dict] = []
+    for chamada in ((tools_invoked or {}).get("mafft") or {}).get("runs", []):
+        comando = list(chamada.get("command") or [])
+        iteracoes = _inteiro(_valor_opcao(comando, "--maxiterate"))
+        threads = _inteiro(_valor_opcao(comando, "--thread"))
+        if not iteracoes or iteracoes <= 0:
+            continue
+        if threads is None or threads == 1:
+            continue
+        if _inteiro(_valor_opcao(comando, "--threadit")) == 0:
+            continue
+        item = {
+            "etapa": "alinhamento",
+            "ferramenta": "mafft",
+            "comando": comando,
+            "motivo": ("refinamento iterativo do MAFFT com mais de uma thread: "
+                       "o resultado pode diferir entre execuções"),
+            "fonte": _FONTE_MAFFT_THREADS,
+            "como_tornar_deterministico": "--threadit 0 (não aplicado nesta execução)",
+        }
+        if chamada.get("alinhador"):
+            item["alinhador"] = chamada["alinhador"]
+        if chamada.get("saida"):
+            item["saidas_afetadas"] = [chamada["saida"]]
+        itens.append(item)
+    return itens
+
+
+def reproducibility_efetivo(tools_invoked: Optional[Dict]) -> Dict[str, Optional[int]]:
+    """
+    Paralelismo e semente realmente passados às ferramentas, lidos dos comandos.
+
+    ``reproducibility.iqtree_threads`` é o valor **configurado** (governa o
+    bootstrap); a busca de ML roda com ``-nt 1`` fixo (D21). Aqui vale o que
+    está no comando. Valor ilegível, ausente ou divergente entre execuções
+    vira ``None`` — nunca 0.
+    """
+    tools_invoked = tools_invoked or {}
+
+    def unico(ferramenta: str, *opcoes: str, filtro=lambda c: True) -> Optional[int]:
+        valores = {_inteiro(_valor_opcao(c.get("command") or [], *opcoes))
+                   for c in (tools_invoked.get(ferramenta) or {}).get("runs", [])
+                   if filtro(c.get("command") or [])}
+        return valores.pop() if len(valores) == 1 else None
+
+    def busca_de_arvore(comando: List[str]) -> bool:
+        return _valor_opcao(comando, "-m") != "MF"
+
+    semente = unico("iqtree", "-seed", filtro=busca_de_arvore)
+    if semente is None:
+        semente = unico("raxml-ng", "--seed")
+    return {
+        "iqtree_threads": unico("iqtree", "-nt", "-T", filtro=busca_de_arvore),
+        "raxml_threads": unico("raxml-ng", "--threads"),
+        "raxml_workers": unico("raxml-ng", "--workers"),
+        "mafft_threads": unico("mafft", "--thread"),
+        "mafft_threadit": unico("mafft", "--threadit"),
+        "random_seed": semente,
+    }
+
+
+def _tools_invoked_com_estrategia(tools_invoked: Dict[str, Dict]) -> Dict[str, Dict]:
+    """Cópia de `tools_invoked` com ``estrategia`` em cada execução do MAFFT."""
+    saida = {nome: dict(dados) for nome, dados in tools_invoked.items()}
+    mafft = saida.get("mafft")
+    if mafft:
+        runs = [dict(r) for r in mafft.get("runs", [])]
+        for r in runs:
+            r["estrategia"] = _estrategia_mafft(list(r.get("command") or []))
+        mafft["runs"] = runs
+        if len({r["estrategia"] for r in runs}) > 1:
+            mafft["estrategia_nota"] = "valor único legado; ver runs[i].estrategia"
+    return saida
+
+
 class ExecutionManifest:
     """
     Manifesto de uma execução do workflow.
@@ -693,9 +820,13 @@ class ExecutionManifest:
             "git": {nome: _git_state(caminho) for nome, caminho in self.repos.items()},
             "environment": _environment(),
             "tools_available": dict(tool_versions()),
-            "tools_invoked": self._tools_effective,
+            "tools_invoked": _tools_invoked_com_estrategia(self._tools_effective),
             "log_file": self._log_file,
-            "reproducibility": dict(self._reproducibility),
+            "reproducibility": {**self._reproducibility,
+                                "efetivo": reproducibility_efetivo(self._tools_effective)},
+            # Etapas não determinísticas declaradas, não corrigidas; derivadas
+            # dos comandos registrados. Acrescentado sem subir a versão.
+            "nondeterminism": etapas_nao_deterministicas(self._tools_effective),
             "execution_mode": dict(self._execution_mode) or None,
             # M7.6 — campos acrescentados sem mudar a forma de nenhum outro,
             # por isso `manifest_version` continua 2: um leitor da v2 que não
