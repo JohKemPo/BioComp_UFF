@@ -10,7 +10,8 @@ import re
 import logging
 from dendropy import Tree, DataSet
 from io import StringIO
-from workflow.tree_construction.distancia_p import matriz_distancia_p, FitchAmbiguidadeIupac
+from workflow.tree_construction.distancia_p import (
+    matriz_distancia_p, FitchAmbiguidadeIupac, FRACAO_MINIMA, PISO_SITIOS)
 
 
 #TODO: Melhorias de parametros dos novos metodos ( esta é somente a versão estavel )
@@ -376,7 +377,12 @@ class TreeBuilder:
             abaixo de ``max(100, 0,5 × bases da mais curta)`` (U4, DM-10), ou
             nula — regra 5 do projeto, "não aplicável" não vira `0.0` nem `1.0`.
         """
-        return matriz_distancia_p(alignment)
+        fracao_minima = getattr(self, 'fracao_minima', FRACAO_MINIMA)
+        piso_sitios = getattr(self, 'piso_sitios', PISO_SITIOS)
+        # U4: sem isto o limiar efetivo não chega ao manifesto.
+        tool_runs.registrar_parametros('p_distancia', fracao_minima=fracao_minima,
+                                       piso_sitios=piso_sitios)
+        return matriz_distancia_p(alignment, fracao_minima, piso_sitios)
     
     def distance_constructor(self, distance_matrix, construct_tree_method):
         """

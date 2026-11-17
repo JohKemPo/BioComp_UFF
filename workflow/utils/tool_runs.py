@@ -32,6 +32,8 @@ from typing import Dict, List, Optional
 
 __all__ = ["registrar", "execucoes", "anotar", "registrar_metodo", "metodos",
            "registrar_selecao_modelo", "selecoes_modelo", "ESTADOS_SELECAO_MODELO",
+           "registrar_qualidade_alinhamento", "qualidades_alinhamento",
+           "registrar_parametros", "parametros_efetivos",
            "limpar", "ESTADOS_METODO"]
 
 #: `ferramenta -> {parâmetros comuns, "runs": [chamada, ...]}`.
@@ -50,6 +52,13 @@ _METODOS: List[Dict] = []
 #: braço leem a mesma escolha, e é isso que permite dizer que rodaram o mesmo
 #: modelo.
 _SELECOES_MODELO: List[Dict] = []
+
+#: P2 / DM-10 — perfil de lacuna e filtro de colunas, um por alinhamento.
+_QUALIDADES_ALINHAMENTO: List[Dict] = []
+
+#: Parâmetros efetivos de etapas que não chamam ferramenta externa (U4):
+#: `grupo -> {parâmetro: valor}`.
+_PARAMETROS: Dict[str, Dict] = {}
 
 #: ``concluida`` (modelo escolhido e traduzido), ``falhou`` (motivo
 #: obrigatório; os métodos que dependiam dela ficam ``tentado_e_falhou``) ou
@@ -254,9 +263,41 @@ def selecoes_modelo() -> List[Dict]:
         return [dict(s) for s in _SELECOES_MODELO]
 
 
+def registrar_qualidade_alinhamento(alinhamento: str, **campos) -> bool:
+    """
+    Registra o perfil de lacuna (P2) de um alinhamento; o primeiro registro
+    prevalece, como em `registrar_selecao_modelo`.
+    """
+    with _TRAVA:
+        if any(q["alinhamento"] == alinhamento for q in _QUALIDADES_ALINHAMENTO):
+            return False
+        _QUALIDADES_ALINHAMENTO.append({"alinhamento": alinhamento, **campos})
+        return True
+
+
+def qualidades_alinhamento() -> List[Dict]:
+    """Cópia dos perfis de lacuna registrados, na ordem em que aconteceram."""
+    with _TRAVA:
+        return [dict(q) for q in _QUALIDADES_ALINHAMENTO]
+
+
+def registrar_parametros(grupo: str, **parametros) -> None:
+    """Registra os parâmetros efetivos de uma etapa (ex.: ``p_distancia``, U4)."""
+    with _TRAVA:
+        _PARAMETROS.setdefault(grupo, {}).update(parametros)
+
+
+def parametros_efetivos() -> Dict[str, Dict]:
+    """Cópia dos parâmetros efetivos registrados."""
+    with _TRAVA:
+        return {g: dict(p) for g, p in _PARAMETROS.items()}
+
+
 def limpar() -> None:
     """Esvazia o registro. Para uso em teste."""
     with _TRAVA:
         _EXECUCOES.clear()
         _METODOS.clear()
         _SELECOES_MODELO.clear()
+        _QUALIDADES_ALINHAMENTO.clear()
+        _PARAMETROS.clear()

@@ -18,12 +18,15 @@ sys.path.append(os.path.join(current_dir, '../..'))
 
 from workflow.tree_construction.builder import (TreeBuilder, MRBAYES_DEFAULTS,
                                                 reproducibility_settings)
+from workflow.tree_construction.qualidade_alinhamento import (
+    avaliar_alinhamento, LACUNA_MAX_COLUNA, LACUNA_MAX_TAXON, LIMITE_APLICACAO)
 from workflow.tree_construction.modelo_substituicao import (
     MODELO_LEGADO, POLITICA_SELECAO_PADRAO, POLITICAS_SELECAO_MODELO,
     TAXAS_CANDIDATAS, SelecaoDeModeloFalhou, selecionar_modelo)
 from workflow.utils.dataValidation import (duplicate_names, duplicate_seq,
                                            validate_sequences, deduplicar_por_sequencia)
 from workflow.utils.dataCleaning import clean_NoPipe, clean_tmp, copiar_arquivos
+from workflow.utils.manifest import file_digest
 from workflow.utils.messages import Messages
 from workflow.utils.metrics import process_rf_distance, plot_heatmap_distances
 from workflow.alignment.alignmentSeq import AlignmentSeqs
@@ -183,6 +186,30 @@ class TreeBuilderController:
         # Uma seleção por alinhamento: `caminho do alinhamento -> tradução`,
         # ou a exceção, se falhou (não se tenta de novo para o método seguinte).
         self._selecoes_modelo = {}
+
+        # P2 / DM-10 — desligado por padrão; o perfil de lacuna é medido de
+        # todo modo. Validado na largada, como as políticas acima.
+        self.filtro_lacuna = bool(getattr(self, 'filtro_lacuna', False))
+        self.lacuna_max_coluna = getattr(self, 'lacuna_max_coluna', None)
+        if self.lacuna_max_coluna is None:
+            self.lacuna_max_coluna = LACUNA_MAX_COLUNA
+        self.lacuna_max_taxon = getattr(self, 'lacuna_max_taxon', None)
+        if self.lacuna_max_taxon is None:
+            self.lacuna_max_taxon = LACUNA_MAX_TAXON
+        self.lacuna_teto_aplicacao = getattr(self, 'lacuna_teto_aplicacao', None)
+        if self.lacuna_teto_aplicacao is None:
+            self.lacuna_teto_aplicacao = LIMITE_APLICACAO
+        for nome in ('lacuna_max_coluna', 'lacuna_max_taxon', 'lacuna_teto_aplicacao'):
+            if not 0.0 <= getattr(self, nome) <= 1.0:
+                raise ValueError(f"{nome} deve estar em [0, 1]: {getattr(self, nome)!r}")
+        self._qualidade_alinhamento = {}
+        # `tree_config` não valida chave desconhecida (AC-02): um `filtro_lacuna`
+        # digitado errado deixaria o filtro desligado sem aviso.
+        logging.info(
+            f"Filtro de lacuna do alinhamento (P2, DM-10): "
+            f"{'LIGADO' if self.filtro_lacuna else 'DESLIGADO'}; colunas com mais de "
+            f"{self.lacuna_max_coluna:.0%} de lacuna, táxons reportados acima de "
+            f"{self.lacuna_max_taxon:.0%}, teto de aplicação {self.lacuna_teto_aplicacao:.0%}.")
 
         # clean_tmp(self.output_path)
         clean_NoPipe(self.input_path)
@@ -924,6 +951,7 @@ class TreeBuilderController:
             logging.error(f"Erro no alinhamento das sequências para {fasta_path}: {e}", exc_info=True)
             raise
 
+        alng = self._qualidade_do_alinhamento(alng, output_path_align)
         try:
             distance_matrix = builder.distance_matrix(alignment=alng)
             logging.debug("Matriz de distâncias calculada com sucesso.")
@@ -989,6 +1017,7 @@ class TreeBuilderController:
             logging.error(f"Erro no alinhamento das sequências para {fasta_path}: {e}", exc_info=True)
             raise
 
+        alng = self._qualidade_do_alinhamento(alng, output_path_align)
         try:
             distance_matrix = builder.distance_matrix(alignment=alng)
             logging.debug("Matriz de distâncias calculada para parcimônia com sucesso.")
@@ -1262,6 +1291,49 @@ class TreeBuilderController:
             f"Método de alinhamento não suportado: '{align_method}'. "
             f"Disponíveis: {sorted(ALIGNERS)}")
 
+    def _caminho_final_do_alinhamento(self, caminho):
+        """Onde o arquivo de `tmp/` fica ao fim da execução (`Align/`)."""
+        saida = getattr(self, 'output_path', None)
+        if saida is None:
+            return caminho
+        return os.path.join(saida, 'Align', os.path.basename(caminho))
+
+    def _qualidade_do_alinhamento(self, alng, output_path_align):
+        """
+        P2 / DM-10 — mede o perfil de lacuna e, com `filtro_lacuna`, devolve o
+        alinhamento sem as colunas majoritariamente lacuna; táxon nunca sai.
+
+        Uma avaliação por alinhamento: NJ e UPGMA (e os métodos avançados)
+        reaproveitam o resultado.
+        """
+        if output_path_align not in self._qualidade_alinhamento:
+            filtrado, relatorio = avaliar_alinhamento(
+                alng, self.filtro_lacuna, self.lacuna_max_coluna, self.lacuna_max_taxon,
+                self.lacuna_teto_aplicacao)
+            self._qualidade_alinhamento[output_path_align] = filtrado
+            relatorio["alinhamento_sha256"] = file_digest(output_path_align)
+            relatorio["alinhamento_filtrado"] = None
+            relatorio["alinhamento_filtrado_sha256"] = None
+            # O alinhador trabalha em `tmp/`, que o fim da execução copia para
+            # `Align/`: o manifesto aponta o local final, não o de trabalho.
+            relatorio["alinhamento"] = self._caminho_final_do_alinhamento(output_path_align)
+            if relatorio["aplicado"]:
+                # O alinhamento que gera a árvore precisa existir em disco.
+                caminho = output_path_align.replace('.aln', '_lacuna.aln')
+                AlignIO.write(filtrado, caminho, "fasta")
+                relatorio["alinhamento_filtrado"] = self._caminho_final_do_alinhamento(caminho)
+                relatorio["alinhamento_filtrado_sha256"] = file_digest(caminho)
+            tool_runs.registrar_qualidade_alinhamento(
+                relatorio.pop("alinhamento"), **relatorio)
+            logging.info(
+                f"Perfil de lacuna de {os.path.basename(output_path_align)}: "
+                f"{relatorio['colunas_removiveis']} de {relatorio['colunas_antes']} colunas "
+                f"com mais de {self.lacuna_max_coluna:.0%} de lacuna; "
+                f"{len(relatorio['taxons_acima_limiar'])} táxon(s) acima de "
+                f"{self.lacuna_max_taxon:.0%}; filtro "
+                f"{'APLICADO' if relatorio['aplicado'] else 'NÃO aplicado (' + relatorio['motivo'] + ')'}.")
+        return self._qualidade_alinhamento[output_path_align]
+
     def _get_alignment(self, fasta_path, output_path_align, align_method, output_path_align_html):
         """
         Alinhamento do arquivo, reaproveitando o que já estiver em disco.
@@ -1288,12 +1360,15 @@ class TreeBuilderController:
                     os.remove(output_path_align)
                 else:
                     logging.info(f"Arquivo de alinhamento já existe: {output_path_align}. Reutilizando.")
-                    return AlignIO.read(output_path_align, "fasta")
+                    return self._qualidade_do_alinhamento(
+                        AlignIO.read(output_path_align, "fasta"), output_path_align)
 
             logging.info(f"STEP: Aligning seqs...")
             align_method, _ = self._resolver_alinhador(align_method, fasta_path)
-            return self._alinhar(align_method, fasta_path,
-                                 output_path_align, output_path_align_html)
+            return self._qualidade_do_alinhamento(
+                self._alinhar(align_method, fasta_path,
+                              output_path_align, output_path_align_html),
+                output_path_align)
         except Exception as e:
             logging.error(f"Erro ao obter alinhamento: {e}")
             raise

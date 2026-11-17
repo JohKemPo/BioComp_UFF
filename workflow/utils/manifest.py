@@ -522,6 +522,8 @@ class ExecutionManifest:
         self._execution_mode: Dict[str, object] = {}
         self._inference_methods: List[Dict] = []
         self._model_selection: List[Dict] = []
+        self._alignment_quality: List[Dict] = []
+        self._effective_params: Dict[str, Dict] = {}
         self._outcome: Optional[Dict[str, Optional[str]]] = None
         self._log_file: Optional[str] = None
 
@@ -748,6 +750,22 @@ class ExecutionManifest:
         for selecao in tool_runs.selecoes_modelo():
             self.register_model_selection(selecao)
 
+        for qualidade in tool_runs.qualidades_alinhamento():
+            self.register_alignment_quality(qualidade)
+        self._effective_params.update(tool_runs.parametros_efetivos())
+
+    def register_alignment_quality(self, qualidade: Dict) -> None:
+        """
+        Registra o perfil de lacuna (P2, DM-10) de um alinhamento.
+
+        `alinhamento` é caminho (relativizado, D15).
+        """
+        registro = dict(qualidade)
+        for chave in ("alinhamento", "alinhamento_filtrado"):
+            if registro.get(chave):
+                registro[chave] = self._fora_da_raiz(registro[chave])
+        self._alignment_quality.append(registro)
+
     def register_model_selection(self, selecao: Dict) -> None:
         """
         Registra a seleção de modelo de um alinhamento — M7.3.
@@ -841,6 +859,11 @@ class ExecutionManifest:
             # precisar de seleção (ou manifesto parcial).
             "model_selection": ([dict(m) for m in self._model_selection]
                                 if self._model_selection else None),
+            # P2 / U4 — acrescentados sem subir a versão, como os de M7.3/M7.6.
+            "alignment_quality": ([dict(q) for q in self._alignment_quality]
+                                  if self._alignment_quality else None),
+            "effective_params": ({g: dict(p) for g, p in self._effective_params.items()}
+                                 if self._effective_params else None),
             "params": self._sanitizar_params(self.params),
             "inputs_sha256": self._inputs,
             "outputs_sha256": self._outputs,
