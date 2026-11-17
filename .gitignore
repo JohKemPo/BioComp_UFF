@@ -210,3 +210,4 @@ pip-selfcheck.json
 # A proveniência versionada é o README de cada diretório e o DEC-171; o dado, não.
 data/VARV48_Li2007/dataset_final.fasta
 data/ZIKV479_Zadra2024/dataset_final.fasta
+data/ZIKV433_Zadra2024_filtrado/dataset_final.fasta
