@@ -53,6 +53,7 @@ import mlxtend
 import pandas
 from Bio import Phylo
 
+from workflow.stability.clade_identity import strip_accession_version
 from workflow.utils import manifest
 from workflow.utils.treeUtils import extract_terminais_list
 
@@ -223,7 +224,7 @@ def remineirar(out_dir: str, motivo: str) -> Dict:
             return construir(path, name)
         controlador.builder = construir_com_contexto
         controlador.downloaded_sequences_cache = {
-            t.name for f in os.listdir(trees_dir)
+            strip_accession_version(t.name) for f in os.listdir(trees_dir)
             for t in Phylo.read(os.path.join(trees_dir, f), cfg["input_format"]).get_terminals()}
         dados = controlador()
 

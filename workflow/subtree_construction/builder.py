@@ -98,13 +98,15 @@ class SubtreeBuilder:
         tree_seqs = tree.get_terminals()
         # D29 — o item é a bipartição canônica, que precisa do conjunto inteiro de táxons.
         todos_os_terminais = [strip_accession_version(t.name) for t in tree_seqs]
-        new_seqs = [s for s in tree_seqs if s.name not in self.downloaded_sequences_cache]
+        # D13 — o cache é por acesso sem versão: rótulo truncado não dispara novo download.
+        new_seqs = [s for s in tree_seqs
+                    if strip_accession_version(s.name) not in self.downloaded_sequences_cache]
         
         if new_seqs:
             logging.info(f"  Baixando {len(new_seqs)} novas sequências para {name_tree}...")
             download_sequences(tree, new_seqs, raw_data_sequences,log=logging)
             for s in new_seqs:
-                self.downloaded_sequences_cache.add(s.name)
+                self.downloaded_sequences_cache.add(strip_accession_version(s.name))
         else:
             logging.info(f"  Todas as sequências de {name_tree} já foram baixadas previamente.")
 

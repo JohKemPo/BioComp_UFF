@@ -14,6 +14,64 @@ from workflow.tree_construction.distancia_p import (
     matriz_distancia_p, FitchAmbiguidadeIupac, FRACAO_MINIMA, PISO_SITIOS)
 
 
+#: O escritor PHYLIP do Biopython corta o identificador em 10 caracteres (D13).
+LIMITE_ROTULO_PHYLIP = 10
+
+
+def restaurar_rotulos_phylip(tree, rotulos_alinhamento) -> dict:
+    """
+    Devolve às pontas da árvore o rótulo completo do alinhamento (D13).
+
+    IQ-TREE e RAxML-NG leem PHYLIP, que trunca o rótulo em 10 caracteres
+    (``NC_008030.1`` vira ``NC_008030.``). A correspondência é pelo prefixo de 10
+    caracteres e só vale se for inequívoca: a restauração só renomeia pontas,
+    nunca altera a topologia.
+
+    Parameters
+    ----------
+    tree : Bio.Phylo.BaseTree.Tree
+        Árvore lida da saída da ferramenta; é alterada no lugar.
+    rotulos_alinhamento : iterable of str
+        Rótulos do alinhamento entregue à ferramenta.
+
+    Return
+    ------
+    dict
+        ``rótulo da árvore -> rótulo restaurado``, só dos que mudaram.
+
+    Raises
+    ------
+    ValueError
+        Dois rótulos do alinhamento com o mesmo prefixo truncado, ou ponta sem
+        correspondente no alinhamento.
+    """
+    por_prefixo = {}
+    for r in rotulos_alinhamento:
+        por_prefixo.setdefault(r[:LIMITE_ROTULO_PHYLIP], []).append(r)
+    colisoes = {p: rs for p, rs in por_prefixo.items() if len(rs) > 1}
+    if colisoes:
+        raise ValueError(
+            "rótulos distintos colidem ao truncar em "
+            f"{LIMITE_ROTULO_PHYLIP} caracteres (D13): "
+            + "; ".join(f"{p!r} <- {sorted(rs)}" for p, rs in sorted(colisoes.items())))
+    completos = {r for rs in por_prefixo.values() for r in rs}
+    alterados, sem_par = {}, []
+    for ponta in tree.get_terminals():
+        rotulo = ponta.name
+        if rotulo in completos:
+            continue
+        alvo = por_prefixo.get((rotulo or "")[:LIMITE_ROTULO_PHYLIP])
+        if not alvo or (rotulo or "") != alvo[0][:LIMITE_ROTULO_PHYLIP]:
+            sem_par.append(rotulo)
+            continue
+        alterados[rotulo] = alvo[0]
+        ponta.name = alvo[0]
+    if sem_par:
+        raise ValueError(f"{len(sem_par)} ponta(s) sem correspondente no alinhamento "
+                         f"(D13): {sem_par[:5]}")
+    return alterados
+
+
 #TODO: Melhorias de parametros dos novos metodos ( esta é somente a versão estavel )
 #: Padrões de reprodutibilidade. Ficam aqui, e não espalhados pelas chamadas das
 #: ferramentas, para que o manifesto de execução possa declarar exatamente o
@@ -511,6 +569,7 @@ class TreeBuilder:
             
             if tree_file_found:
                 tree = Phylo.read(tree_file_found, 'newick')
+                restaurar_rotulos_phylip(tree, [r.id for r in alignment])
                 Phylo.write(tree, output_path_tree, 'nexus')
                 
                 logging.info(f"Arquivos IQ-TREE salvos em: {tmp_dir}")
@@ -656,6 +715,7 @@ class TreeBuilder:
                     tool_runs.anotar('raxml-ng', output_path_tree,
                                      arvore_lida='.raxml.support')
                 tree = Phylo.read(tree_file, 'newick')
+                restaurar_rotulos_phylip(tree, [r.id for r in alignment])
 
                 Phylo.write(tree, output_path_tree, 'nexus')
 
