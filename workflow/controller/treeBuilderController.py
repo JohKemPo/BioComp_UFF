@@ -17,6 +17,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, '../..'))
 
 from workflow.tree_construction.builder import (TreeBuilder, MRBAYES_DEFAULTS,
+                                                BOOTSTRAP_DEFAULTS,
                                                 reproducibility_settings)
 from workflow.tree_construction.qualidade_alinhamento import (
     avaliar_alinhamento, LACUNA_MAX_COLUNA, LACUNA_MAX_TAXON, LIMITE_APLICACAO)
@@ -1047,6 +1048,11 @@ class TreeBuilderController:
         chaves = ('random_seed', 'raxml_threads', 'iqtree_threads')
         return {chave: getattr(self, chave) for chave in chaves if hasattr(self, chave)}
 
+    def _bootstrap_kwargs(self):
+        """`*_bs_trees` do `tree_config`; ausente cai no padrão em `bootstrap_settings`."""
+        return {chave: getattr(self, chave) for chave in BOOTSTRAP_DEFAULTS
+                if hasattr(self, chave)}
+
     def _mrbayes_kwargs(self):
         """
         `mrbayes_*` do `tree_config` — M7.4. Mesma lição de D26: um parâmetro
@@ -1150,7 +1156,7 @@ class TreeBuilderController:
         builder = TreeBuilder(fasta_path=fasta_path, output_path_tree=output_path_tree,
                               modelo_substituicao=self._modelo_do_alinhamento(
                                   output_path_align, alng, align_method),
-                              **self._reproducibility_kwargs())
+                              **self._reproducibility_kwargs(), **self._bootstrap_kwargs())
         tree = builder.iqtree_constructor(alng, output_path_tree)
         self.count_nodes.append(tree.count_terminals())
         return tree
@@ -1177,7 +1183,7 @@ class TreeBuilderController:
         builder = TreeBuilder(fasta_path=fasta_path, output_path_tree=output_path_tree,
                               modelo_substituicao=self._modelo_do_alinhamento(
                                   output_path_align, alng, align_method),
-                              **self._reproducibility_kwargs())
+                              **self._reproducibility_kwargs(), **self._bootstrap_kwargs())
         tree = builder.raxml_ng_constructor(alng, output_path_tree)
         self.count_nodes.append(tree.count_terminals())
         return tree

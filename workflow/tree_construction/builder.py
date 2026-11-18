@@ -110,6 +110,56 @@ def reproducibility_settings(config: dict) -> dict:
             for chave, padrao in REPRODUCIBILITY_DEFAULTS.items()}
 
 
+#: Contagem de réplicas de bootstrap, vinda do `tree_config`. Strings, porque o
+#: `--bs-trees` do RAxML-NG também aceita critério de convergência (`autoMRE{1000}`).
+BOOTSTRAP_DEFAULTS = {
+    'raxml_bs_trees': '1000',
+    'iqtree_bs_trees': '1000',
+}
+
+_BS_CONVERGENCIA_RAXML = re.compile(r'^auto(MRE|MRC|FC)(\{\d+\})?$')
+
+
+def bootstrap_settings(config: dict) -> dict:
+    """
+    Resolve e valida a contagem de réplicas de bootstrap de cada ferramenta.
+
+    Parameters
+    ----------
+    config : dict
+        `tree_config` do projeto; chaves ausentes caem em 1000.
+
+    Return
+    ------
+    dict
+        ``raxml_bs_trees`` e ``iqtree_bs_trees``, sempre como ``str``.
+
+    Raises
+    ------
+    ValueError
+        `raxml_bs_trees` fora de inteiro >= 1 ou das formas `autoMRE`, `autoMRC`,
+        `autoFC` (com ou sem `{N}`); `iqtree_bs_trees` fora de inteiro >= 1000 —
+        o `-bb` do IQ-TREE exige esse mínimo e não aceita critério de convergência.
+    """
+    cfg = {chave: str(config.get(chave, padrao)).strip()
+           for chave, padrao in BOOTSTRAP_DEFAULTS.items()}
+
+    raxml = cfg['raxml_bs_trees']
+    if not (re.fullmatch(r'\d+', raxml) and int(raxml) >= 1
+            or _BS_CONVERGENCIA_RAXML.match(raxml)):
+        raise ValueError(f"raxml_bs_trees precisa ser inteiro >= 1 ou autoMRE/autoMRC/"
+                         f"autoFC (com ou sem {{N}}), veio {raxml!r}")
+
+    iqtree = cfg['iqtree_bs_trees']
+    if _BS_CONVERGENCIA_RAXML.match(iqtree):
+        raise ValueError(f"iqtree_bs_trees recebeu {iqtree!r}: critério de convergência "
+                         f"(auto...) é do RAxML-NG, não do IQ-TREE; use raxml_bs_trees")
+    if not (re.fullmatch(r'\d+', iqtree) and int(iqtree) >= 1000):
+        raise ValueError(f"iqtree_bs_trees precisa ser inteiro >= 1000 (mínimo do -bb "
+                         f"do IQ-TREE), veio {iqtree!r}")
+    return cfg
+
+
 #: M7.4 — parâmetros do MrBayes, vindos do `tree_config` (chaves `mrbayes_*`).
 #:
 #: Os padrões reproduzem o que o pipeline **já executava de fato**, conferido
@@ -374,6 +424,9 @@ class TreeBuilder:
         for chave, valor in reproducibility_settings(kwargs).items():
             setattr(self, chave, valor)
 
+        for chave, valor in bootstrap_settings(kwargs).items():
+            setattr(self, chave, valor)
+
         self.count_noudes = 0
 
     def _modelo(self):
@@ -537,18 +590,19 @@ class TreeBuilder:
             # ML roda em uma thread.
             cmd = [
                 require_tool('iqtree'), '-s', align_path,
-                '-m', self._modelo()['iqtree'], '-bb', '1000',
+                '-m', self._modelo()['iqtree'], '-bb', self.iqtree_bs_trees,
                 '-seed', str(self.random_seed),
                 '-pre', prefix,
                 '-nt', '1'
             ]
 
+            tool_runs.registrar_parametros('bootstrap', iqtree_bs_trees=self.iqtree_bs_trees)
             logging.info(f"IQ-TREE: {' '.join(cmd)}")
             tool_runs.registrar('iqtree', cmd, saida=output_path_tree,
                                 seed=self.random_seed, threads=1,
                                 threads_configurados=self.iqtree_threads,
                                 model=self._model_nivel_ferramenta('GTR+G'),
-                                bootstrap='UFBoot 1000',
+                                bootstrap=f'UFBoot {self.iqtree_bs_trees}',
                                 nota='-nt 1 fixo por D21: com -nt N a mesma semente dá topologias diferentes')
             self._anotar_modelo('iqtree', output_path_tree, self._modelo()['iqtree'])
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -659,8 +713,10 @@ class TreeBuilder:
             # comando (verificado com `raxml-ng --help` e execução real numa
             # entrada sintética em 2026-09-02) e grava o suporte já mapeado em
             # `<prefix>.raxml.support` — o `.raxml.bestTree` continua existindo,
-            # mas sem confidence. `--bs-trees 1000` casa a contagem de réplicas
-            # com o `-bb 1000` do IQ-TREE, mas **não é a mesma métrica**: o
+            # mas sem confidence. A contagem vem de `tree_config.raxml_bs_trees`
+            # (padrão 1000, o comportamento anterior); `autoMRE{N}` é o critério
+            # de convergência da ferramenta, que para antes de N se o suporte
+            # estabilizar. O RAxML-NG **não é a mesma métrica** do IQ-TREE: o
             # `--all` do RAxML-NG por padrão calcula FBP (Felsenstein bootstrap
             # proportion, bootstrap não-paramétrico clássico), e o `-bb` do
             # IQ-TREE é UFBoot (bootstrap ultrarrápido, aproximado). Ambos saem
@@ -671,10 +727,13 @@ class TreeBuilder:
                 '--model', self._modelo()['raxml-ng'],
                 '--threads', str(self.raxml_threads), '--workers', '1',
                 '--seed', str(self.random_seed), '--tree', 'rand{10}',
-                '--bs-trees', '1000',
+                '--bs-trees', self.raxml_bs_trees,
                 '--prefix', prefix
             ]
 
+            tool_runs.registrar_parametros('bootstrap', raxml_bs_trees=self.raxml_bs_trees)
+            logging.info(f"RAxML-NG: 10 buscas de ML + bootstrap '{self.raxml_bs_trees}'; "
+                         f"o custo cresce com táxons × padrões distintos (tree_config.raxml_bs_trees)")
             logging.info(f"RAxML-NG: {' '.join(cmd)}")
             # `workers=1` é fixo por D17 e vai ao manifesto junto com `threads`:
             # medido que o esquema de paralelização muda a topologia com a
@@ -682,7 +741,7 @@ class TreeBuilder:
             tool_runs.registrar('raxml-ng', cmd, saida=output_path_tree,
                                 seed=self.random_seed, threads=self.raxml_threads,
                                 workers=1, model=self._model_nivel_ferramenta('GTR+G'),
-                                bootstrap='FBP (Felsenstein) 1000 réplicas via --all',
+                                bootstrap=f'FBP (Felsenstein) {self.raxml_bs_trees} réplicas via --all',
                                 nota='FBP não é a mesma escala/interpretação do UFBoot do IQ-TREE')
             self._anotar_modelo('raxml-ng', output_path_tree, self._modelo()['raxml-ng'])
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
