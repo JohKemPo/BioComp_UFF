@@ -342,6 +342,68 @@ class MolecularClockController:
             },
         }
 
+    def _alinhamento_da_arvore(self, base_sem_inferidor: str):
+        """Resolve o alinhamento de que a árvore saiu, pela proveniência registrada.
+
+        O nome da árvore não carrega o sufixo do filtro de coluna (P2), então
+        derivá-lo do nome datava a matriz **não** filtrada — medido em 2026-11-19
+        no VARV-48 (185 988 contra 191 248 colunas) e no ZIKV-479 (10 698 contra
+        10 817). Quem decide é o bloco ``alignment_quality`` do manifesto, que
+        registra, por alinhador, se o filtro foi ``aplicado`` e o ``sha256`` das
+        duas matrizes.
+
+        Returns
+        -------
+        tuple
+            ``(caminho, info)`` em caso de sucesso, onde ``info`` descreve a
+            proveniência; ``(None, motivo)`` quando não é possível decidir.
+        """
+        simples = os.path.join(self.dir_align, base_sem_inferidor + ".aln")
+        filtrado = os.path.join(self.dir_align, base_sem_inferidor + "_lacuna.aln")
+        registro = None
+        caminho_manifesto = os.path.join(self.output_path, 'outputs',
+                                         manifest.MANIFEST_FILENAME)
+        try:
+            with open(caminho_manifesto, encoding='utf-8') as fh:
+                blocos = json.load(fh).get('alignment_quality') or []
+            alvo = base_sem_inferidor + ".aln"
+            registro = next((b for b in blocos
+                             if os.path.basename(b.get('alinhamento') or '') == alvo), None)
+        except (OSError, ValueError):
+            registro = None
+
+        if registro is None:
+            # Sem proveniência não se adivinha: com as duas matrizes em disco,
+            # qualquer escolha pelo nome pode datar a errada.
+            if os.path.isfile(filtrado):
+                return None, ("proveniência do alinhamento indisponível: "
+                              f"{manifest.MANIFEST_FILENAME} não registra "
+                              f"'{base_sem_inferidor}.aln' em alignment_quality, e existem "
+                              "as duas matrizes (filtrada e não filtrada) em Align")
+            if not os.path.isfile(simples):
+                return None, f"alinhamento não encontrado: {os.path.basename(simples)}"
+            return simples, {"alinhamento": os.path.basename(simples),
+                             "filtro_de_coluna_aplicado": False,
+                             "proveniencia": "sem manifesto; só a matriz não filtrada existe"}
+
+        aplicado = bool(registro.get('aplicado'))
+        escolhido = filtrado if aplicado else simples
+        esperado = registro.get('alinhamento_filtrado_sha256' if aplicado
+                                else 'alinhamento_sha256')
+        if not os.path.isfile(escolhido):
+            return None, (f"o manifesto declara filtro_de_coluna aplicado={aplicado}, "
+                          f"mas {os.path.basename(escolhido)} não está em Align")
+        obtido = manifest.file_digest(escolhido)
+        if esperado and obtido != esperado:
+            return None, (f"{os.path.basename(escolhido)} mudou depois da execução: "
+                          f"sha256 {obtido} contra {esperado} no manifesto")
+        return escolhido, {"alinhamento": os.path.basename(escolhido),
+                           "filtro_de_coluna_aplicado": aplicado,
+                           "sha256": obtido,
+                           "colunas": registro.get('colunas_depois' if aplicado
+                                                   else 'colunas_antes'),
+                           "proveniencia": f"alignment_quality.aplicado={aplicado}"}
+
     def _falha(self, rel: Dict, saida: str, alinhador: str, motivo: str) -> Dict:
         tool_runs.registrar_metodo(METODO_NO_MANIFESTO, "tentado_e_falhou", saida=saida,
                                    alinhador=alinhador, motivo=motivo)
@@ -362,13 +424,14 @@ class MolecularClockController:
                      "metodo_de_inferencia": rotulo.inference, "estado": None, "motivo": None,
                      "timetree": None}
         try:
-            # tree_dataset_final_mafft_iqtree -> dataset_final_mafft.aln
+            # tree_dataset_final_mafft_iqtree -> dataset_final_mafft[_lacuna].aln,
+            # com o sufixo decidido pela proveniência, não pelo nome da árvore.
             base = stem[len("tree_"):] if stem.startswith("tree_") else stem
-            aln = os.path.join(self.dir_align,
-                               base[: -len("_" + rotulo.inference)] + ".aln")
-            if not os.path.isfile(aln):
-                return self._falha(rel, timetree, rotulo.aligner,
-                                   f"alinhamento não encontrado: {os.path.basename(aln)}")
+            aln, info = self._alinhamento_da_arvore(
+                base[: -len("_" + rotulo.inference)])
+            if aln is None:
+                return self._falha(rel, timetree, rotulo.aligner, info)
+            rel["alinhamento"] = info
 
             arv = datacao.ler_arvore_de_origem(os.path.join(self.dir_trees, nome))
             todos = frozenset(strip_accession_version(l.taxon.label)
