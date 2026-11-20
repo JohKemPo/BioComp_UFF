@@ -143,9 +143,19 @@ class TreeBuilderController:
             path = os.path.join(self.output_path, dir)
             os.makedirs(path, exist_ok=True)
         
+        # AC-09 — a limpeza vem ANTES da enumeração: o resíduo `_NoPipe` de uma
+        # execução anterior é FASTA válido e entrava na lista como se fosse
+        # outro conjunto de dados.
+        clean_NoPipe(self.input_path)
+
         self.files = []
         for nome in sorted(os.listdir(self.input_path)):
-            if eh_fasta(os.path.join(self.input_path, nome)):
+            if 'NoPipe' in nome:
+                # AC-09 — segunda barreira: a deduplicação grava `_NoPipe` neste
+                # mesmo diretório durante a execução, depois da enumeração.
+                logging.warning(
+                    f"Arquivo {nome} ignorado: é saída de deduplicação, não entrada — AC-09.")
+            elif eh_fasta(os.path.join(self.input_path, nome)):
                 self.files.append(nome)
             else:
                 logging.warning(
@@ -411,7 +421,10 @@ class TreeBuilderController:
         print(f"Métodos ignorados: {', '.join([m.upper() for m in self.ignore_methods])}\n")
         logging.info(f"Métodos ignorados: {', '.join([m.upper() for m in self.ignore_methods])}")
         
-        heatmap_matrix = np.zeros((8, 8))
+        # A ordem do acumulado é a do primeiro arquivo, não um 8 fixo: com um
+        # método indisponível (U4), a matriz do arquivo é menor e a soma contra
+        # um 8×8 devolvia None, zerando o acumulado em silêncio.
+        heatmap_matrix = None
         multi_trees = self._initialize_multi_trees_structure()
         base_folder = self.input_path.split('/')[-1]
 
@@ -889,11 +902,25 @@ class TreeBuilderController:
         Return
         ------
         np.ndarray or None
-            A matriz resultante da soma ou None se as dimensões forem incompatíveis.
+            A soma das duas; a outra matriz, se uma delas for None; ou o
+            acumulado inalterado, se as ordens forem incompatíveis. Só devolve
+            None quando as duas entradas são None.
         """
+        # O acumulado começa vazio e assume a ordem do primeiro arquivo.
+        if matriz1 is None:
+            return matriz2
+        if matriz2 is None:
+            return matriz1
+
         if len(matriz1) != len(matriz2) or len(matriz1[0]) != len(matriz2[0]):
-            return None
-        
+            # Conjuntos com números diferentes de árvores não somam; o acumulado
+            # anterior é preservado em vez de virar None e derrubar a execução
+            # no arquivo seguinte.
+            logging.warning(
+                f"Heatmap acumulado: matriz {len(matriz2)}x{len(matriz2[0])} incompatível "
+                f"com o acumulado {len(matriz1)}x{len(matriz1[0])}; arquivo não somado.")
+            return matriz1
+
         result = []
         for i in range(len(matriz1)):   
             result.append([])
